@@ -2,7 +2,7 @@
 
 <img src="https://github.com/TSIW-PROAE/.github/raw/main/img/logo_pgcomp.png" alt="Logo pgcomp">
 
-> Front-end do sistema de gestão para a Pró-Reitoria de Ações Afirmativas e Assistência Estudantil (PROAE) da UFBA
+Front-end do sistema de gestão para a Pró-Reitoria de Ações Afirmativas e Assistência Estudantil (PROAE) da UFBA
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -22,7 +22,6 @@ Antes de começar, certifique-se de ter instalado:
 - Node.js v16 ou superior
 - Gerenciador de pacotes: npm
 
-## Estrutura do projeto 
 ## 📂 Estrutura do Projeto
 
 ```plaintext
@@ -53,8 +52,8 @@ proae-frontend/
 ## 🚀 Como Rodar o Projeto
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/seu-projeto.git
-cd seu-projeto
+git clone https://github.com/TSIW-PROAE/proae_frontend.git
+cd proae_frontend
 ```
 2. **Instale as dependências**
 ```bash
