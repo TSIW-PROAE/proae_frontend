@@ -1,3 +1,8 @@
+/* importando a fonte */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Space+Grotesk:wght@300..700&display=swap');
+
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -38,5 +43,86 @@
 }
 
 .read-the-docs {
-  color: #888;
+  color: #e01818;
+}
+
+body {
+  font-family: 'Fredoka', sans-serif;
+  background-color: #F5EEDC;
+  margin: 0;
+  padding: 0px;
+  text-align: left;
+}
+
+.container {
+  max-width: 800px;
+  margin: auto;
+}
+
+.titulo {
+  color: #222;
+  font-size: 28px;
+  font-weight: bold;
+  font-family: 'Fredoka', sans-serif;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.botoes-filtro {
+  display: flex;
+  justify-content:flex-end;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filtro {
+  background-color: #183B4E;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 30px;
+  cursor: pointer;
+}
+
+.card {
+  background: #DDA853;
+  padding: 0px 20px 0px 20px;
+  border-radius: 2%;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border-color: #000000;
+}
+
+.card:hover {
+  background: #914d00;
+}
+
+.expandido {
+  background: #ffd700;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: bold;
+  color: #000000;
+}
+
+.status {
+  padding: 5px 10px;
+  margin-left: 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  color: white;
+}
+
+.green {
+  background-color: green;
+}
+
+.blue {
+  background-color: blue;
 }
