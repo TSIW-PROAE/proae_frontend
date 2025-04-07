@@ -14,6 +14,8 @@ O projeto foi desenvolvido com as seguintes tecnologias:
 
 🟦 TypeScript - Tipagem estática para JavaScript
 
+## Back-end 
+O repositório do back-end pode ser encontrado [aqui](https://github.com/TSIW-PROAE/proae_backend).
 
 ## 💻 Pré-requisitos
 
@@ -93,6 +95,14 @@ Agradecemos às seguintes pessoas que contribuíram para este projeto:
         <img src="https://avatars.githubusercontent.com/u/101140937?v=4" width="100px;" alt="Foto do Steve Jobs"/><br>
         <sub>
           <b>Caio Alcarria</b>
+        </sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="#" title="defina o título do link">
+        <img src="https://avatars.githubusercontent.com/u/101140937?v=4" width="100px;" alt="Foto do Steve Jobs"/><br>
+        <sub>
+          <b>Allan Thales</b>
         </sub>
       </a>
     </td>
