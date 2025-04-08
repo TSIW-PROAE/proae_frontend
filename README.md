@@ -116,7 +116,7 @@ Agradecemos às seguintes pessoas que contribuíram para este projeto:
       <a href="#" title="defina o título do link">
         <img src="https://avatars.githubusercontent.com/u/31896950?v=4" width="100px;" alt="Foto do Allan"/><br>
         <sub>
-          <b>Caio Alcarria</b>
+          <b>Allan Oliveira</b>
         </sub>
       </a>
     </td>
