@@ -104,6 +104,14 @@ Agradecemos às seguintes pessoas que contribuíram para este projeto:
         </sub>
       </a>
     </td>
+    <td align="center">
+      <a href="#" title="defina o título do link">
+        <img src="https://avatars.githubusercontent.com/u/101140937?v=4" width="100px;" alt="Foto do Steve Jobs"/><br>
+        <sub>
+          <b>Caio Alcarria</b>
+        </sub>
+      </a>
+    </td>
   </tr>
 </table>
 
