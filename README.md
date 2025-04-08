@@ -89,10 +89,18 @@ Agradecemos às seguintes pessoas que contribuíram para este projeto:
       </a>
     </td>
     <td align="center">
-      <a href="#" title="defina o título do link">
-        <img src="https://avatars.githubusercontent.com/u/101140937?v=4" width="100px;" alt="Foto do Steve Jobs"/><br>
+      <a href="https://github.com/SauloSamps" title="defina o título do link">
+        <img src="https://avatars.githubusercontent.com/u/82217565?v=4" width="100px;" alt="Foto do Saulo Samps"/><br>
         <sub>
-          <b>Caio Alcarria</b>
+          <b>Saulo Samps</b>
+        </sub>
+      </a>
+    </td>
+     <td align="center">
+      <a href="https://github.com/ptrickcesar" title="defina o título do link">
+        <img src="https://avatars.githubusercontent.com/u/69088118?v=4" width="100px;" alt="Foto do Patrick César"/><br>
+        <sub>
+          <b>Patrick César</b>
         </sub>
       </a>
     </td>
