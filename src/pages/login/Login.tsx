@@ -1,33 +1,14 @@
 import React, { useState } from "react";
 import "./Login.css";
+import { formatCPF, validarCPFReal } from "../../utils/utils";
 
 const Login: React.FC = () => {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
 
-  // Validação de CPF real
-  const validarCPFReal = (cpf: string): boolean => {
-    cpf = cpf.replace(/\D/g, '');
-    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-
-    let soma = 0;
-    for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
-    let resto = (soma * 10) % 11;
-    if (resto === 10 || resto === 11) resto = 0;
-    if (resto !== parseInt(cpf.charAt(9))) return false;
-
-    soma = 0;
-    for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
-    resto = (soma * 10) % 11;
-    if (resto === 10 || resto === 11) resto = 0;
-
-    return resto === parseInt(cpf.charAt(10));
-  };
-
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const somenteNumeros = e.target.value.replace(/\D/g, '');
-    setCpf(somenteNumeros);
+    setCpf(formatCPF(e.target.value));
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -51,9 +32,6 @@ const Login: React.FC = () => {
     }
 
     setErro('');
-    console.log("Login com CPF válido:", cpfNumeros, senha);
-
-    // enviar para o backend com fetch/axios
   };
 
   return (
@@ -75,7 +53,6 @@ const Login: React.FC = () => {
                 type="text"
                 placeholder="Digite seu CPF"
                 onChange={handleCpfChange}
-                maxLength={11}
               />
             </div>
             <div className="flex flex-col gap-5 items-start">
@@ -90,10 +67,10 @@ const Login: React.FC = () => {
               />
             </div>
 
-            {erro && <p className="text-red-500 text-sm">{erro}</p>}
+            {erro && <p className="text-red-500 text-sm error">{erro}</p>}
 
             <div className="flex justify-between items-center w-full text-sm">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-5 remember">
                 <input type="checkbox" id="lembrar" />
                 <label htmlFor="lembrar">Lembrar-me</label>
               </div>

@@ -74,3 +74,12 @@
     gap: 20px;
     margin-top: 30px;
 }
+
+.error{
+    color: red;
+}
+.remember{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
