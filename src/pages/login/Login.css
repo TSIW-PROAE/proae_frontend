@@ -83,3 +83,7 @@
     align-items: center;
     gap: 5px;
 }
+
+.login-form a{
+    color: #183B4E;
+}
