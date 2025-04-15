@@ -6,6 +6,7 @@ import pgcompLogo from "./assets/204805776.png";
 import App from "./App.tsx";
 import "./styles/global.css"
 import Login from './pages/login/Login.tsx';
+import Status from './components/Status/Status.tsx';
 
 
 const routes = [
@@ -52,7 +53,15 @@ const routes = [
 
 if(import.meta.env.MODE == 'development') {
     console.log("design system page is available go to /design-system");
-    routes.push({path: "design-system", element: <div>Design System</div>});
+    routes.push({path: "design-system", element:
+        <div>
+            Design System
+            <Status titulo="APROVADO" />
+            <Status titulo="REPROVADO" />
+            <Status titulo="PENDENTE" />
+            <Status titulo="EM ANÁLISE" />
+        </div>
+    });
 }
 
 const router = createBrowserRouter(routes);
