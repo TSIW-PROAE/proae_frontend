@@ -1,0 +1,89 @@
+#login {
+    background-color: #183B4E;
+    background-image: 
+        url("../../assets/decor/emoji.svg"),
+        url("../../assets/decor/plant.svg"),
+        url("../../assets/decor/arrow.svg"),
+        url("../../assets/decor/cloud.svg"),
+        url("../../assets/decor/stars.svg"),
+        url("../../assets/decor/swirl.svg"),
+        url("../../assets/decor/fluff.svg"),
+        url("../../assets/decor/thoughts.svg");
+    
+    background-size: 
+        auto 15.26%,       /* emoji */
+        auto 20%,          /* plant  */
+        auto 27.34%,       /* arrow */
+        auto 11.66%,       /* cloud */
+        auto 14.06%,       /* stars */
+        auto 17.43%,       /* swirl */
+        auto 28%,          /* fluff */
+        auto 35%;          /* thoughts */
+
+    background-position: 
+        2.013% 2.16%,      /* emoji */
+        29% 0%,            /* plant */
+        98% -0.6%,         /* arrow */
+        100% 39.52%,       /* cloud */
+        98% 94%,           /* stars */
+        55.16% 100%,       /* swirl */
+        0% 100%,           /* fluff */
+        0% 53.27%;         /* thoughts */
+
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* 🔽 Media query to hide images at 935px or lower */
+@media (max-width: 935px) {
+    body {
+        background-image: none;
+    }
+}
+
+
+#login .login-content{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+#login{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#img-cultura{
+    max-width: 334px;
+}
+
+.login-form{
+    max-width: 499px;
+    border-radius: 34px;
+    background: #F5EEDC;
+    padding: 30px;
+    gap: 20px;
+}
+
+.login-form form{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.error{
+    color: red;
+}
+.remember{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.login-form a{
+    color: #183B4E;
+}

@@ -1,10 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
 import {createBrowserRouter, RouterProvider} from "react-router-dom";
 import ProtectedRouteAluno, {ProtectedRouteProae} from "./features/Auth/ProtectRoute.tsx";
 import pgcompLogo from "./assets/204805776.png";
 import App from "./App.tsx";
+import "./styles/global.css"
+import Login from './pages/login/Login.tsx';
+
 
 const routes = [
     {path: '/', element: <App/>,
@@ -24,7 +26,7 @@ const routes = [
                     </div>
                 )
             },
-            {path: "login-aluno", element: <div>Login Aluno</div>},
+            {path: "login", element: <Login></Login>},
             {
                 element: <ProtectedRouteAluno/>, children: [
                     {path: "portal-aluno", element: <div>Portal do Aluno</div>},
