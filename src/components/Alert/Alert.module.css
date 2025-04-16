@@ -1,0 +1,38 @@
+@import url('../../styles/variables.css');
+@import url('../../styles/global.css');
+
+.aviso{
+    background-color: var(--cor-azul-escuro);
+    border: 1px solid black;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    height: fit-content;
+    width: 400px;
+    padding: 10px;
+}
+
+.aviso p{
+    color: var(--cor-creme);
+    line-height: 20px;
+    margin: 0;
+}
+
+.conteudoPrincipal{
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+}
+
+.texto{
+    text-align: justify;
+}
+
+.titulo{
+    font-weight: 500;
+}
+
+.data{
+    font-size: 11px;
+}
