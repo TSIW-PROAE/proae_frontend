@@ -2,6 +2,7 @@
     background-color: #F5EEDC;
     width: 95px;
     height: 100vh;
+    border-right: 1px solid rgba(128, 128, 128, 0.5);
 
     #sideBar {
         padding-top: 2rem;
