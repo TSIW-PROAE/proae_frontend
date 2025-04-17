@@ -8,6 +8,7 @@ import "./styles/global.css"
 import Login from './pages/login/Login.tsx';
 import Status from './components/Status/Status.tsx';
 import Alert from './components/Alert/Alert.tsx';
+import SideBar from "./components/Side Bar/SideBar.tsx";
 
 
 const routes = [
@@ -64,6 +65,9 @@ if(import.meta.env.MODE == 'development') {
             <Alert titulo='Inscrição Confirmada' descricao='Inscrição realizada.' data='03/04'/>
             <Alert titulo='Documentação Negada' descricao='Caro aluno, por favor faça o reenvio do documento de matricula devidamente atualizado, conforme o especificado no item 2.3 do edital.' data='04/04'/>
             <Alert titulo='Documentação Pendente' descricao='Caro aluno, por favor faça o envio do CAD Único.' data='04/04'/>
+            <SideBar homeIconRedirect={"/redirect"}
+                     processIconRedirect={"/redirect"}
+                     configIconRedirect={"/redirect"}/>
         </div>
     });
 }
