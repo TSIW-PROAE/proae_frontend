@@ -1,0 +1,27 @@
+.inputText {
+    border: 1px solid #DED2D9;
+    width: 100%;
+    gap: 13px;
+    border-radius: 5px;
+    padding: 13px 10px;
+    background: transparent;
+  }
+  
+  .inputText:focus {
+    outline: none;
+    border-color: #EAB8A1;
+  }
+  
+  .inputText::placeholder {
+    color: #A1A1AA;
+  }
+  
+  .label {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: #828282;
+    margin-bottom: 5px;
+  }
+  
