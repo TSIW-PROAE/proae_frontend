@@ -1,14 +1,17 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "./index.css";
+import React from "react";
+import ReactDOM from "react-dom/client";
+
+import { Provider } from "./provider.tsx";
+import "@/styles/variables.css";
+import "@/styles/globals.css";
+
 import { RouterProvider } from "react-router-dom";
-import { HeroUIProvider } from "@heroui/react";
 import { router } from "./routes";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <HeroUIProvider>
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <Provider>
       <RouterProvider router={router} />
-    </HeroUIProvider>
-  </StrictMode>
+    </Provider>
+  </React.StrictMode>
 );

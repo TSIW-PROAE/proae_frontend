@@ -1,0 +1,35 @@
+/* Importação das fontes do Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+
+:root {
+  /* Cores principais */
+  --cor-azul-escuro: #183b4e;
+  --cor-dourado: #dda853;
+  --cor-creme: #f5eedc;
+  --cor-azul-medio: #27548a;
+  --cor-preto: #000000;
+  --cor-verde-escuro: #16353e;
+  --cor-dourado-claro: #ffe8b1;
+
+  /* Tipografia - Famílias de fontes */
+  --fonte-titulos: "Fredoka", sans-serif;
+  --fonte-corpo: "Space Grotesk", sans-serif;
+
+  /* Tipografia - Tamanhos de fonte */
+  --tamanho-xs: 0.75rem; /* 12px */
+  --tamanho-pequeno: 0.875rem; /* 14px */
+  --tamanho-base: 1rem; /* 16px */
+  --tamanho-medio: 1.125rem; /* 18px */
+  --tamanho-grande: 1.25rem; /* 20px */
+  --tamanho-xl: 1.5rem; /* 24px */
+  --tamanho-2xl: 1.75rem; /* 28px */
+  --tamanho-3xl: 2rem; /* 32px */
+  --tamanho-4xl: 2.5rem; /* 40px */
+
+  /* Tipografia - Peso da fonte */
+  --peso-fino: 300;
+  --peso-normal: 400;
+  --peso-medio: 500;
+  --peso-semi-negrito: 600;
+  --peso-negrito: 700;
+}

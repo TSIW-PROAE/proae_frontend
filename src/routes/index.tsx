@@ -1,27 +1,25 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
-import Home from "../pages/Home";
-import LoginAluno from "../pages/LoginAluno";
-import LoginProae from "../pages/LoginProae";
-import NotFound from "../pages/NotFound";
-import DesignSystem from "../pages/DesignSystem";
+import Home from "../pages/Home/Home";
+import LoginAluno from "../pages/paginaAluno/LoginAluno/LoginAluno";
+import LoginProae from "../pages/paginaProae/LoginProae/LoginProae";
+import NotFound from "../pages/NotFound/NotFound";
+import DesignSystem from "../pages/DesignSystem/DesignSystem";
 
 // Aluno
-import PortalAluno from "../pages/aluno/PortalAluno";
-import ProcessosAluno from "../pages/aluno/ProcessosAluno";
-import DocumentacaoAluno from "../pages/aluno/DocumentacaoAluno";
-import ConfiguracaoAluno from "../pages/aluno/ConfiguracaoAluno";
-import CandidaturaAluno from "../pages/aluno/CandidaturaAluno";
+import PortalAluno from "../pages/paginaAluno/PortalAluno/PortalAluno";
+import ProcessosAluno from "../pages/paginaAluno/ProcessosAluno/ProcessosAluno";
+import DocumentacaoAluno from "../pages/paginaAluno/DocumentacaoAluno/DocumentacaoAluno";
+import ConfiguracaoAluno from "../pages/paginaAluno/ConfiguracaoAluno/ConfiguracaoAluno";
+import CandidaturaAluno from "../pages/paginaAluno/CandidaturaAluno/CandidaturaAluno";
 
 // PROAE
-import ProcessosProae from "../pages/proae/ProcessosProae";
-import ConfiguracaoProae from "../pages/proae/ConfiguracaoProae";
-import InscricoesProae from "../pages/proae/InscricoesProae";
+import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
+import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
+import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
 
 // Auth
-import ProtectedRouteAluno, {
-  ProtectedRouteProae,
-} from "../features/Auth/ProtectRoute";
+import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
 
 const routes = [
   {
