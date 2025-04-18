@@ -16,6 +16,8 @@
   --fonte-corpo: "Space Grotesk", sans-serif;
 
   /* Tipografia - Tamanhos de fonte */
+  --tamanho-3xs: 0.5rem; /* 8px */
+  --tamanho-2xs: 0.625rem; /* 10px */
   --tamanho-xs: 0.75rem; /* 12px */
   --tamanho-pequeno: 0.875rem; /* 14px */
   --tamanho-base: 1rem; /* 16px */

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Switch } from "@heroui/switch";
+import { Link } from "@heroui/link";
 import "./LoginAluno.css";
 
 export default function LoginAluno() {
@@ -11,6 +12,7 @@ export default function LoginAluno() {
   const [erroCpf, setErroCpf] = useState("");
   const [erroSenha, setErroSenha] = useState("");
   const [lembrar, setLembrar] = useState(false);
+  const anoAtual = new Date().getFullYear();
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(formatCPF(e.target.value));
@@ -128,6 +130,16 @@ export default function LoginAluno() {
               >
                 Entrar
               </Button>
+
+              <div className="register-link-container">
+                <Link href="#" className="register-link" color="primary">
+                  Cadastrar-se no sistema
+                </Link>
+              </div>
+
+              <div className="copyright-text">
+                © {anoAtual} UFBA PROAE. Todos os direitos reservados.
+              </div>
             </form>
           </div>
         </div>

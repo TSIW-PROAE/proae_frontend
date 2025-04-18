@@ -114,7 +114,7 @@
 
 /* Cabeçalho */
 .login-header {
-  margin-bottom: 30px;
+  margin-bottom: 25px;
   text-align: center;
 }
 
@@ -137,14 +137,14 @@
 .login-form-container {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
 }
 
 /* Corrigindo problema do input que "salta" com mensagens de erro */
 .input-container {
   display: flex;
   flex-direction: column;
-  min-height: 90px; /* Altura fixa para evitar "saltos" */
+  min-height: 85px;
 }
 
 .custom-input {
@@ -156,7 +156,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin-top: 5px;
   margin-bottom: 10px;
 }
 
@@ -198,7 +198,7 @@
 
 /* Botão de login */
 .login-button {
-  margin-top: 15px;
+  margin-top: 10px;
   height: 52px;
   font-weight: var(--peso-semi-negrito);
   font-size: var(--tamanho-base);
@@ -232,6 +232,35 @@
 .login-button:hover:after {
   left: 120%;
   opacity: 1;
+}
+
+/* Link de cadastro */
+.register-link-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.register-link {
+  font-size: var(--tamanho-pequeno);
+  font-weight: var(--peso-medio);
+  color: var(--cor-azul-medio) !important;
+  text-decoration: underline !important;
+  transition: color 0.2s ease;
+}
+
+.register-link:hover {
+  color: var(--cor-azul-escuro) !important;
+}
+
+/* Copyright texto */
+.copyright-text {
+  text-align: center;
+  font-size: var(--tamanho-2xs);
+  color: #777;
+  display: none;
+  margin-bottom: -20px;
 }
 
 /* Estilos customizados para inputs do HeroUI */
@@ -285,13 +314,13 @@
 
     background-position:
       2% 2%,
-      /* emoji - mantida posição */ 28% 0%,
-      /* plant - leve ajuste */ 97% -0.5%,
-      /* arrow - leve ajuste */ 99% 39%,
-      /* cloud - leve ajuste */ 97% 93%,
-      /* stars - leve ajuste */ 54% 99%,
-      /* swirl - leve ajuste */ 0% 99%,
-      /* fluff - leve ajuste */ 0% 52%; /* thoughts - leve ajuste */
+      /* emoji */ 28% 0%,
+      /* plant */ 97% -0.5%,
+      /* arrow */ 99% 39%,
+      /* cloud */ 97% 93%,
+      /* stars */ 54% 99%,
+      /* swirl */ 0% 99%,
+      /* fluff */ 0% 52%; /* thoughts - leve ajuste */
   }
 }
 
@@ -378,6 +407,10 @@
       /* stars - reduzido mais */ auto 8%,
       /* swirl - reduzido mais */ auto 15%,
       /* fluff - reduzido mais */ auto 18%; /* thoughts - reduzido mais */
+  }
+
+  .copyright-text {
+    font-size: 9px;
   }
 }
 
