@@ -1,0 +1,8 @@
+/* Definindo as variáveis das cores que são usadas com frequência no projeto */
+
+:root{
+    --cor-creme: #F5EEDC;
+    --cor-mostarda: #DDA853;
+    --cor-azul-marinho: #27548A;
+    --cor-azul-escuro: #16353E;
+}

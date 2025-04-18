@@ -1,0 +1,48 @@
+@import url('../../styles/variables.css');
+@import url('../../styles/global.css');
+
+.status {
+    padding: 0px 6px;
+    border: none;
+    border-radius: 10px;
+    width: fit-content;
+}
+  
+.positivo {
+    background-color: #17C964;
+    color: var(--cor-azul-escuro);
+}
+
+.positivo p{
+    color: var(--cor-azul-escuro);
+}
+
+.negativo {
+    background-color: #E94548;
+}
+
+.negativo p{
+    color: #990F00;
+}
+
+.pendente {
+    background-color: #FE9C00;
+}
+
+.pendente p{
+    color: var(--cor-azul-escuro);
+}
+
+.analise {
+    background-color: #006FEE;
+}
+
+.analise p{
+    color: white;
+}
+
+.titulo {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+}
