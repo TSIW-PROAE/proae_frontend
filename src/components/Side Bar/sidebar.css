@@ -20,7 +20,7 @@
             cursor: auto;
         }
 
-        #icon-wrapper {
+        #iconWrapper {
             display: flex;
             align-items: center;
             justify-content: center;

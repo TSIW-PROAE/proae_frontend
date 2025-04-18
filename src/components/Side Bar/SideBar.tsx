@@ -47,11 +47,11 @@ const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, sh
                 <div id="sideBar">
                     <img id="proaeLogo" src="/PROAE.svg" alt="PROAE LOGO" />
                         {icons.map((iconConfig) => (
-                            iconConfig.shouldShowIcon ? (
-                                    <div id="icon-wrapper" style={iconConfig.isIconSelected ? {'border': '2px solid #27548A'} : {}}>
+                            iconConfig.shouldShowIcon && (
+                                    <div id="iconWrapper" style={iconConfig.isIconSelected ? {'border': '2px solid #27548A'} : {}}>
                                         <img src={iconConfig.isIconSelected ? iconConfig.srcSelectedIcon : iconConfig.srcNotSelectedIcon} alt={iconConfig.alt} key={iconConfig.alt} onClick={() => {navigate(iconConfig.redirect); resetSelection(); iconConfig.onClick();}}/>
                                     </div>
-                            ) : null
+                            )
                         ))}
                 </div>
             </aside>
