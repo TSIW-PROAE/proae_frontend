@@ -1,1 +1,469 @@
-/* Estilos para a página LoginAluno */
+/* Importando variáveis globais */
+@import "../../../styles/variables.css";
+
+/* Container principal */
+.login-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--cor-azul-escuro);
+  background-image: url("../../../assets/icons/emoji.svg"),
+    url("../../../assets/icons/plant.svg"),
+    url("../../../assets/icons/arrow.svg"),
+    url("../../../assets/icons/cloud.svg"),
+    url("../../../assets/icons/stars.svg"),
+    url("../../../assets/icons/swirl.svg"),
+    url("../../../assets/icons/fluff.svg"),
+    url("../../../assets/icons/thoughts.svg");
+
+  background-size:
+    auto 15.26%,
+    /* emoji */ auto 20%,
+    /* plant  */ auto 27.34%,
+    /* arrow */ auto 11.66%,
+    /* cloud */ auto 14.06%,
+    /* stars */ auto 17.43%,
+    /* swirl */ auto 28%,
+    /* fluff */ auto 35%; /* thoughts */
+
+  background-position:
+    2.013% 2.16%,
+    /* emoji */ 29% 0%,
+    /* plant */ 98% -0.6%,
+    /* arrow */ 100% 39.52%,
+    /* cloud */ 98% 94%,
+    /* stars */ 55.16% 100%,
+    /* swirl */ 0% 100%,
+    /* fluff */ 0% 53.27%; /* thoughts */
+
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Título do Portal */
+.portal-title {
+  color: var(--cor-creme);
+  font-family: var(--fonte-titulos);
+  font-size: var(--tamanho-4xl);
+  font-weight: var(--peso-negrito);
+  margin-bottom: 2rem;
+  text-align: center;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+}
+
+/* Card de login centralizado */
+.login-content {
+  width: 90%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Formulário de login */
+.login-form {
+  width: 100%;
+  background: var(--cor-creme);
+  border-radius: 24px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  display: flex;
+  overflow: hidden;
+}
+
+.login-form:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* Lado da imagem */
+.logo-container {
+  background-image: url("../../../assets/letras.jpg");
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 35%;
+  padding: 0;
+  position: relative;
+}
+
+/* Overlay para melhorar o contraste */
+.logo-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Lado do formulário */
+.form-container {
+  width: 65%;
+  padding: 40px;
+}
+
+/* Cabeçalho */
+.login-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.login-title {
+  color: var(--cor-azul-escuro);
+  font-family: var(--fonte-titulos);
+  font-size: var(--tamanho-2xl);
+  font-weight: var(--peso-semi-negrito);
+  margin-bottom: 10px;
+}
+
+.login-subtitle {
+  color: var(--cor-azul-medio);
+  font-family: var(--fonte-corpo);
+  font-size: var(--tamanho-medio);
+  font-weight: var(--peso-normal);
+}
+
+/* Formulário */
+.login-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Corrigindo problema do input que "salta" com mensagens de erro */
+.input-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 90px; /* Altura fixa para evitar "saltos" */
+}
+
+.custom-input {
+  margin-bottom: 0;
+}
+
+/* Opções de login */
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+.remember-option {
+  display: flex;
+  align-items: center;
+}
+
+.forgot-password {
+  color: var(--cor-azul-medio);
+  text-decoration: none;
+  font-size: var(--tamanho-pequeno);
+  font-weight: var(--peso-medio);
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+  position: relative;
+}
+
+.forgot-password:after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: var(--cor-azul-escuro);
+  transition: width 0.3s ease;
+}
+
+.forgot-password:hover {
+  color: var(--cor-azul-escuro);
+  transform: translateY(-1px);
+}
+
+.forgot-password:hover:after {
+  width: 100%;
+}
+
+/* Botão de login */
+.login-button {
+  margin-top: 15px;
+  height: 52px;
+  font-weight: var(--peso-semi-negrito);
+  font-size: var(--tamanho-base);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  border-radius: 16px !important;
+  overflow: hidden;
+  background-color: var(--cor-azul-escuro) !important;
+  position: relative;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.login-button:after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 20%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(30deg);
+  transition: all 0.6s ease;
+  opacity: 0;
+}
+
+.login-button:hover:after {
+  left: 120%;
+  opacity: 1;
+}
+
+/* Estilos customizados para inputs do HeroUI */
+:global(.heroui-input-base[data-invalid="true"]) {
+  animation: none !important; /* Desabilita animação padrão que causa o "salto" */
+}
+
+:global(.heroui-input-label) {
+  color: var(--cor-azul-escuro) !important;
+  font-weight: var(--peso-medio) !important;
+}
+
+:global(.heroui-input-inputWrapper) {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  transition: border-color 0.2s ease !important;
+}
+
+:global(.heroui-input-inputWrapper:hover) {
+  border-color: var(--cor-azul-medio) !important;
+}
+
+:global(.heroui-input-input) {
+  color: var(--cor-azul-escuro) !important;
+}
+
+:global(.heroui-input-input::placeholder) {
+  color: rgba(0, 0, 0, 0.4) !important;
+}
+
+:global(.heroui-switch-thumb) {
+  background-color: var(--cor-azul-escuro) !important;
+}
+
+:global(.heroui-switch-label) {
+  color: var(--cor-azul-escuro) !important;
+}
+
+/* Media queries para redimensionamento responsivo dos ícones de fundo */
+@media (max-width: 1200px) {
+  .login-container {
+    background-size:
+      auto 13%,
+      /* emoji - reduzido */ auto 18%,
+      /* plant - reduzido */ auto 24%,
+      /* arrow - reduzido */ auto 10%,
+      /* cloud - reduzido */ auto 12%,
+      /* stars - reduzido */ auto 15%,
+      /* swirl - reduzido */ auto 25%,
+      /* fluff - reduzido */ auto 32%; /* thoughts - reduzido */
+
+    background-position:
+      2% 2%,
+      /* emoji - mantida posição */ 28% 0%,
+      /* plant - leve ajuste */ 97% -0.5%,
+      /* arrow - leve ajuste */ 99% 39%,
+      /* cloud - leve ajuste */ 97% 93%,
+      /* stars - leve ajuste */ 54% 99%,
+      /* swirl - leve ajuste */ 0% 99%,
+      /* fluff - leve ajuste */ 0% 52%; /* thoughts - leve ajuste */
+  }
+}
+
+@media (max-width: 992px) {
+  .login-container {
+    background-size:
+      auto 11%,
+      /* emoji - reduzido mais */ auto 15%,
+      /* plant - reduzido mais */ auto 21%,
+      /* arrow - reduzido mais */ auto 9%,
+      /* cloud - reduzido mais */ auto 10%,
+      /* stars - reduzido mais */ auto 13%,
+      /* swirl - reduzido mais */ auto 22%,
+      /* fluff - reduzido mais */ auto 28%; /* thoughts - reduzido mais */
+  }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .login-content {
+    width: 90%;
+  }
+
+  .login-form {
+    flex-direction: column;
+  }
+
+  .logo-container {
+    width: 100%;
+    height: 200px;
+  }
+
+  .form-container {
+    width: 100%;
+    padding: 30px;
+  }
+
+  .login-title {
+    font-size: var(--tamanho-xl);
+  }
+
+  .login-subtitle {
+    font-size: var(--tamanho-base);
+  }
+
+  .portal-title {
+    font-size: var(--tamanho-3xl);
+    margin-bottom: 1.5rem;
+  }
+
+  /* Ajuste dos ícones de fundo */
+  .login-container {
+    background-size:
+      auto 9%,
+      /* emoji - reduzido ainda mais */ auto 12%,
+      /* plant - reduzido ainda mais */ auto 18%,
+      /* arrow - reduzido ainda mais */ auto 7%,
+      /* cloud - reduzido ainda mais */ auto 8%,
+      /* stars - reduzido ainda mais */ auto 10%,
+      /* swirl - reduzido ainda mais */ auto 18%,
+      /* fluff - reduzido ainda mais */ auto 22%; /* thoughts - reduzido ainda mais */
+
+    background-position:
+      1.5% 1.5%,
+      /* emoji - ajustado */ 26% 0%,
+      /* plant - ajustado */ 96% -0.4%,
+      /* arrow - ajustado */ 98% 38%,
+      /* cloud - ajustado */ 96% 92%,
+      /* stars - ajustado */ 52% 98%,
+      /* swirl - ajustado */ 0% 98%,
+      /* fluff - ajustado */ 0% 51%; /* thoughts - ajustado */
+  }
+}
+
+@media (max-width: 580px) {
+  /* Ajuste dos ícones de fundo */
+  .login-container {
+    background-size:
+      auto 7%,
+      /* emoji - reduzido mais */ auto 10%,
+      /* plant - reduzido mais */ auto 15%,
+      /* arrow - reduzido mais */ auto 5%,
+      /* cloud - reduzido mais */ auto 6%,
+      /* stars - reduzido mais */ auto 8%,
+      /* swirl - reduzido mais */ auto 15%,
+      /* fluff - reduzido mais */ auto 18%; /* thoughts - reduzido mais */
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 20px 0;
+    /* Ícones ainda mais reduzidos, mas não removidos */
+    background-size:
+      auto 5%,
+      /* emoji - mínimo */ auto 8%,
+      /* plant - mínimo */ auto 12%,
+      /* arrow - mínimo */ auto 4%,
+      /* cloud - mínimo */ auto 5%,
+      /* stars - mínimo */ auto 6%,
+      /* swirl - mínimo */ auto 12%,
+      /* fluff - mínimo */ auto 15%; /* thoughts - mínimo */
+
+    background-position:
+      1% 1%,
+      /* emoji - ajustado */ 24% 0%,
+      /* plant - ajustado */ 95% -0.3%,
+      /* arrow - ajustado */ 97% 37%,
+      /* cloud - ajustado */ 95% 91%,
+      /* stars - ajustado */ 50% 97%,
+      /* swirl - ajustado */ 0% 97%,
+      /* fluff - ajustado */ 0% 50%; /* thoughts - ajustado */
+  }
+
+  .login-content {
+    width: 95%;
+  }
+
+  .login-form {
+    border-radius: 20px;
+  }
+
+  .form-container {
+    padding: 25px;
+  }
+
+  .logo-container {
+    height: 160px;
+  }
+
+  .login-options {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .login-button {
+    margin-top: 20px;
+  }
+
+  .input-container {
+    min-height: 80px;
+  }
+
+  .portal-title {
+    font-size: var(--tamanho-2xl);
+    margin-bottom: 1rem;
+  }
+}
+
+/* Removendo a regra antiga que escondia as imagens por completo */
+/* 🔽 Media query to hide images at 935px or lower 
+@media (max-width: 935px) {
+    body {
+        background-image: none;
+    }
+}
+*/
+
+#img-cultura {
+  max-width: 334px;
+}
+
+.error {
+  color: red;
+}
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.login-form a {
+  color: #183b4e;
+}

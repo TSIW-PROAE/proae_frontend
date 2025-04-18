@@ -9,23 +9,12 @@
     text-align: center;
     line-height: 1.5;
     font-weight: 400;
-
-
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    
   
 
     color: var(--cor-verde-escuro);
     background-color: var(--cor-creme);
   
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+
   }
   
   h1 {
@@ -34,10 +23,4 @@
     font-weight: 600;
   }
   
-  body {
-    margin: 0;
-    display: flex;
-    place-items: center;
-    min-width: 320px;
-    min-height: 100vh;
-  }
+
