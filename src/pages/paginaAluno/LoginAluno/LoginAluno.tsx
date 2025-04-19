@@ -1,9 +1,10 @@
 import { formatCPF, validarCPFReal } from "../../../utils/utils";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Switch } from "@heroui/switch";
 import { Link } from "@heroui/link";
+import { useLocation } from "react-router-dom";
 import "./LoginAluno.css";
 
 export default function LoginAluno() {
@@ -13,6 +14,17 @@ export default function LoginAluno() {
   const [erroSenha, setErroSenha] = useState("");
   const [lembrar, setLembrar] = useState(false);
   const anoAtual = new Date().getFullYear();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Capturar o parâmetro CPF da URL quando a página carrega
+    const params = new URLSearchParams(location.search);
+    const cpfParam = params.get("cpf");
+
+    if (cpfParam) {
+      setCpf(formatCPF(cpfParam));
+    }
+  }, [location]);
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(formatCPF(e.target.value));
@@ -53,6 +65,15 @@ export default function LoginAluno() {
     <div id="login" className="login-container">
       <div className="login-content">
         <div className="login-form">
+          <a
+            href="/"
+            className="voltar-link-login"
+            style={{ color: "var(--cor-creme)" }}
+          >
+            <span style={{ marginRight: "5px" }}>←</span>
+            Página inicial
+          </a>
+
           <div className="logo-container">
             {/* A imagem agora está como background no CSS */}
           </div>

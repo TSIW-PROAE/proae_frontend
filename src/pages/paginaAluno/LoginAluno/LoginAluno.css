@@ -43,6 +43,19 @@
   background-attachment: fixed;
 }
 
+/* Botão de voltar */
+.voltar-link-login {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  display: flex;
+  align-items: center;
+  color: var(--cor-creme);
+  font-size: 14px;
+  text-decoration: none;
+  z-index: 10;
+}
+
 /* Título do Portal */
 .portal-title {
   color: var(--cor-creme);
@@ -75,6 +88,7 @@
     box-shadow 0.3s ease;
   display: flex;
   overflow: hidden;
+  position: relative;
 }
 
 .login-form:hover {
@@ -371,6 +385,11 @@
     margin-bottom: 1.5rem;
   }
 
+  /* Ajuste do botão de voltar para mobile */
+  .voltar-link-login {
+    bottom: auto;
+    top: 15px;
+  }
   /* Ajuste dos ícones de fundo */
   .login-container {
     background-size:
