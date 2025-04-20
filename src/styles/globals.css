@@ -6,7 +6,6 @@
 :root {
     font-family: var(--fonte-titulos);
     font-size: var(--tamanho-base);
-    text-align: center;
     line-height: 1.5;
     font-weight: 400;
   

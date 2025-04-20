@@ -5,8 +5,10 @@ interface InfoCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
+  color?: string;
   backgroundColor?: string;
   borderColor?: string;
+  
 }
 
 export default function InfoCard({
@@ -14,6 +16,7 @@ export default function InfoCard({
   title,
   description,
   backgroundColor = "var(--cor-dourado)",
+  color = "var(--cor-azul-escuro)",
   borderColor = "var(--cor-azul-escuro)",
 }: InfoCardProps) {
   return (
@@ -27,11 +30,11 @@ export default function InfoCard({
       <div className="info-card-header">
         <div className="info-card-icon">{icon}</div>
         <div className="info-card-title">
-          <h3>{title}</h3>
+          <h3 style={{ color }}>{title}</h3>
         </div>
       </div>
       <div className="info-card-description">
-        <p>{description}</p>
+        <p style={{ color }}>{description}</p>
       </div>
     </div>
   );

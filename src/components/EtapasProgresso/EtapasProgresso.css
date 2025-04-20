@@ -1,0 +1,119 @@
+.etapas-progresso {
+  padding: 1.5rem 0;
+}
+
+.etapa-item:last-child {
+  margin-bottom: 0;
+}
+
+.etapa-marker {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 0.6rem;
+  background-color: var(--cor-cinza-claro);
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--cor-cinza-claro);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.etapa-atual .etapa-marker {
+  background-color: var(--cor-azul-escuro);
+  border: 1px solid var(--cor-azul-escuro);
+}
+
+.etapa-completada .etapa-marker {
+  background-color: var(--cor-azul-escuro);
+  border: 1px solid var(--cor-azul-escuro);
+}
+
+.etapa-conteudo {
+  flex: 1;
+  padding: 0rem;
+  text-align: left;
+}
+
+.etapa-titulo {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.1rem;
+  font-family: var(--fonte-titulo);
+  font-size: 1rem;
+  text-align: left;
+}
+
+.etapa-periodo {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--cor-cinza-escuro);
+  font-family: var(--fonte-corpo);
+  text-align: left;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .etapas-progresso {
+    padding: 1rem 0;
+  }
+
+  .etapa-marker {
+    margin-right: 1rem;
+  }
+}
+
+.etapas-titulo {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--cor-preto);
+  font-family: var(--fonte-corpo);
+  text-align: left;
+}
+
+.etapas-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+
+.etapas-lista::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  height: calc(100% - 38px);
+  width: 4px;
+  background-color: var(--cor-azul-escuro);
+  border-radius: 100px;
+  z-index: 0;
+}
+
+.etapa-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.etapa-item:last-child {
+  margin-bottom: 0;
+}
+
+.etapa-futura .etapa-marker {
+  background-color: var(--cor-cinza-claro);
+}
+
+.etapa-conteudo {
+  flex: 1;
+}
+
+.etapa-futura .etapa-marker {
+  background-color: var(--cor-dourado);
+  border: 1px solid var(--cor-azul-escuro);
+  z-index: 1;
+}

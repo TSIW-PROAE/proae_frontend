@@ -1,7 +1,7 @@
 /* Estilos para a página Home */
 .home-container {
   width: 100%;
-  min-height: 1000vh;
+  min-height: 100vh;
   background-image: url("../../assets/icons/draw.svg"),
     url("../../assets/icons/cicle.svg"),
     url("../../assets/icons/arrow-dark.svg"),
@@ -159,7 +159,7 @@
 .info-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+  gap: 0.5rem;
   margin-top: 3rem;
 }
 
@@ -361,5 +361,200 @@
   .home-title-container {
     text-align: center;
     margin-top: 11rem;
+  }
+}
+
+/* Seção de Processos Seletivos */
+.processos-seletivos-section {
+  margin-top: 8rem;
+}
+
+.processos-seletivos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.processos-title {
+  font-family: "Fredoka", sans-serif;
+  font-weight: 700;
+  font-size: 40px;
+  color: var(--cor-azul-escuro);
+  margin: 0;
+  text-align: left;
+}
+
+/* Botões de filtro */
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-button {
+  font-family: "Fredoka", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1.5px solid #cdcdcd;
+  background-color: var(--cor-creme-claro);
+  color: var(--cor-cinza-escuro);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-button.active {
+  background-color: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.filter-button:hover:not(.active) {
+  background-color: #eee;
+}
+
+/* Responsividade para processos seletivos */
+@media (max-width: 992px) {
+  .processos-seletivos-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .processos-title {
+    font-size: 35px;
+  }
+}
+
+@media (max-width: 768px) {
+  .processos-title {
+    font-size: 30px;
+  }
+
+  .filter-buttons {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 576px) {
+  .processos-seletivos-section {
+    margin-top: 5rem;
+  }
+
+  .processos-title {
+    font-size: 28px;
+  }
+
+  .filter-button {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .processos-title {
+    font-size: 24px;
+  }
+
+  .filter-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Footer */
+.home-footer {
+  background-color: var(--cor-azul-escuro);
+  color: var(--cor-creme);
+  padding: 3rem 3rem;
+  margin-top: 5rem;
+  font-family: "Fredoka", sans-serif;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-info {
+  flex: 1;
+}
+
+.footer-info h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.footer-info p {
+  font-size: 14px;
+  margin: 0.2rem 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.footer-button {
+  font-family: "Fredoka", sans-serif;
+  font-weight: 500;
+  padding: 0.6rem 1.5rem;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.footer-button.primary-button {
+  background-color: var(--cor-dourado);
+  color: var(--cor-azul-escuro);
+}
+
+.footer-button.primary-button:hover {
+  opacity: 0.9;
+}
+
+.footer-button.secondary-button {
+  background-color: transparent;
+  color: var(--cor-creme);
+  border: 1px solid var(--cor-creme);
+}
+
+.footer-button.secondary-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--cor-dourado);
+}
+
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 2rem;
+  }
+
+  .footer-info {
+    margin-bottom: 0;
+  }
+
+  .footer-links {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-footer {
+    padding: 1.5rem 1rem;
+  }
+
+  .footer-info h3 {
+    font-size: 15px;
+  }
+
+  .footer-info p {
+    font-size: 13px;
   }
 }
