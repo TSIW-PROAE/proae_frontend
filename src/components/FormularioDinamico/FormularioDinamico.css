@@ -274,8 +274,6 @@
   margin-left: 0.25rem;
 }
 
-
-
 .input-field[style*="borderColor"] {
   border-color: #e53e3e !important;
   box-shadow: 0 0 0 1px #e53e3e !important;
@@ -446,6 +444,353 @@
   color: #555;
 }
 
+/* Estilo para o componente de upload de arquivo */
+.arquivo-upload-container {
+  margin-bottom: 2rem;
+}
+
+.arquivo-label {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #14374c;
+  margin-bottom: 0.5rem;
+}
+
+.arquivo-upload-box {
+  width: 100%;
+  background-color: var(--cor-creme);
+  border: 1px dashed #14374c80;
+  border-radius: 0.5rem;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.arquivo-upload-box.arquivo-erro {
+  border-color: #e53e3e;
+}
+
+.arquivo-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.upload-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.5rem;
+}
+
+.upload-text {
+  font-size: 1rem;
+  color: #14374c;
+}
+
+.upload-button {
+  background-color: #14374c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0.5rem 0;
+}
+
+.upload-button:hover {
+  background-color: #0f2a3a;
+  transform: translateY(-2px);
+}
+
+.formato-permitido {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 0.25rem;
+}
+
+.arquivo-input-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
+
+/* Estilo para a visualização do arquivo após upload */
+.arquivo-preview {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.arquivo-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.arquivo-icone {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.arquivo-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.arquivo-nome {
+  font-weight: 500;
+  color: #14374c;
+  font-size: 1rem;
+}
+
+.arquivo-tamanho {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.arquivo-status {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.arquivo-status.pendente {
+  background-color: #f8a100;
+  color: white;
+}
+
+.arquivo-status.aprovado {
+  background-color: #38a169;
+  color: white;
+}
+
+.arquivo-status.rejeitado {
+  background-color: #e53e3e;
+  color: white;
+}
+
+.arquivo-acoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.arquivo-download,
+.arquivo-remover {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.arquivo-download:hover,
+.arquivo-remover:hover {
+  background-color: rgba(20, 55, 76, 0.1);
+}
+
+/* Estilos para os cards de documentos */
+.documento-container {
+  margin-bottom: 1.5rem;
+}
+
+.documento-label {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #14374c;
+  margin-bottom: 0.5rem;
+}
+
+.documento-subtitulo {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.documento-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--cor-creme);
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.documento-icone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.documento-icone img {
+  width: 40px;
+  height: auto;
+  object-fit: contain;
+}
+
+.documento-tipo {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #14374c;
+  margin-top: 0.25rem;
+}
+
+.documento-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.documento-nome {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #14374c;
+  margin-bottom: 0.5rem;
+}
+
+.documento-status {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: bold;
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.documento-status.pendente {
+  background-color: #f8a100;
+  color: white;
+}
+
+.documento-acoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.documento-download {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  transition: all 0.2s;
+}
+
+.documento-download:hover {
+  transform: translateY(-2px);
+}
+
+/* Estilos para a lista de documentos */
+.documentos-container {
+  margin-bottom: 2rem;
+}
+
+.documentos-label {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #14374c;
+  margin-bottom: 0.5rem;
+}
+
+.documentos-subtitulo {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.documentos-lista {
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.documento-upload-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 1;
+}
+
+/* Modificação para o documento-card ficar mais parecido com a referência */
+.documento-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background-color: var(--cor-creme);
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+  height: 75px;
+}
+
+.documento-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Status pendente em maiúsculas */
+.documento-status.pendente {
+  background-color: #f8a100;
+  color: white;
+  text-transform: uppercase;
+}
+
+.documento-status.aprovado {
+  background-color: #38a169;
+  color: white;
+  text-transform: uppercase;
+}
+
+.documento-status.rejeitado {
+  background-color: #e53e3e;
+  color: white;
+  text-transform: uppercase;
+}
+
 /* Responsividade */
 @media (min-width: 992px) {
   .inputs-container {
@@ -494,5 +839,153 @@
     left: 10px;
     width: auto;
     max-width: none;
+  }
+
+  .arquivo-preview {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .arquivo-acoes {
+    align-self: flex-end;
+  }
+
+  .documento-card {
+    padding: 1rem;
+  }
+
+  .documento-nome {
+    font-size: 0.9rem;
+  }
+}
+
+/* Estilos para upload de arquivo */
+.arquivo-container {
+  margin-bottom: 1rem;
+}
+
+.arquivo-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+  position: relative;
+}
+
+.arquivo-esquerda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+}
+
+.arquivo-icone {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.arquivo-icone img {
+  width: 100%;
+  height: auto;
+}
+
+.arquivo-miniatura {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.arquivo-tamanho-max {
+  font-size: 0.7rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.arquivo-centro {
+  flex: 1;
+  padding: 0 1rem;
+}
+
+.arquivo-titulo {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #14374c;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.arquivo-status {
+  display: flex;
+}
+
+.arquivo-direita {
+  width: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.arquivo-upload {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  transition: all 0.2s;
+}
+
+.arquivo-upload:hover {
+  transform: translateY(-2px);
+}
+
+.arquivo-remover {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  transition: all 0.2s;
+}
+
+.arquivo-remover:hover {
+  transform: translateY(-2px);
+}
+
+.arquivo-divisor {
+  height: 1px;
+  background-color: #e9ecef;
+  width: 100%;
+  margin: 0;
+}
+
+@media (max-width: 576px) {
+  .arquivo-item {
+    flex-wrap: wrap;
+  }
+
+  .arquivo-esquerda {
+    width: 60px;
+  }
+
+  .arquivo-centro {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .arquivo-titulo {
+    max-width: 150px;
   }
 }

@@ -87,7 +87,6 @@ export default function Inscricao() {
             nome: "dataIngresso",
             obrigatorio: true,
             placeholder: "MM/AAAA",
-            formatacao: "dataMes" as TipoFormatacao,
           },
           {
             tipo: "input" as TipoInput,

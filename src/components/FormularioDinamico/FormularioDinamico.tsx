@@ -7,15 +7,24 @@ import {
   Radio,
   RadioGroup,
   Textarea,
+  Chip,
 } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import "./FormularioDinamico.css";
 import arrowDownIcon from "../../assets/icons/arrow-down-item.svg";
 import arrowDownBegeIcon from "../../assets/icons/arrow-down-item-bege.svg";
+import uploadIcon from "../../assets/icons/upload.svg";
+import arquivoPdfIcon from "../../assets/icons/arquivo-azul-bege-pdf.svg";
 
 // Tipos de input suportados
-export type TipoInput = "radio" | "select" | "input" | "textarea" | "file";
+export type TipoInput =
+  | "radio"
+  | "select"
+  | "input"
+  | "textarea"
+  | "file"
+  | "documentos";
 
 // Tipos de formatação para inputs de texto
 export type TipoFormatacao =
@@ -41,6 +50,19 @@ export interface InputConfig {
   formatacao?: TipoFormatacao;
   formatacaoPersonalizada?: string; // Expressão regular para formatação personalizada
   mensagemErro?: string; // Mensagem de erro personalizada
+}
+
+// Interface para documento
+export interface Documento {
+  id: string;
+  titulo: string;
+  tipo: string;
+  status?: "pendente" | "aprovado" | "rejeitado";
+}
+
+// Interface para entrada de documentos
+export interface DocumentosConfig extends InputConfig {
+  documentos: Documento[];
 }
 
 // Interface para cada página do formulário
@@ -596,7 +618,7 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
                 base: "custom-input",
               }}
             >
-              {opcoes?.map((opcao) => (
+              {(opcoes || []).map((opcao) => (
                 <SelectItem key={opcao.valor}>{opcao.label}</SelectItem>
               ))}
             </Select>
@@ -605,26 +627,265 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
 
       case "file":
         return (
-          <div className="input-container" key={nome}>
-            <Input
-              type="file"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                if (e.target.files && e.target.files[0]) {
-                  handleInputChange(nome, e.target.files[0]);
-                }
-              }}
-              label={titulo}
-              variant="bordered"
-              radius="lg"
-              isRequired={obrigatorio}
-              isInvalid={!!erro}
-              errorMessage={erro}
-              description={subtitulo}
-              fullWidth
-              classNames={{
-                base: "custom-input",
-              }}
-            />
+          <div className="input-container arquivo-container" key={nome}>
+            <div className="arquivo-item">
+              <div className="arquivo-esquerda">
+                <div className="arquivo-icone">
+                  {formData[nome] instanceof File ? (
+                    <div className="arquivo-miniatura">
+                      <img src={arquivoPdfIcon} alt="PDF" />
+                    </div>
+                  ) : (
+                    <img src={arquivoPdfIcon} alt="PDF" />
+                  )}
+                </div>
+                <div className="arquivo-tamanho-max">Max: 5MB</div>
+              </div>
+
+              <div className="arquivo-centro">
+                <div className="arquivo-titulo">
+                  {formData[nome] instanceof File
+                    ? formData[nome].name
+                    : titulo}
+                </div>
+                <div className="arquivo-status">
+                  <Chip
+                    color={
+                      formData[nome] instanceof File ? "success" : "warning"
+                    }
+                    size="sm"
+                    variant="flat"
+                  >
+                    {formData[nome] instanceof File ? "ANEXADO" : "PENDENTE"}
+                  </Chip>
+                </div>
+              </div>
+
+              <div className="arquivo-direita">
+                {formData[nome] instanceof File ? (
+                  <button
+                    type="button"
+                    className="arquivo-remover"
+                    aria-label="Remover arquivo"
+                    onClick={() => handleInputChange(nome, "")}
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M3 6H5H21"
+                        stroke="#16353E"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                        stroke="#16353E"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                ) : (
+                  <label htmlFor={`file-${nome}`} className="arquivo-upload">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                        stroke="#16353E"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M17 8L12 3L7 8"
+                        stroke="#16353E"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M12 3V15"
+                        stroke="#16353E"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </label>
+                )}
+              </div>
+
+              <input
+                type="file"
+                id={`file-${nome}`}
+                accept=".pdf"
+                style={{ display: "none" }}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleInputChange(nome, e.target.files[0]);
+                  }
+                }}
+                aria-label={`Upload ${titulo}`}
+              />
+            </div>
+
+            <div className="arquivo-divisor"></div>
+
+            {erro && <p className="mensagem-erro">{erro}</p>}
+          </div>
+        );
+
+      case "documentos":
+        const documentosConfig = input as DocumentosConfig;
+        return (
+          <div className="input-container documentos-container" key={nome}>
+            <label className="documentos-label">
+              {titulo} {obrigatorio && <span className="obrigatorio">*</span>}
+            </label>
+            {subtitulo && <p className="documentos-subtitulo">{subtitulo}</p>}
+
+            <div className="documentos-lista">
+              {documentosConfig.documentos.map((documento, index) => {
+                const documentoKey = `${nome}_${documento.id}`;
+                const temArquivo = formData[documentoKey] instanceof File;
+
+                return (
+                  <React.Fragment key={documento.id}>
+                    <div className="arquivo-item">
+                      <div className="arquivo-esquerda">
+                        <div className="arquivo-icone">
+                          {temArquivo ? (
+                            <div className="arquivo-miniatura">
+                              <img src={arquivoPdfIcon} alt="PDF" />
+                            </div>
+                          ) : (
+                            <img src={arquivoPdfIcon} alt="PDF" />
+                          )}
+                        </div>
+                        <div className="arquivo-tamanho-max">Max: 5MB</div>
+                      </div>
+
+                      <div className="arquivo-centro">
+                        <div className="arquivo-titulo">
+                          {temArquivo
+                            ? (formData[documentoKey] as File).name
+                            : documento.titulo}
+                        </div>
+                        <div className="arquivo-status">
+                          <Chip
+                            color={temArquivo ? "success" : "warning"}
+                            size="sm"
+                            variant="flat"
+                          >
+                            {temArquivo ? "ANEXADO" : "PENDENTE"}
+                          </Chip>
+                        </div>
+                      </div>
+
+                      <div className="arquivo-direita">
+                        {temArquivo ? (
+                          <button
+                            type="button"
+                            className="arquivo-remover"
+                            aria-label={`Remover ${documento.titulo}`}
+                            onClick={() => handleInputChange(documentoKey, "")}
+                          >
+                            <svg
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M3 6H5H21"
+                                stroke="#16353E"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                                stroke="#16353E"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                        ) : (
+                          <label
+                            htmlFor={`file-${documentoKey}`}
+                            className="arquivo-upload"
+                          >
+                            <svg
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                                stroke="#16353E"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M17 8L12 3L7 8"
+                                stroke="#16353E"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M12 3V15"
+                                stroke="#16353E"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </label>
+                        )}
+                      </div>
+
+                      <input
+                        type="file"
+                        id={`file-${documentoKey}`}
+                        accept=".pdf"
+                        style={{ display: "none" }}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleInputChange(documentoKey, e.target.files[0]);
+                          }
+                        }}
+                        aria-label={`Upload ${documento.titulo}`}
+                      />
+                    </div>
+
+                    {index < documentosConfig.documentos.length - 1 && (
+                      <div className="arquivo-divisor"></div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {erro && <p className="mensagem-erro">{erro}</p>}
           </div>
         );
 
