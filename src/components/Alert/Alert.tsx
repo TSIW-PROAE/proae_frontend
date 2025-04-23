@@ -24,7 +24,7 @@ function normalize(str: string) {
     return str.toLowerCase();
 }
 
-function Alert({ titulo, descricao, data, largura = '400px' }: AlertProps) {
+function Alert({ titulo, descricao, data, largura = '1000px' }: AlertProps) {
     const normalizedTitle = normalize(titulo);
     const icon = iconMap[normalizedTitle] || warning;
 

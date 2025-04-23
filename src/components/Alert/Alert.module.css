@@ -1,5 +1,4 @@
 @import url('../../styles/variables.css');
-@import url('../../styles/global.css');
 
 .aviso{
     background-color: var(--cor-azul-escuro);
