@@ -1,0 +1,67 @@
+.info-card {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: 7.5px;
+  border: 1.5px solid;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.info-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.info-card-icon {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-card-icon svg,
+.info-card-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.info-card-title {
+  text-align: right;
+  max-width: 70%;
+}
+
+.info-card-title h3 {
+  margin: 0;
+  font-family: "Fredoka", sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  color: var(--cor-azul-escuro);
+}
+
+.info-card-description {
+  margin-top: 1rem;
+}
+
+.info-card-description p {
+  margin: 0;
+  font-family: "Fredoka", sans-serif;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: var(--cor-azul-escuro);
+  text-align:left;
+}
