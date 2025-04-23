@@ -1,6 +1,14 @@
 import "./sidebar.css"
 import { useNavigate } from 'react-router-dom';
 import {useState} from "react";
+import homeNotSelectedIcon from "../../assets/home-not-selected.svg";
+import homeSelectedIcon from "../../assets/home-selected.svg";
+import appsProcessNotSelectedIcon from "../../assets/apps-processos-not-selected.svg";
+import appsProcessSelectedIcon from "../../assets/apps-processos-selected.svg";
+import settingsNotSelectedIcon from "../../assets/settings-not-selected.svg";
+import settingsSelectedIcon from "../../assets/settings-selected.svg";
+import docsNotSelectedIcon from "../../assets/docs-not-selected.svg";
+import docsSelectedIcon from "../../assets/docs-selected.svg";
 
 export interface ISideBarProps {
     shouldShowDocsIcon?: boolean,
@@ -28,10 +36,10 @@ const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, sh
     const [isDocsSelected, setIsDocsSelected] = useState(false);
 
     const icons: ISideBarIconsConfig[] = [
-        {srcNotSelectedIcon: '/home-not-selected.svg', srcSelectedIcon: '/home-selected.svg', alt: 'home icon', redirect: homeIconRedirect, onClick: () => setIsHomeSelected((isHomeSelected) => !isHomeSelected), isIconSelected: isHomeSelected, shouldShowIcon: true},
-        {srcNotSelectedIcon: '/apps-processos-not-selected.svg', srcSelectedIcon: '/apps-processos-selected.svg', alt: 'process icon', redirect: processIconRedirect, onClick: () => setIsProcessSelected((isProcessSelected) => !isProcessSelected), isIconSelected: isProcessSelected, shouldShowIcon: true},
-        {srcNotSelectedIcon: '/settings-not-selected.svg', srcSelectedIcon: '/settings-selected.svg', alt: 'settings icon', redirect: configIconRedirect, onClick: () => setIsConfigSelected((isConfigSelected) => !isConfigSelected), isIconSelected: isConfigSelected, shouldShowIcon: true},
-        {srcNotSelectedIcon: '/docs-not-selected.svg', srcSelectedIcon: '/docs-selected.svg', alt: 'docs icon', redirect: docsIconRedirect, onClick: () => setIsDocsSelected((isDocsSelected) => !isDocsSelected), isIconSelected: isDocsSelected, shouldShowIcon: shouldShowDocsIcon},
+        {srcNotSelectedIcon: homeNotSelectedIcon, srcSelectedIcon: homeSelectedIcon, alt: 'home icon', redirect: homeIconRedirect, onClick: () => setIsHomeSelected((isHomeSelected) => !isHomeSelected), isIconSelected: isHomeSelected, shouldShowIcon: true},
+        {srcNotSelectedIcon: appsProcessNotSelectedIcon, srcSelectedIcon: appsProcessSelectedIcon, alt: 'process icon', redirect: processIconRedirect, onClick: () => setIsProcessSelected((isProcessSelected) => !isProcessSelected), isIconSelected: isProcessSelected, shouldShowIcon: true},
+        {srcNotSelectedIcon: settingsNotSelectedIcon, srcSelectedIcon: settingsSelectedIcon, alt: 'settings icon', redirect: configIconRedirect, onClick: () => setIsConfigSelected((isConfigSelected) => !isConfigSelected), isIconSelected: isConfigSelected, shouldShowIcon: true},
+        {srcNotSelectedIcon: docsNotSelectedIcon, srcSelectedIcon: docsSelectedIcon, alt: 'docs icon', redirect: docsIconRedirect, onClick: () => setIsDocsSelected((isDocsSelected) => !isDocsSelected), isIconSelected: isDocsSelected, shouldShowIcon: shouldShowDocsIcon},
     ];
 
     function resetSelection() {
@@ -45,9 +53,11 @@ const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, sh
         <>
             <aside id="sideBarWrapper">
                 <div id="sideBar">
-                    <img id="proaeLogo" src="/PROAE.svg" alt="PROAE LOGO" />
-                        {icons.map((iconConfig) => (
-                            iconConfig.shouldShowIcon && (
+                    <div className="logo">
+                        <h1>PROAE</h1>
+                    </div>
+                    {icons.map((iconConfig) => (
+                        iconConfig.shouldShowIcon && (
                                     <div id="iconWrapper" style={iconConfig.isIconSelected ? {'border': '2px solid #27548A'} : {}}>
                                         <img src={iconConfig.isIconSelected ? iconConfig.srcSelectedIcon : iconConfig.srcNotSelectedIcon} alt={iconConfig.alt} key={iconConfig.alt} onClick={() => {navigate(iconConfig.redirect); resetSelection(); iconConfig.onClick();}}/>
                                     </div>

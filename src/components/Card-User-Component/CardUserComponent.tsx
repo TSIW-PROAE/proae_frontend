@@ -1,5 +1,5 @@
 import React from "react";
-import "./card-user-aluno.css";
+import "./card-user-component.css";
 
 type Beneficio = {
   nome: string;
