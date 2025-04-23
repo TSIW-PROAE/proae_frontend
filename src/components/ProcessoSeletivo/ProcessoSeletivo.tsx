@@ -72,7 +72,8 @@ const ProcessoSeletivo: React.FC<ProcessoSeletivoProps> = ({
   const obterClasseTema = (): string => {
     return tema === "dourado" ? "tema-dourado" : "tema-azul";
   };
-  const cor = tema === "dourado" ? "var(--cor-azul-escuro)" : "var(--cor-creme-escuro)";
+  const cor =
+    tema === "dourado" ? "var(--cor-azul-escuro)" : "var(--cor-creme-escuro)";
 
   return (
     <div className={`processo-seletivo ${obterClasseTema()}`}>
@@ -112,15 +113,19 @@ const ProcessoSeletivo: React.FC<ProcessoSeletivoProps> = ({
 
       {expandido && (
         <>
-          <div className={`processo-conteudo-expandido ${obterClasseTema()}-conteudo`}>
+          <div
+            className={`processo-conteudo-expandido ${obterClasseTema()}-conteudo`}
+          >
             <div className="processo-etapas-coluna">
               <EtapasProgresso etapas={etapas} tema={tema} />
             </div>
 
             {documentos.length > 0 && (
               <div className="processo-documentos-coluna">
-                <h4 style={{ color: cor }} className="documentos-titulo">Documentos:</h4>
-                <div className="documentos-lista">
+                <h4 style={{ color: cor }} className="documentos-titulo">
+                  Documentos:
+                </h4>
+                <div className="processo-documentos-lista">
                   {documentos.map((doc, index) => (
                     <DocumentoItem
                       key={index}
@@ -133,8 +138,6 @@ const ProcessoSeletivo: React.FC<ProcessoSeletivoProps> = ({
               </div>
             )}
           </div>
-
-
         </>
       )}
     </div>

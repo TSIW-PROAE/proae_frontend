@@ -538,6 +538,7 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
               fullWidth
               classNames={{
                 base: "custom-input",
+                input: "text-small",
               }}
               description={subtitulo}
             />

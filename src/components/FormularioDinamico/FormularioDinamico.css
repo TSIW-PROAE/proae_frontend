@@ -82,7 +82,7 @@
   align-items: center;
   border-bottom: 1px solid #14374c4f;
   height: 8vh;
-  padding: 0 4rem;
+  padding: 0 3rem;
   position: sticky;
   top: 0;
   background-color: var(--cor-creme);
@@ -94,7 +94,7 @@
   justify-content: space-between;
   align-items: center;
   height: 8vh;
-  padding: 0 4rem;
+  padding: 0 3rem;
   border-top: 1px solid #14374c4f;
   position: sticky;
   bottom: 0;
@@ -103,22 +103,22 @@
 }
 
 .arrow-down {
-  width: 20px;
+  width: 16px;
   rotate: 90deg;
 }
 
 .voltar-texto {
   color: #14374c;
-  font-size: 1.1rem;
-  margin-left: 8px;
+  font-size: 0.9rem;
+  margin-left: 6px;
   font-weight: 500;
 }
 
 .arrow-next {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   rotate: -90deg;
-  margin-left: 10px;
+  margin-left: 8px;
   vertical-align: middle;
 }
 
@@ -132,7 +132,7 @@
 }
 
 .details {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: #14374c;
   font-family: var(--fonte-corpo);
 }
@@ -148,27 +148,27 @@
 }
 
 .formulario-logo {
-  width: 150px;
+  width: 80px;
   object-fit: contain;
 }
 
 .progresso-container {
   width: 50%;
-  margin: 10px auto;
+  margin: 8px auto;
   position: sticky;
-  top: calc(8vh + 70px);
+  top: calc(6vh + 60px);
   background-color: var(--cor-creme);
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
   z-index: 8;
   visibility: visible !important;
-  border-radius: 1rem;
+  border-radius: 0.8rem;
 }
 
 .barra-progresso {
   width: 100%;
-  height: 0.7rem;
+  height: 0.35rem;
   background-color: #183b4e2d;
-  border-radius: 1rem;
+  border-radius: 0.8rem;
   overflow: hidden;
 }
 
@@ -180,68 +180,68 @@
 
 .formulario-conteudo {
   flex-grow: 1;
-  overflow-y: auto; /* Permite rolagem para o conteúdo do formulário */
-  padding: 0 4rem 2rem;
-  height: calc(100vh - 16vh - 130px); /* Ajusta altura para o espaço restante */
+  overflow-y: auto;
+  padding: 0 3rem 1.6rem;
+  height: calc(100vh - 12vh - 110px);
   display: flex;
   flex-direction: column;
 }
 
 .formulario-titulo {
-  font-size: 2rem;
+  font-size: 1.6rem;
   color: var(--cor-azul-escuro);
-  margin-bottom: 0rem;
+  margin-bottom: 0;
   text-align: center;
   position: sticky;
   top: 0;
   background-color: var(--cor-creme);
-  padding: 1rem 0;
+  padding: 0.8rem 0;
   z-index: 7;
 }
 
 .formulario-subtitulo {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #555;
-  margin-bottom: 2rem;
+  margin-bottom: 1.6rem;
   text-align: center;
   position: sticky;
-  top: 4rem;
+  top: 3.2rem;
   background-color: var(--cor-creme);
-  padding-bottom: 1rem;
+  padding-bottom: 0.8rem;
   z-index: 7;
 }
 
 .pagina-titulo {
-  font-size: 2rem;
+  font-size: 1.6rem;
   color: #14374c;
-  margin-bottom: 0rem;
+  margin-bottom: 0;
   text-align: center;
   font-weight: 600;
   position: sticky;
   top: 0;
   background-color: var(--cor-creme);
-  padding: 1rem 0;
+  padding: 0.8rem 0;
   z-index: 7;
 }
 
 .pagina-subtitulo {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #555;
-  margin-bottom: 2rem;
+  margin-bottom: 1.6rem;
   text-align: center;
   position: sticky;
-  top: 4rem;
+  top: 3.2rem;
   background-color: var(--cor-creme);
-  padding-bottom: 1rem;
+  padding-bottom: 0.8rem;
   z-index: 7;
 }
 
 .inputs-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 1rem;
-  max-width: 800px;
+  gap: 1.2rem;
+  margin-top: 0.8rem;
+  max-width: 640px;
   width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -249,29 +249,29 @@
 }
 
 .input-container {
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
   width: 100%;
   position: relative;
 }
 
 .input-label {
   display: block;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #14374c;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .input-subtitulo {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: #555;
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
+  margin-top: 0.2rem;
+  margin-bottom: 0.4rem;
 }
 
 .obrigatorio {
   color: #e53e3e;
-  margin-left: 0.25rem;
+  margin-left: 0.2rem;
 }
 
 .input-field[style*="borderColor"] {
@@ -281,14 +281,14 @@
 
 .mensagem-erro {
   color: #e53e3e;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   font-weight: 500;
   position: absolute;
   top: 100%;
   left: 0;
   width: 100%;
   line-height: 1.2;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .text-area-field {
@@ -391,14 +391,14 @@
 
 .botao-continuar,
 .botao-finalizar {
-  width: 200px;
+  width: 160px;
   background-color: var(--cor-azul-escuro);
-  height: 48px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  font-size: 1.1rem;
+  padding: 0 16px;
+  font-size: 0.9rem;
   font-weight: 500;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
@@ -421,26 +421,26 @@
 }
 
 .icone-conclusao {
-  font-size: 4rem;
+  font-size: 3.2rem;
   color: #38a169;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
   background-color: rgba(56, 161, 105, 0.1);
   border-radius: 50%;
-  width: 120px;
-  height: 120px;
+  width: 96px;
+  height: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .titulo-conclusao {
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   color: #14374c;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .mensagem-conclusao {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   color: #555;
 }
 
@@ -615,55 +615,55 @@
 
 /* Estilos para os cards de documentos */
 .documento-container {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
 }
 
 .documento-label {
   display: block;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #14374c;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .documento-subtitulo {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: #555;
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
+  margin-top: 0.2rem;
+  margin-bottom: 0.4rem;
 }
 
 .documento-card {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   background-color: var(--cor-creme);
-  border-radius: 0.5rem;
-  padding: 1rem 1.5rem;
+  border-radius: 0.4rem;
+  padding: 0.8rem 1.2rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.05);
   position: relative;
+  height: 60px;
 }
 
 .documento-icone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-right: 1rem;
+  margin-right: 0.8rem;
 }
 
 .documento-icone img {
-  width: 40px;
+  width: 32px;
   height: auto;
   object-fit: contain;
 }
 
 .documento-tipo {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: bold;
   color: #14374c;
-  margin-top: 0.25rem;
+  margin-top: 0.2rem;
 }
 
 .documento-info {
@@ -674,18 +674,18 @@
 }
 
 .documento-nome {
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: #14374c;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .documento-status {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: bold;
-  border-radius: 0.25rem;
-  padding: 0.2rem 0.5rem;
+  border-radius: 0.2rem;
+  padding: 0.15rem 0.4rem;
   text-transform: uppercase;
   width: fit-content;
 }
@@ -695,9 +695,19 @@
   color: white;
 }
 
+.documento-status.aprovado {
+  background-color: #38a169;
+  color: white;
+}
+
+.documento-status.rejeitado {
+  background-color: #e53e3e;
+  color: white;
+}
+
 .documento-acoes {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .documento-download {
@@ -707,37 +717,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
+  padding: 0.4rem;
   transition: all 0.2s;
-}
-
-.documento-download:hover {
-  transform: translateY(-2px);
 }
 
 /* Estilos para a lista de documentos */
 .documentos-container {
-  margin-bottom: 2rem;
+  margin-bottom: 1.6rem;
 }
 
 .documentos-label {
   display: block;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #14374c;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .documentos-subtitulo {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: #555;
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
+  margin-top: 0.2rem;
+  margin-bottom: 0.4rem;
 }
 
 .documentos-lista {
   background-color: #fff;
-  border-radius: 0.5rem;
+  border-radius: 0.4rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.05);
   overflow: hidden;
@@ -802,36 +808,36 @@
 
 @media (max-width: 768px) {
   .header {
-    padding: 0 2rem;
-    height: 10vh;
+    padding: 0 1.6rem;
+    height: 8vh;
   }
 
   .footer {
-    padding: 0 2rem;
+    padding: 0 1.6rem;
   }
 
   .formulario-titulo {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
   }
 
   .pagina-titulo {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
   }
 
   .botao-continuar,
   .botao-finalizar {
-    width: 160px;
+    width: 130px;
   }
 
   .progresso-container {
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
     width: 80%;
-    margin: 10px auto;
+    margin: 8px auto;
   }
 
   .formulario-conteudo {
-    padding: 0 2rem 2rem;
-    height: calc(100vh - 20vh - 120px);
+    padding: 0 1.6rem 1.6rem;
+    height: calc(100vh - 16vh - 100px);
   }
 
   .toast-container {
@@ -862,13 +868,13 @@
 
 /* Estilos para upload de arquivo */
 .arquivo-container {
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .arquivo-item {
   display: flex;
   align-items: center;
-  padding: 1rem 0;
+  padding: 0.8rem 0;
   position: relative;
 }
 
@@ -876,12 +882,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 80px;
+  width: 64px;
 }
 
 .arquivo-icone {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -893,8 +899,8 @@
 }
 
 .arquivo-miniatura {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
   background-color: #f8f9fa;
   display: flex;
@@ -904,25 +910,25 @@
 }
 
 .arquivo-tamanho-max {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: #666;
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
 }
 
 .arquivo-centro {
   flex: 1;
-  padding: 0 1rem;
+  padding: 0 0.8rem;
 }
 
 .arquivo-titulo {
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: #14374c;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 300px;
+  max-width: 240px;
 }
 
 .arquivo-status {
@@ -930,7 +936,7 @@
 }
 
 .arquivo-direita {
-  width: 50px;
+  width: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -941,7 +947,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
+  padding: 0.4rem;
   transition: all 0.2s;
 }
 
@@ -956,7 +962,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
+  padding: 0.4rem;
   transition: all 0.2s;
 }
 
@@ -988,4 +994,187 @@
   .arquivo-titulo {
     max-width: 150px;
   }
+}
+
+/* Ajustes específicos para inputs do HeroUI em escala 0.8 */
+:where(input, textarea, select).nextui-input-main-container {
+  font-size: 0.85rem !important;
+}
+
+.nextui-input-wrapper {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 0.6rem !important;
+}
+
+.nextui-input-container {
+  height: 36px !important;
+  min-height: 36px !important;
+}
+
+.nextui-input {
+  font-size: 0.85rem !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0.4rem 0.6rem !important;
+}
+
+/* Ajustes para labels e description */
+.nextui-input-label {
+  font-size: 0.85rem !important;
+  margin-bottom: 0.3rem !important;
+  transform: translateY(-0.2rem) !important;
+}
+
+/* Ajustes para os containers de input */
+.nextui-input-container--has-label {
+  height: auto !important;
+}
+
+/* Ajustes para botões */
+.nextui-button {
+  height: 36px !important;
+  min-width: 36px !important;
+  font-size: 0.85rem !important;
+  padding: 0 0.8rem !important;
+}
+
+/* Ajuste para espessura da borda dos inputs */
+.nextui-input-border-group {
+  border-width: 1px !important;
+}
+
+.nextui-input--bordered {
+  border-width: 1px !important;
+}
+
+/* Ajuste para radius nos cantos dos inputs */
+.nextui-input-border-radius--lg {
+  border-radius: 0.5rem !important;
+}
+
+/* Especificidade para inputs, textareas e selects com radius grande */
+.nextui-input--radius-lg,
+.nextui-textarea--radius-lg,
+.nextui-select--radius-lg {
+  border-radius: 0.5rem !important;
+}
+
+/* Ajustes restaurados e adicionais */
+.custom-input {
+  font-size: 0.85rem !important;
+}
+
+/* Ajustar elementos de Textarea */
+textarea.nextui-input {
+  min-height: 80px !important;
+  height: auto !important;
+  padding: 0.6rem !important;
+}
+
+/* Ajustes para descrições */
+.nextui-input-helper-text,
+.nextui-input-error-message {
+  font-size: 0.7rem !important;
+  margin-top: 0.2rem !important;
+}
+
+/* Ajustar elementos Radio */
+.radio-group-custom {
+  font-size: 0.85rem !important;
+  gap: 0.4rem !important;
+}
+
+.radio-group-custom label {
+  font-size: 0.85rem !important;
+}
+
+/* Reduzir o tamanho dos chips (status de documento) */
+[class*="chip"] {
+  height: 20px !important;
+  font-size: 0.65rem !important;
+  padding: 0 0.4rem !important;
+}
+
+/* Ajustar os arquivos */
+.arquivo-item {
+  min-height: 40px !important;
+}
+
+/* Ajustes para as radio buttons */
+.nextui-radio-container {
+  height: 18px !important;
+  width: 18px !important;
+}
+
+.nextui-radio-point {
+  height: 10px !important;
+  width: 10px !important;
+}
+
+/* Ajuste para os arquivos */
+.arquivo-upload svg,
+.arquivo-remover svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.arquivo-centro {
+  padding: 0 0.6rem;
+}
+
+/* Ajustes finais para inputs */
+.nextui-input-main-container {
+  line-height: 1.2 !important;
+}
+
+/* Ajustes para o tamanho do input quando tem label */
+.nextui-input-container.nextui-input-container--with-label {
+  height: auto !important;
+  min-height: 56px !important;
+}
+
+/* Ajuste para o tamanho do placeholder */
+.nextui-input::placeholder {
+  font-size: 0.75rem !important;
+}
+
+/* Ajuste para o tamanho do texto nos selects */
+.nextui-select-value {
+  font-size: 0.85rem !important;
+}
+
+/* Ajuste para o padding interno dos inputs */
+.nextui-input-clear-button {
+  width: 16px !important;
+  height: 16px !important;
+  right: 4px !important;
+}
+
+/* Ajuste para o tamanho das opções nos selects */
+.nextui-select-dropdown {
+  padding: 0.3rem !important;
+}
+
+.nextui-select-dropdown-item {
+  font-size: 0.85rem !important;
+  padding: 0.4rem 0.6rem !important;
+  min-height: 32px !important;
+}
+
+/* Ajustes para size="lg" */
+.nextui-c-hhqfap-kLmFsI-size-lg {
+  min-height: 36px !important;
+  height: 36px !important;
+}
+
+/* Ajustes específicos para select arrow */
+.nextui-select-icon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Ajustes para focus ring */
+.nextui-input:focus + .nextui-input-border-group {
+  box-shadow: 0 0 0 2px rgba(20, 55, 76, 0.2) !important;
 }

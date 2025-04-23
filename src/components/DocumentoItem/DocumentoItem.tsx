@@ -15,22 +15,30 @@ const DocumentoItem: React.FC<DocumentoItemProps> = ({
   tema = "dourado",
 }) => {
   const icone = tema === "dourado" ? arqAzulPdf : arqBegePdf;
-  const cor = tema === "dourado" ? "var(--cor-azul-escuro)" : "var(--cor-creme-escuro)";
+  const cor =
+    tema === "dourado" ? "var(--cor-azul-escuro)" : "var(--cor-creme-escuro)";
 
   return (
-    <div className="documento-item">
+    <div className="processo-documento-item">
       <a
         href={url}
-        className="documento-link"
+        className="processo-documento-link"
         target="_blank"
         rel="noopener noreferrer"
       >
-        <div className="documento-icone">
+        <div className="processo-documento-icone">
           <img src={icone} alt="PDF" />
         </div>
-        <div style={{borderBottom: `0.4px solid ${cor}`}} className="documento-info">
-          <span className="documento-titulo" style={{ color: cor }}>{titulo}</span>
-          <span className="documento-tipo" style={{ color: cor }}>PDF</span>
+        <div
+          style={{ borderBottom: `0.4px solid ${cor}` }}
+          className="processo-documento-info"
+        >
+          <span className="processo-documento-titulo" style={{ color: cor }}>
+            {titulo}
+          </span>
+          <span className="processo-documento-tipo" style={{ color: cor }}>
+            PDF
+          </span>
         </div>
       </a>
     </div>
