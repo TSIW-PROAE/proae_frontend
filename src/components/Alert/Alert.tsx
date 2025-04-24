@@ -24,16 +24,15 @@ function normalize(str: string) {
     return str.toLowerCase();
 }
 
-function Alert({ titulo, descricao, data, largura = '1000px' }: AlertProps) {
+//Por padrão esse componente tem 400px de largura, mas dá pra passar um valor diferente via props
+function Alert({ titulo, descricao, data, largura = '400px' }: AlertProps) {
     const normalizedTitle = normalize(titulo);
-    const icon = iconMap[normalizedTitle] || warning;
+    const icon = iconMap[normalizedTitle];
 
     return (
         <div className={styles.aviso} style={{ width: largura }}>
             <div className={styles.conteudoPrincipal}>
-                <div className={styles.icon}>
-                    <img src={icon} alt={`Ícone para ${titulo}`} />
-                </div>
+                <img className={styles.icon} src={icon} alt={`Ícone para ${titulo}`} />
                 <div className={styles.texto}>
                     <p className={styles.titulo}>{titulo}</p>
                     <p className={styles.descricao}>{descricao}</p>
