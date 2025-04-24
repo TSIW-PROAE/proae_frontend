@@ -21,6 +21,7 @@ import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProa
 
 // Auth
 import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
+import CadastroProae from "@/pages/paginaProae/CadastroProae/CadastroProae";
 
 const routes = [
   {
@@ -50,6 +51,7 @@ const routes = [
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
           { path: "portal-proae/configuracao", element: <ConfiguracaoProae /> },
+          { path: "portal-proae/cadastro-edital", element: <CadastroProae /> },
         ],
       },
     ],
