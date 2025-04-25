@@ -82,6 +82,7 @@ export interface FormularioDinamicoProps {
   rotaRedirecionamento: string;
   rotaCancelamento?: string;
   logoSrc?: string;
+  hendlerSubmit?: (dados: Record<string, any>) => void;
 }
 
 // Funções de formatação
@@ -203,6 +204,7 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
   rotaRedirecionamento,
   rotaCancelamento,
   logoSrc,
+  hendlerSubmit,
 }) => {
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -432,10 +434,11 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
     setEnviando(true);
 
     try {
-      // Aqui você pode adicionar a lógica para enviar os dados do formulário
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulação de envio
-      setConcluido(true);
+      if (hendlerSubmit) {
+       const response =  hendlerSubmit(formData);
 
+        setConcluido(true);
+      }
       // Redirecionamento após conclusão
       setTimeout(() => {
         navigate(rotaRedirecionamento);

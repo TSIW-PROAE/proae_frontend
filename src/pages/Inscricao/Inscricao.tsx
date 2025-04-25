@@ -5,6 +5,8 @@ import FormularioDinamico, {
 } from "../../components/FormularioDinamico/FormularioDinamico";
 import logoUfba from "../../assets/logo-ufba.png";
 import "./inscricao.css";
+import { FetchAdapter } from "@/services/http/HttpClient";
+import InscriptionService from "@/services/Inscription/Inscription";
 
 export default function Inscricao() {
   // Configuração do formulário dinâmico para inscrição PROAE
@@ -154,9 +156,21 @@ export default function Inscricao() {
     logoSrc: logoUfba,
   };
 
+  const client = new FetchAdapter();
+  const inscriptionService = new InscriptionService(client);
+
+  const handleSubmit = async (dados: any) => {
+    const response =  await inscriptionService.save(dados);
+    // Aqui você pode adicionar a lógica para enviar os dados do formulário
+    console.log("Dados do formulário:", dados);
+    console.log("Resposta do servidor:", response);
+    
+    return response;
+  };
+
   return (
     <div className="body">
-      <FormularioDinamico {...configFormulario} />
+      <FormularioDinamico {...configFormulario} hendlerSubmit={handleSubmit}/>
     </div>
   );
 }
