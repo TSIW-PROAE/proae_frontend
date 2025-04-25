@@ -21,6 +21,7 @@ import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProa
 
 // Auth
 import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
+import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
 
 const routes = [
   {
@@ -33,6 +34,7 @@ const routes = [
       },
       { path: "login-aluno", element: <LoginAluno /> },
       { path: "inscricao", element: <Inscricao /> },
+      { path: "cadastro-aluno", element: <CadastroAluno /> },
       {
         element: <ProtectedRouteAluno />,
         children: [
