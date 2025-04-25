@@ -14,7 +14,6 @@ O projeto foi desenvolvido com as seguintes tecnologias:
 
 🟦 TypeScript - Tipagem estática para JavaScript
 
-
 ## 💻 Pré-requisitos
 
 Antes de começar, certifique-se de ter instalado:
@@ -50,22 +49,28 @@ proae-frontend/
 ```
 
 ## 🚀 Como Rodar o Projeto
+
 1. **Clone o repositório**
+
 ```bash
 git clone https://github.com/TSIW-PROAE/proae_frontend.git
 cd proae_frontend
 ```
+
 2. **Instale as dependências**
+
 ```bash
 npm install
 ```
+
 3. **Configure as variáveis de ambiente**
 
-Renomeie o arquivo .env.example para .env e preencha com os valores necessários.
-4. **Inicie o projeto**
+Renomeie o arquivo .env.example para .env e preencha com os valores necessários. 4. **Inicie o projeto**
+
 ```bash
 npm run dev
 ```
+
 ## 🤝 Colaboradores
 
 Agradecemos às seguintes pessoas que contribuíram para este projeto:
@@ -133,3 +138,9 @@ Agradecemos às seguintes pessoas que contribuíram para este projeto:
 
 ## 📝 Licença
 
+O projeto PROAE é licenciado sob a [Creative Commons Attribution 4.0](LICENSE).
+
+## 📧 Contato <a name="contato"></a>
+
+- **Email:** tsiw-proae@ufba.br
+- **GitHub:** [TSIW-PROAE](https://github.com/TSIW-PROAE)
