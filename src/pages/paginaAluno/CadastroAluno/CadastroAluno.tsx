@@ -284,23 +284,6 @@ const campus = [
                     />
                 </div>
 
-                <div className="cadastro-options">
-                    <div className="remember-option">
-                    <Switch
-                        size="sm"
-                        isSelected={lembrar}
-                        onValueChange={setLembrar}
-                        aria-label="Lembrar-me"
-                        color="primary"
-                    >
-                        Lembrar-me
-                    </Switch>
-                    </div>
-                    <a href="#" className="forgot-password">
-                    Esqueci minha senha
-                    </a>
-                </div>
-
                 <Button
                     type="submit"
                     radius="lg"
@@ -308,14 +291,8 @@ const campus = [
                     className="cadastro-button"
                     color="primary"
                 >
-                    Entrar
+                    Avançar
                 </Button>
-
-                <div className="register-link-container">
-                    <Link href="#" className="register-link" color="primary">
-                    Cadastrar-se no sistema
-                    </Link>
-                </div>
 
                 <div className="copyright-text">
                     © {anoAtual} UFBA PROAE. Todos os direitos reservados.
