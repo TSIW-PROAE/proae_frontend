@@ -2,11 +2,11 @@ import { Navigate, Outlet } from "react-router-dom";
 
 
 const isAuthenticatedAluno = () => {
-    return false;
+    return true;
 };
 
 const isAuthenticatedProae = () => {
-    return false;
+    return true;
 };
 
 

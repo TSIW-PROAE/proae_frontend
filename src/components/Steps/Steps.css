@@ -1,0 +1,96 @@
+#step-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    #step-header {
+        display: flex;
+        justify-content: center;
+        padding: 1rem 0;
+        position: sticky;
+        top: 8vh;
+        background-color: var(--cor-creme);
+        z-index: 9;
+        width: 150px;
+    }
+
+    #progresso-container {
+        width: 50%;
+        margin: 50px auto;
+        position: sticky;
+        top: calc(8vh + 70px);
+        background-color: var(--cor-creme);
+        z-index: 10;
+        visibility: visible !important;
+        border-radius: 1rem;
+
+        #barra-progresso {
+            width: 100%;
+            height: 0.7rem;
+            background-color: #183b4e2d;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        #progresso-preenchido {
+            height: 100%;
+            background-color: var(--cor-azul-escuro);
+            transition: width 0.3s ease;
+        }
+    }
+
+    #data-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        #formulario-titulo {
+            font-size: 2rem;
+            color: var(--cor-azul-escuro);
+            margin-bottom: 0rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            background-color: var(--cor-creme);
+            padding: 1rem 0;
+            z-index: 7;
+        }
+
+        #formulario-subtitulo {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 2rem;
+            text-align: center;
+            position: sticky;
+            top: 4rem;
+            background-color: var(--cor-creme);
+            padding-bottom: 1rem;
+            z-index: 7;
+        }
+
+        #buttons-container {
+            display: flex;
+            gap: 25px;
+
+            .button {
+                width: 200px;
+                background-color: var(--cor-azul-escuro);
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 20px;
+                font-size: 1.1rem;
+                font-weight: 500;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                transition: all 0.2s ease;
+                color: #f2e8d5;
+            }
+
+            .button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            }
+        }
+    }
+}
