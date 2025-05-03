@@ -30,7 +30,7 @@ const CadastroEdital = () => {
                 >
                     <h1>PROAE</h1>
                 </div>
-                <p className="details">Edital nº 27/2023</p>
+                <p className="details">Cadastro de Edital PROAE</p>
             </div>
 
             {/*<div>CadastroEdital</div>*/}
