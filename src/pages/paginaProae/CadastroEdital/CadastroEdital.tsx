@@ -1,8 +1,8 @@
 import Steps, { StepsConfig, StepsProps } from "@/components/Steps/Steps.tsx";
 import logoUfba from "../../../assets/logo-ufba.png";
+import arrowDownIcon from "../../../assets/icons/arrow-down-item.svg";
 import { useNavigate } from "react-router-dom";
-import "./CadastroEdital.css"
-
+import "./CadastroEdital.css";
 
 const CadastroEdital = () => {
 
@@ -21,7 +21,7 @@ const CadastroEdital = () => {
     const stepsProps: StepsProps = { stepsConfig: steps, whereToRedirectWhenFinishSteps: "/portal-proae/processos" };
 
     return (
-        <div>
+        <div className="cadastro-page">
             <div className="header">
                 <div
                     className="logo"
@@ -34,7 +34,16 @@ const CadastroEdital = () => {
             </div>
 
             {/*<div>CadastroEdital</div>*/}
-            <Steps stepsProps={stepsProps} />
+            <div className="steps-container">
+                <Steps stepsProps={stepsProps} />
+            </div>
+
+            <div className="footer">
+                <div className="footer-back" onClick={irParaHome}>
+                    <img src={arrowDownIcon} className="arrow-down" alt="Cancelar" />
+                    <span className="voltar-texto">Cancelar</span>
+                </div>
+            </div>
         </div>
     )
 }

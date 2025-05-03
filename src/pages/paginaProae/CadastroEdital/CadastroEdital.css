@@ -1,3 +1,13 @@
+.cadastro-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.steps-container {
+    flex: 1;
+}
+
 .header {
     display: flex;
     justify-content: space-between;
@@ -9,4 +19,16 @@
     top: 0;
     background-color: var(--cor-creme);
     z-index: 10;
-  }
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 8vh;
+    padding: 0 4rem;
+    border-top: 1px solid #14374c4f;
+    bottom: 0;
+    background-color: var(--cor-creme);
+    z-index: 10;
+}
