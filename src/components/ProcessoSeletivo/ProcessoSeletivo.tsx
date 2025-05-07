@@ -77,7 +77,11 @@ const ProcessoSeletivo: React.FC<ProcessoSeletivoProps> = ({
   return (
     <div className={`processo-seletivo ${obterClasseTema()}`}>
       <div className="processo-header">
-        <div className="processo-info">
+        <div
+          className="processo-info"
+          onClick={alternarExpansao}
+          style={{ cursor: "pointer" }}
+        >
           <div className="processo-titulo-container">
             <h3 className="processo-titulo fonte-corpo">{titulo}</h3>
           </div>
