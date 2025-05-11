@@ -1,7 +1,7 @@
 import { Button } from "@heroui/button";
 import "./DesignSystem.css";
 import CardUserComponent from "@/components/Card-User-Component/CardUserComponent.tsx";
-import SideBar from "@/components/Side Bar/SideBar.tsx";
+import SideBar from "@/components/SideBar/SideBar.tsx";
 import Alert from "@/components/Alert/Alert.tsx";
 
 export default function DesignSystem() {
