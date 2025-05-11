@@ -4,6 +4,7 @@ import PageLayout from "@/pages/PageLayout/PageLayout";
 import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
 import "./PortalAluno.css";
+import CandidateStatus from "./componentes/CandidateStatus";
 
 export default function PortalAluno() {
   const benefits = [
@@ -33,6 +34,62 @@ export default function PortalAluno() {
     },
   ];
 
+  const editalsMock = [
+    {
+      id: 1,
+      title: "Auxílio Permanência - Campus Salvador",
+      year: 2025,
+      status: {
+        title: "Aguardando Documentação",
+        status: "pending",
+        color: "yellow", // Apenas a cor
+      },
+      pendingItems: [
+        {
+          name: "RG",
+          reason: "Imagem ilegível",
+          requestDate: "2025-05-09T10:15:00Z",
+        },
+        {
+          name: "CAD Único",
+          reason: "Não enviado",
+          requestDate: "2025-05-09T10:16:00Z",
+        },
+      ],
+      stages: [
+        "Inscrição",
+        "Homologação das Inscrições",
+        "Análise de Documentos",
+        "Resultado Preliminar",
+        "Interposição do Resultado Parcial",
+        "Resultado do Recurso",
+        "Resultado Final",
+      ],
+      currentStageIndex: 2,
+    },
+    {
+      id: 2,
+      title: "Auxílio Moradia - Campus Salvador",
+      year: 2025,
+      status: {
+        title: "Aprovado",
+        status: "approved",
+        color: "green",
+      },
+      pendingItems: [],
+      stages: [
+        "Inscrição",
+        "Homologação das Inscrições",
+        "Interposição das Inscrições",
+        "Resultado Preliminar",
+        "Análise de Documentos",
+        "Resultado do Recurso",
+        "Resultado Final",
+      ],
+      currentStageIndex: 6,
+    },
+  ];
+
   return (
     <PageLayout
       sidebar={
@@ -54,6 +111,15 @@ export default function PortalAluno() {
           </div>
           <div className="w-full lg:w-1/2">
             <OpenSelections selections={openSelections} />
+          </div>
+        </div>
+
+        <div className="mt-10">
+          <h2 className="text-2xl font-bold mb-3">Minhas últimos inscrições </h2>
+          <div className="flex  flex-col gap-6">
+            {editalsMock.map((edital) => (
+              <CandidateStatus key={edital.id} edital={edital} />
+            ))}
           </div>
         </div>
       </div>
