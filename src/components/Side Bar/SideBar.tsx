@@ -15,7 +15,8 @@ export interface ISideBarProps {
     homeIconRedirect: string,
     processIconRedirect: string,
     configIconRedirect: string,
-    docsIconRedirect?: string
+    docsIconRedirect?: string,
+    defaultSelected?: "home" | "process" | "config" | "docs"
 }
 
 export interface ISideBarIconsConfig {
@@ -28,12 +29,12 @@ export interface ISideBarIconsConfig {
     shouldShowIcon: boolean
 }
 
-const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, shouldShowDocsIcon = false, docsIconRedirect = ""}: ISideBarProps) => {
+const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, shouldShowDocsIcon = false, docsIconRedirect = "", defaultSelected = "home"}: ISideBarProps) => {
     const navigate = useNavigate();
-    const [isHomeSelected, setIsHomeSelected] = useState(true);
-    const [isProcessSelected, setIsProcessSelected] = useState(false);
-    const [isConfigSelected, setIsConfigSelected] = useState(false);
-    const [isDocsSelected, setIsDocsSelected] = useState(false);
+    const [isHomeSelected, setIsHomeSelected] = useState(defaultSelected === "home");
+    const [isProcessSelected, setIsProcessSelected] = useState(defaultSelected === "process");
+    const [isConfigSelected, setIsConfigSelected] = useState(defaultSelected === "config");
+    const [isDocsSelected, setIsDocsSelected] = useState(defaultSelected === "docs");
 
     const icons: ISideBarIconsConfig[] = [
         {srcNotSelectedIcon: homeNotSelectedIcon, srcSelectedIcon: homeSelectedIcon, alt: 'home icon', redirect: homeIconRedirect, onClick: () => setIsHomeSelected((isHomeSelected) => !isHomeSelected), isIconSelected: isHomeSelected, shouldShowIcon: true},
