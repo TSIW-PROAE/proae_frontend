@@ -1,1 +1,9 @@
 /* Estilos para a página ConfiguracaoAluno */
+.container {
+    display: flex;
+}
+
+.form {
+    padding-left: 50px;
+    padding-top: 50px;
+}
