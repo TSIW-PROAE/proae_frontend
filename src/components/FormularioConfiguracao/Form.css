@@ -27,9 +27,10 @@
 
 .action-buttons {
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
+  justify-content: center;
+  gap: 3rem;
   margin-top: 2rem;
+  margin-bottom: 5rem;
 }
 
 .cancel-button {
