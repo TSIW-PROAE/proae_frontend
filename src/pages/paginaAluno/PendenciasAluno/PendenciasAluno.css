@@ -1,0 +1,33 @@
+@import "../../../styles/variables.css";
+
+.pendencias-aluno-container {
+  display: flex;
+  flex-direction: row;
+  gap: 60px;
+}
+
+.pendencias-container{
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.pendencias-content{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+    width: 100
+}
+
+.pendencias-card{
+    display: flex;
+    flex-direction: column;
+    background-color: var(--cor-dourado);
+    padding: 20px;
+    border-radius: 10px;
+    width: 100vh;
+    box-sizing: border-box;
+
+}
