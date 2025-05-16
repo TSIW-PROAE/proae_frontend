@@ -22,6 +22,7 @@ import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProa
 // Auth
 import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
+import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
 
 const routes = [
   {
@@ -43,6 +44,7 @@ const routes = [
           { path: "portal-aluno/documentacao", element: <DocumentacaoAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <CandidaturaAluno /> },
+          { path: "portal-aluno/pendencias-aluno", element: <PendenciasAluno /> },
         ],
       },
       { path: "login-proae", element: <LoginProae /> },

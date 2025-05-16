@@ -12,12 +12,8 @@ import renovacaoIcon from "../../assets/dashboard icons/renvação.svg";
 import "./Home.css";
 
 export default function Home() {
-  const [currentFilter, setCurrentFilter] = useState("todos");
+  
   const navigate = useNavigate();
-
-  const handleFilterChange = (filter: string) => {
-    setCurrentFilter(filter);
-  };
 
   return (
     <div className="home-container">
