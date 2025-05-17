@@ -115,7 +115,7 @@ export default function PortalAluno() {
         </div>
 
         <div className="mt-10">
-          <h2 className="text-2xl font-bold mb-3">Minhas últimos inscrições </h2>
+          <h2 className="text-2xl font-bold mb-3">Minhas últimas inscrições </h2>
           <div className="flex  flex-col gap-6">
             {editalsMock.map((edital) => (
               <CandidateStatus key={edital.id} edital={edital} />
