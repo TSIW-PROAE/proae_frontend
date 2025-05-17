@@ -35,8 +35,8 @@ const CandidateStatus: React.FC<{ edital: Edital | null }> = ({ edital }) => {
   };
 
   return (
-    <section className="bg-[#f5d087] p-6 rounded-xl shadow-md w-full mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Status da Inscrição para: {title}</h2>
+    <section className="bg-[#EDF2F7] text-[#1B3A4B] p-6 rounded-xl border border-[#D1D5DB] w-full mx-auto">
+      <h2 className="text-xl font-normal text-[#374151] mb-6"><span className="text-[#6B7280]">Status da Inscrição para:</span> {title}</h2>
 
       <div className="space-y-4">
         {/* Status */}
@@ -89,7 +89,7 @@ const CandidateStatus: React.FC<{ edital: Edital | null }> = ({ edital }) => {
           </button>
           <button
             onClick={handleUploadDocuments}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-[#2E3A59] text-white px-4 py-2 rounded-lg hover:bg-[#1f2937] transition"
           >
             Enviar Documentos
           </button>
