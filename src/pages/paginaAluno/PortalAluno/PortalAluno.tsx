@@ -20,17 +20,30 @@ export default function PortalAluno() {
     {
       title: "Bolsa Permanência 2025.2",
       code: "05/2023",
-      status: "Applications open",
+      status: {
+        title: "Inscrições abertas",
+        status: "open",
+        color: "green",
+      }
     },
     {
       title: "Auxílio Moradia 2025.1",
       code: "05/2023",
-      status: "Document Review",
+       status: {
+        title: "Validação de domcumentos",
+        status: "pending",
+        color: "red", 
+      }
     },
     {
       title: "Renovação de Benefícios 2025.1",
       code: "05/2023",
-      status: "closed",
+      status: {
+        title: "Inscrição Fechada",
+        status: "closed",
+        color: "red", 
+      }
+
     },
   ];
 
@@ -54,6 +67,46 @@ export default function PortalAluno() {
           name: "CAD Único",
           reason: "Não enviado",
           requestDate: "2025-05-09T10:16:00Z",
+        },
+        {
+          name: "Comprovante de Residência",
+          reason: "Documento vencido",
+          requestDate: "2025-05-10T08:00:00Z",
+        },
+        {
+          name: "Histórico Escolar",
+          reason: "Faltando assinatura",
+          requestDate: "2025-05-10T08:10:00Z",
+        },
+        {
+          name: "Declaração de Matrícula",
+          reason: "Formato inválido",
+          requestDate: "2025-05-10T08:20:00Z",
+        },
+        {
+          name: "Foto 3x4",
+          reason: "Não enviado",
+          requestDate: "2025-05-10T08:30:00Z",
+        },
+        {
+          name: "Título de Eleitor",
+          reason: "Imagem cortada",
+          requestDate: "2025-05-10T08:40:00Z",
+        },
+        {
+          name: "Comprovante de Renda",
+          reason: "Informação incompatível",
+          requestDate: "2025-05-10T08:50:00Z",
+        },
+        {
+          name: "CPF",
+          reason: "Documento ilegível",
+          requestDate: "2025-05-10T09:00:00Z",
+        },
+        {
+          name: "Declaração de Imposto de Renda",
+          reason: "Faltando página",
+          requestDate: "2025-05-10T09:10:00Z",
         },
       ],
       stages: [
@@ -115,7 +168,9 @@ export default function PortalAluno() {
         </div>
 
         <div className="mt-10">
-          <h2 className="text-2xl font-medium text-[#1B3A4B] mb-3">Minhas últimas inscrições </h2>
+          <h2 className="text-2xl font-medium text-[#1B3A4B] mb-3">
+            Minhas últimas inscrições{" "}
+          </h2>
           <div className="flex  flex-col gap-6">
             {editalsMock.map((edital) => (
               <CandidateStatus key={edital.id} edital={edital} />

@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface Edital {
   title: string;
@@ -17,6 +18,8 @@ interface Edital {
 }
 
 const CandidateStatus: React.FC<{ edital: Edital | null }> = ({ edital }) => {
+  const navigate = useNavigate();
+
   if (!edital) return null;
 
   const { title, status, pendingItems, stages, currentStageIndex } = edital;
@@ -25,18 +28,18 @@ const CandidateStatus: React.FC<{ edital: Edital | null }> = ({ edital }) => {
   const etapaAtual = stages[currentStageIndex];
 
   const handleViewForm = () => {
-    // lógica para abrir a ficha de inscrição
     alert("Abrir ficha de inscrição");
   };
 
-  const handleUploadDocuments = () => {
-    // lógica para upload de documentos
-    alert("Abrir upload de documentos");
+  const handleCheckPendingItems = () => {
+    navigate("/pendencias"); // Atualize a rota conforme necessário
   };
 
   return (
     <section className="bg-[#EDF2F7] text-[#1B3A4B] p-6 rounded-xl border border-[#D1D5DB] w-full mx-auto">
-      <h2 className="text-xl font-normal text-[#374151] mb-6"><span className="text-[#6B7280]">Status da Inscrição para:</span> {title}</h2>
+      <h2 className="text-xl font-normal text-[#374151] mb-6">
+        <span className="text-[#6B7280]">Status da Inscrição para:</span> {title}
+      </h2>
 
       <div className="space-y-4">
         {/* Status */}
@@ -47,16 +50,9 @@ const CandidateStatus: React.FC<{ edital: Edital | null }> = ({ edital }) => {
 
         {/* Pendências */}
         {(pendingItems?.length ?? 0) > 0 ? (
-          <div className="flex items-start gap-4">
-            <span className="font-semibold">Pendências:</span>
-            <ul className="list-disc ml-6 text-sm text-red-700">
-              {pendingItems.map((doc, i) => (
-                <li key={i}>
-                  {doc.name} - {doc.reason} -{" "}
-                  {new Date(doc.requestDate).toLocaleDateString()}
-                </li>
-              ))}
-            </ul>
+          <div className="text-red-700 font-medium">
+            Você possui {pendingItems.length} pendência
+            {pendingItems.length > 1 ? "s" : ""} de documentos.
           </div>
         ) : (
           <div className="text-green-700 font-medium">
@@ -87,12 +83,15 @@ const CandidateStatus: React.FC<{ edital: Edital | null }> = ({ edital }) => {
           >
             Ver Ficha de Inscrição
           </button>
-          <button
-            onClick={handleUploadDocuments}
-            className="bg-[#2E3A59] text-white px-4 py-2 rounded-lg hover:bg-[#1f2937] transition"
-          >
-            Enviar Documentos
-          </button>
+
+          {(pendingItems?.length ?? 0) > 0 && (
+            <button
+              onClick={handleCheckPendingItems}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+            >
+              Verificar Pendências
+            </button>
+          )}
         </div>
       </div>
     </section>
