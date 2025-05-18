@@ -1,6 +1,6 @@
 // PendenciasAluno.tsx
 import PendenciaItem from "@/components/PendenciaItem/PendenciaItem";
-import SideBar from "@/components/Side Bar/SideBar";
+import SideBar from "@/components/SideBar/SideBar";
 import React from "react";
 import "./PendenciasAluno.css";
 
