@@ -153,7 +153,11 @@ export default function LoginAluno() {
               </Button>
 
               <div className="register-link-container">
-                <Link href="#" className="register-link" color="primary">
+                <Link
+                  href="/cadastro"
+                  className="register-link"
+                  color="primary"
+                >
                   Cadastrar-se no sistema
                 </Link>
               </div>

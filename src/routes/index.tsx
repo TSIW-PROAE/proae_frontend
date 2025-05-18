@@ -6,6 +6,7 @@ import LoginProae from "../pages/paginaProae/LoginProae/LoginProae";
 import NotFound from "../pages/NotFound/NotFound";
 import DesignSystem from "../pages/DesignSystem/DesignSystem";
 import Inscricao from "../pages/Inscricao/Inscricao";
+import Cadastro from "../pages/paginaAluno/Cadastro/Cadastro";
 
 // Aluno
 import PortalAluno from "../pages/paginaAluno/PortalAluno/PortalAluno";
@@ -32,6 +33,7 @@ const routes = [
         element: <Home />,
       },
       { path: "login-aluno", element: <LoginAluno /> },
+      { path: "cadastro", element: <Cadastro /> },
       { path: "inscricao", element: <Inscricao /> },
       {
         element: <ProtectedRouteAluno />,
