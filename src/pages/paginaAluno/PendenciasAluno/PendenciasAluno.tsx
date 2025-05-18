@@ -1,8 +1,7 @@
-// PendenciasAluno.tsx
+import React from "react";
 import PendenciaItem from "@/components/PendenciaItem/PendenciaItem";
 import SideBar from "@/components/SideBar/SideBar";
-import React from "react";
-import "./PendenciasAluno.css";
+import PageLayout from "@/pages/PageLayout/PageLayout";
 
 const PendenciasAluno: React.FC = () => {
   const pendenciasPorEdital = [
@@ -23,29 +22,30 @@ const PendenciasAluno: React.FC = () => {
     },
   ];
 
+  const sidebar = (
+    <SideBar
+      homeIconRedirect="/portal-aluno"
+      processIconRedirect="/portal-aluno/processos"
+      configIconRedirect="/portal-aluno/configuracao"
+      docsIconRedirect="/portal-aluno/documentacao"
+      shouldShowDocsIcon={true}
+    />
+  );
+
   return (
-    <div className="pendencias-aluno-container">
-      <SideBar
-        homeIconRedirect="/portal-aluno"
-        processIconRedirect="/portal-aluno/processos"
-        configIconRedirect="/portal-aluno/configuracao"
-        docsIconRedirect="/portal-aluno/documentacao"
-        shouldShowDocsIcon={true}
-      />
-      <div className="pendencias-container">
-        <h1>Pendências</h1>
-        <div className="pendencias-content">
-          {pendenciasPorEdital.map((edital, index) => (
-            <PendenciaItem
-              key={index}
-              edital={edital.edital}
-              tipo={edital.tipo}
-              pendencias={edital.pendencias}
-            />
-          ))}
-        </div>
+    <PageLayout sidebar={sidebar}>
+      <h1 className="text-2xl font-semibold mb-6">Pendências</h1>
+      <div className="space-y-6">
+        {pendenciasPorEdital.map((edital, index) => (
+          <PendenciaItem
+            key={index}
+            edital={edital.edital}
+            tipo={edital.tipo}
+            pendencias={edital.pendencias}
+          />
+        ))}
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

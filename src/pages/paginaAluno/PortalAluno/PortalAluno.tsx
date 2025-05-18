@@ -147,10 +147,12 @@ export default function PortalAluno() {
     <PageLayout
       sidebar={
         <SideBar
-          homeIconRedirect="/home"
-          processIconRedirect="/process"
-          configIconRedirect="/config"
-        />
+        homeIconRedirect="/portal-aluno"
+        processIconRedirect="/portal-aluno/processos"
+        configIconRedirect="/portal-aluno/configuracao"
+        docsIconRedirect="/portal-aluno/documentacao"
+        shouldShowDocsIcon={true}
+      />
       }
     >
       <div className="max-w-[1500px] mx-auto">

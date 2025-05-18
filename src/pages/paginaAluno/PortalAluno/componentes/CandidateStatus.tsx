@@ -32,7 +32,7 @@ const CandidateStatus: React.FC<{ edital: Edital | null }> = ({ edital }) => {
   };
 
   const handleCheckPendingItems = () => {
-    navigate("/pendencias"); // Atualize a rota conforme necessário
+    navigate("/portal-aluno/pendencias-aluno"); 
   };
 
   return (
