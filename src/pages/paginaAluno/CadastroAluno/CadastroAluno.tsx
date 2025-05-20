@@ -9,6 +9,8 @@ import { DateValue, parseDate } from "@internationalized/date";
 import { toast, Toaster } from "react-hot-toast";
 import axios from "axios";
 import "./CadastroAluno.css";
+import CadastroAlunoService from "../../../services/CadastroAluno.service/cadastroAluno.service";
+import { FetchAdapter } from "../../../services/BaseRequestService/HttpClient";
 
 interface FormData {
   nome: string;
@@ -59,7 +61,7 @@ export default function Cadastro() {
     { valor: "Prefiro não informar", label: "Prefiro não informar" },
   ];
 
-const cursos = [
+  const cursos = [
     { valor: "Arquitetura e Urbanismo", label: "Arquitetura e Urbanismo" },
     {
       valor: "Arquitetura e Urbanismo – Noturno",
@@ -268,10 +270,10 @@ const cursos = [
     { valor: "B.I. – C.T.I", label: "B.I. – C.T.I" },
   ];
 
-const campus = [
+  const campus = [
     { valor: "Salvador", label: "Salvador" },
     { valor: "Vitória da Conquista", label: "Vitória da Conquista" },
-];
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -359,23 +361,40 @@ const campus = [
       };
       console.log(dadosFormatados);
 
-      try {
-        const response = await axios.post(
-          "http://b8ckk40k0ook00gckgk44s84.201.54.12.165.sslip.io/auth/signup",
-          dadosFormatados
-        );
+      const client = new FetchAdapter();
+      const cadastroAlunoService = new CadastroAlunoService(client);
 
-        if (response.status === 201) {
-          toast.success("Cadastro realizado com sucesso!");
-          navigate("/login-aluno"); // Redireciona para a página de login após o cadastro
-        }
-      } catch (error: unknown) {
-        if (axios.isAxiosError(error)) {
-          const mensagemErro =
-            error.response?.data?.message || "Erro ao realizar cadastro";
+      try {
+        const response =
+          await cadastroAlunoService.createAlunoUser(dadosFormatados);
+        console.log(response);
+        toast.success("Cadastro realizado com sucesso!");
+        navigate("/login-aluno"); // Redireciona para a página de login após o cadastro
+      } catch (error: any) {
+        console.log(error)
+
+        let mensagemErro = error.message || "Erro ao realizar cadastro";
+
+        if (mensagemErro == "Erro ao inserir aluno no clerk") {
+          error.error.errors.forEach((element: { message: string }) => {
+            if(element.message == "That username is taken. Please try another."){
+              toast.error("Matrícula já cadastrada no sistema");
+            }
+            else if(element.message == "That email address is taken. Please try another."){
+              toast.error("Email já cadastrada no sistema");
+            }
+            else if(element.message == "Password has been found in an online data breach. For account safety, please use a different password."){
+              toast.error("Sua senha foi encontada em um vazamento de dados, por favor digite uma senha diferente");
+            }
+            else if(element.message == "Username must be between 11 and 11 characters long."){
+              toast.error("A matrícula deve conter até 11 caracteres");
+            }
+            else{
+              toast.error(element.message);
+            }
+          });
+        }else{
           toast.error(mensagemErro);
-        } else {
-          toast.error("Erro ao realizar cadastro");
         }
       }
     }
@@ -392,7 +411,7 @@ const campus = [
                 className="cadastro-image"
             />
         </div> */}
-        
+
         <div className="cadastro-form">
           <a
             href="/"
@@ -405,48 +424,48 @@ const campus = [
 
           <div className="form-container">
             <div className="cadastro-header">
-                <h2 className="cadastro-title">Cadastre-se!</h2>
+              <h2 className="cadastro-title">Cadastre-se!</h2>
             </div>
 
             <form className="cadastro-form-container" onSubmit={handleSubmit}>
-                <div className="input-nomes">
-                    <div className="input-container">
-                        <Input
-                        id="nome"
+              <div className="input-nomes">
+                <div className="input-container">
+                  <Input
+                    id="nome"
                     value={formData.nome}
-                        label="Nome"
-                        variant="bordered"
-                        radius="lg"
-                        type="text"
-                        placeholder="Digite o seu nome"
+                    label="Nome"
+                    variant="bordered"
+                    radius="lg"
+                    type="text"
+                    placeholder="Digite o seu nome"
                     onChange={(e) => handleInputChange("nome", e.target.value)}
                     isInvalid={!!errors.nome}
                     errorMessage={errors.nome}
-                        fullWidth
+                    fullWidth
                     classNames={{ base: "custom-input" }}
-                        />
-                    </div>
-                    <div className="input-container">
-                        <Input
-                        id="sobrenome"
+                  />
+                </div>
+                <div className="input-container">
+                  <Input
+                    id="sobrenome"
                     value={formData.sobrenome}
-                        label="Sobrenome"
-                        variant="bordered"
-                        radius="lg"
-                        type="text"
-                        placeholder="Digite o seu sobrenome"
+                    label="Sobrenome"
+                    variant="bordered"
+                    radius="lg"
+                    type="text"
+                    placeholder="Digite o seu sobrenome"
                     onChange={(e) =>
                       handleInputChange("sobrenome", e.target.value)
                     }
                     isInvalid={!!errors.sobrenome}
                     errorMessage={errors.sobrenome}
-                        fullWidth
+                    fullWidth
                     classNames={{ base: "custom-input" }}
-                        />
-                    </div>
-                </div>  
-                
-                <div className="select-container">
+                  />
+                </div>
+              </div>
+
+              <div className="select-container">
                 <Select
                   className="select-pronomes"
                   label="Pronomes"
@@ -458,27 +477,27 @@ const campus = [
                   isInvalid={!!errors.pronome}
                   errorMessage={errors.pronome}
                 >
-                        {pronomes.map((pronome) => (
+                  {pronomes.map((pronome) => (
                     <SelectItem key={pronome.valor}>{pronome.label}</SelectItem>
-                        ))}
-                    </Select>
-                </div> 
+                  ))}
+                </Select>
+              </div>
 
-                <div className="date-container">
-                    <DatePicker
-                        label="Data de Nascimento"
-                        variant="bordered"
-                        radius="lg"
-                        fullWidth
+              <div className="date-container">
+                <DatePicker
+                  label="Data de Nascimento"
+                  variant="bordered"
+                  radius="lg"
+                  fullWidth
                   value={formData.dataNascimento}
                   onChange={(date) => handleInputChange("dataNascimento", date)}
                   isInvalid={!!errors.dataNascimento}
                   errorMessage={errors.dataNascimento}
                   classNames={{ base: "custom-input" }}
-                    />
-                </div>
+                />
+              </div>
 
-                <div className="select-container">
+              <div className="select-container">
                 <Select
                   className="select-cursos"
                   label="Curso"
@@ -490,13 +509,13 @@ const campus = [
                   isInvalid={!!errors.curso}
                   errorMessage={errors.curso}
                 >
-                        {cursos.map((curso) => (
+                  {cursos.map((curso) => (
                     <SelectItem key={curso.valor}>{curso.label}</SelectItem>
-                        ))}
-                    </Select>
-                </div> 
+                  ))}
+                </Select>
+              </div>
 
-                <div className="select-container">
+              <div className="select-container">
                 <Select
                   className="select-campus"
                   label="Campus"
@@ -508,58 +527,58 @@ const campus = [
                   isInvalid={!!errors.campus}
                   errorMessage={errors.campus}
                 >
-                        {campus.map((campi) => (
+                  {campus.map((campi) => (
                     <SelectItem key={campi.valor}>{campi.label}</SelectItem>
-                        ))}
-                    </Select>
-                </div> 
-            
-                <div className="input-div">
-                    <Input
-                    id="cpf"
+                  ))}
+                </Select>
+              </div>
+
+              <div className="input-div">
+                <Input
+                  id="cpf"
                   value={formData.cpf}
-                    label="CPF"
-                    variant="bordered"
-                    radius="lg"
-                    type="text"
-                    placeholder="Digite seu CPF"
+                  label="CPF"
+                  variant="bordered"
+                  radius="lg"
+                  type="text"
+                  placeholder="Digite seu CPF"
                   onChange={(e) =>
                     handleInputChange("cpf", formatCPF(e.target.value))
                   }
                   isInvalid={!!errors.cpf}
                   errorMessage={errors.cpf}
-                    fullWidth
+                  fullWidth
                   classNames={{ base: "custom-input" }}
-                    />
-                </div>
+                />
+              </div>
 
               <div className="date-container">
                 <DatePicker
                   label="Data de Ingresso"
-                        variant="bordered"
-                        radius="lg"
-                        fullWidth
+                  variant="bordered"
+                  radius="lg"
+                  fullWidth
                   value={formData.dataIngresso}
                   onChange={(date) => handleInputChange("dataIngresso", date)}
                   classNames={{ base: "custom-input" }}
-                    />
-                </div>
+                />
+              </div>
 
-                <div className="input-div">
-                    <Input
-                        id="matricula"
+              <div className="input-div">
+                <Input
+                  id="matricula"
                   value={formData.matricula}
-                        label="Matrícula"
-                        variant="bordered"
-                        radius="lg"
-                        type="text"
-                        placeholder="Digite a sua matrícula"
+                  label="Matrícula"
+                  variant="bordered"
+                  radius="lg"
+                  type="text"
+                  placeholder="Digite a sua matrícula"
                   onChange={(e) =>
                     handleInputChange("matricula", e.target.value)
                   }
-                        fullWidth
-                    />
-                </div>
+                  fullWidth
+                />
+              </div>
 
               <div className="input-div">
                 <Input
@@ -578,69 +597,69 @@ const campus = [
                 />
               </div>
 
-                <div className="input-div">
-                    <Input
-                        id="celular"
+              <div className="input-div">
+                <Input
+                  id="celular"
                   value={formData.celular}
-                        label="Celular"
-                        variant="bordered"
-                        radius="lg"
-                        type="text"
-                        placeholder="Digite o seu celular"
+                  label="Celular"
+                  variant="bordered"
+                  radius="lg"
+                  type="text"
+                  placeholder="Digite o seu celular"
                   onChange={(e) => handleInputChange("celular", e.target.value)}
-                        fullWidth
-                    />
-                </div>
+                  fullWidth
+                />
+              </div>
 
-                <div className="input-div">
-                    <Input
-                    id="senha"
-                    label="Senha"
-                    variant="bordered"
-                    radius="lg"
-                    type="password"
-                    placeholder="Digite sua senha"
+              <div className="input-div">
+                <Input
+                  id="senha"
+                  label="Senha"
+                  variant="bordered"
+                  radius="lg"
+                  type="password"
+                  placeholder="Digite sua senha"
                   value={formData.senha}
                   onChange={(e) => handleInputChange("senha", e.target.value)}
                   isInvalid={!!errors.senha}
                   errorMessage={errors.senha}
-                    fullWidth
+                  fullWidth
                   classNames={{ base: "custom-input" }}
-                    />
-                </div>
+                />
+              </div>
 
-                <div className="input-div">
-                    <Input
+              <div className="input-div">
+                <Input
                   id="confirmarSenha"
-                    label="Repita sua senha"
-                    variant="bordered"
-                    radius="lg"
-                    type="password"
-                    placeholder="Digite sua senha novamente"
+                  label="Repita sua senha"
+                  variant="bordered"
+                  radius="lg"
+                  type="password"
+                  placeholder="Digite sua senha novamente"
                   value={formData.confirmarSenha}
                   onChange={(e) =>
                     handleInputChange("confirmarSenha", e.target.value)
                   }
                   isInvalid={!!errors.confirmarSenha}
                   errorMessage={errors.confirmarSenha}
-                    fullWidth
+                  fullWidth
                   classNames={{ base: "custom-input" }}
-                    />
-                </div>
+                />
+              </div>
 
-                <Button
-                    type="submit"
-                    radius="lg"
-                    fullWidth
-                    className="cadastro-button"
-                    color="primary"
-                >
-                    Avançar
-                </Button>
+              <Button
+                type="submit"
+                radius="lg"
+                fullWidth
+                className="cadastro-button"
+                color="primary"
+              >
+                Avançar
+              </Button>
 
-                <div className="copyright-text">
-                    © {anoAtual} UFBA PROAE. Todos os direitos reservados.
-                </div>
+              <div className="copyright-text">
+                © {anoAtual} UFBA PROAE. Todos os direitos reservados.
+              </div>
             </form>
           </div>
         </div>
