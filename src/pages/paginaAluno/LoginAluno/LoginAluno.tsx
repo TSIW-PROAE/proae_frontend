@@ -71,20 +71,22 @@ export default function LoginAluno() {
           strategy: "password",
         });
 
-        if (result.status === "complete") {
-          console.log("Login realizado com sucesso!");
-          toast.success("Login realizado com sucesso!");
-          navigate("/dashboard-aluno");
-        } else {
-          console.log("Login incompleto:", result.status);
-          toast.error("Erro ao realizar login");
-        }
+
+        console.log("Login realizado com sucesso!");
+        toast.success("Login realizado com sucesso!");
+        navigate("/dashboard-aluno");
+
       } catch (err: any) {
         console.error("Erro no login:", err);
-        if (err.errors?.[0]?.message) {
+        if(err.errors[0].message == "Password is incorrect. Try again, or use another method."){
+           toast.error("senha incorreta");
+        }
+        else if (err.errors[0].message == "Couldn't find your account."){
+          toast.error("email não cadastrado");
+        }
+        else {
           toast.error(err.errors[0].message);
-        } else {
-          toast.error("Erro ao realizar login. Verifique suas credenciais.");
+          //toast.error("Erro ao realizar login. Verifique suas credenciais.");
         }
       } finally {
         setIsLoading(false);
