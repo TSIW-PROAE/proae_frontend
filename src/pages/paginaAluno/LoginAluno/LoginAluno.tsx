@@ -31,7 +31,7 @@ export default function LoginAluno() {
 
     // Verificar se já existe uma sessão ativa
     if (session) {
-      navigate("/dashboard-aluno");
+      navigate("/portal-aluno");
     }
   }, [location, session, navigate]);
 
@@ -74,7 +74,7 @@ export default function LoginAluno() {
 
         console.log("Login realizado com sucesso!");
         toast.success("Login realizado com sucesso!");
-        navigate("/dashboard-aluno");
+        navigate("/portal-aluno");
 
       } catch (err: any) {
         console.error("Erro no login:", err);
