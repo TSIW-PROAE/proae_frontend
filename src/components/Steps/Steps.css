@@ -24,12 +24,12 @@
         #progresso-container {
             width: 800px;
             position: sticky;
-            top: calc(8vh + 70px);
+            top: calc(8vh + 20px);
             background-color: var(--cor-creme);
             z-index: 10;
             visibility: visible !important;
             border-radius: 1rem;
-            margin-top: 100px;
+            margin-top: 50px;
             margin-bottom: 2rem;
 
             #barra-progresso {
@@ -78,6 +78,7 @@
         #buttons-container {
             display: flex;
             gap: 25px;
+            margin-bottom: 1rem;
 
             .button {
                 width: 200px;

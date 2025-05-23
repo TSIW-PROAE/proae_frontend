@@ -1,11 +1,13 @@
 .cadastro-page {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    /*display: flex;*/
+    /*flex-direction: column;*/
+    /*height: 100vh;*/
 }
 
 .steps-container {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .header {
@@ -13,7 +15,7 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #14374c4f;
-    height: 8vh;
+    height: 50px;
     padding: 0 4rem;
     position: sticky;
     top: 0;
