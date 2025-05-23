@@ -1,8 +1,8 @@
 import React, {useState} from "react";
 import plusIcon from "../../assets/plus-icon.svg";
 import minusIcon from "../../assets/minus-icon.svg";
-import {Input, RadioGroup, Select, SelectItem, Textarea} from "@heroui/react";
-import {useFormContext} from "react-hook-form";
+import {DatePicker, Input, RadioGroup, Select, SelectItem, Textarea} from "@heroui/react";
+import {Controller, useFormContext} from "react-hook-form";
 import {TypeFormat, TypeInput} from "@/utils/enumInput.tsx";
 
 interface Option {
@@ -24,7 +24,7 @@ export interface InputProps {
 
 const CustomInput: React.FC<InputProps> = ( props : InputProps) => {
 
-    const { register, formState: { errors }, unregister } = useFormContext();
+    const { register, formState: { errors }, unregister, control } = useFormContext();
 
     const errorMessage: string = "Este campo é obrigatório";
 
@@ -113,10 +113,26 @@ const CustomInput: React.FC<InputProps> = ( props : InputProps) => {
                                    label={props.title} type={props.type} placeholder={props.placeholder} isRequired={props.required}
                                    isInvalid={!!errors[props.name]} errorMessage={errorMessage}
                                    radius="lg" variant="bordered" fullWidth className="custom-input"/>
-                            <Input {...register(props.name + 1, { required: props.required})}
-                                   label={"Data"} type={"date"} isRequired={props.required}
-                                   isInvalid={!!errors[props.name]} errorMessage={errorMessage}
-                                   radius="lg" variant="bordered" fullWidth className="custom-input"/>
+                            <Controller
+                                name={props.name + "1"}
+                                control={control}
+                                rules={{ required: props.required }}
+                                render={({ field }) => (
+                                    <DatePicker
+                                        label="Data"
+                                        isRequired={props.required}
+                                        variant="bordered"
+                                        radius="lg"
+                                        fullWidth
+                                        errorMessage={errorMessage}
+                                        classNames={{ base: "custom-input" }}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        onBlur={field.onBlur}
+                                        isInvalid={!!errors[props.name]}
+                                    />
+                                )}
+                            />
                         </div>
                     </div>
                 </div>
@@ -132,41 +148,99 @@ const CustomInput: React.FC<InputProps> = ( props : InputProps) => {
                                    isRequired={props.required} isInvalid={!!errors[props.name]}
                                    errorMessage={errorMessage}
                                    radius="lg" variant="bordered" fullWidth className="custom-input"/>
-                            <Input {...register(props.name + "DateInitial", {required: props.required})}
-                                   defaultValue={props.defaultValue}
-                                   label={"Data de Inicio"} type={"date"}
-                                   isRequired={props.required} isInvalid={!!errors[props.name]}
-                                   errorMessage={errorMessage}
-                                   radius="lg" variant="bordered" fullWidth className="custom-input"/>
-                            <Input {...register(props.name + "DateFinal", {required: props.required})}
-                                   defaultValue={props.defaultValue}
-                                   label={"Data Final"} type={"date"}
-                                   isRequired={props.required} isInvalid={!!errors[props.name]}
-                                   errorMessage={errorMessage}
-                                   radius="lg" variant="bordered" fullWidth className="custom-input"/>
+                            <Controller
+                                name={props.name + "DateInitial"}
+                                control={control}
+                                rules={{ required: props.required }}
+                                render={({ field }) => (
+                                    <DatePicker
+                                        label="Data de Inicio"
+                                        isRequired={props.required}
+                                        variant="bordered"
+                                        radius="lg"
+                                        fullWidth
+                                        errorMessage={errorMessage}
+                                        classNames={{ base: "custom-input" }}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        onBlur={field.onBlur}
+                                        isInvalid={!!errors[props.name]}
+                                    />
+                                )}
+                            />
+                            <Controller
+                                name={props.name + "DateFinal"}
+                                control={control}
+                                rules={{ required: props.required }}
+                                render={({ field }) => (
+                                    <DatePicker
+                                        label="Data Final"
+                                        isRequired={props.required}
+                                        variant="bordered"
+                                        radius="lg"
+                                        fullWidth
+                                        errorMessage={errorMessage}
+                                        classNames={{ base: "custom-input" }}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        onBlur={field.onBlur}
+                                        isInvalid={!!errors[props.name]}
+                                    />
+                                )}
+                            />
                             <img src={plusIcon} alt="plus icon" width={25} className="cursor-pointer" onClick={() => addTextAndDateInputWithPlus(props.name)}/>
                         </div>
-                            {textAndDateInputWithPlus.map((input) => (
-                                <div className="flex items-center gap-3" key={input.name}>
-                                    <Input {...register(input.name, {required: input.required})}
-                                           defaultValue={input.defaultValue}
-                                           label={input.title} type={input.type} placeholder={input.placeholder}
-                                           isRequired={input.required} isInvalid={!!errors[input.name]}
-                                           errorMessage={errorMessage}
-                                           radius="lg" variant="bordered" fullWidth className="custom-input"/>
-                                    <Input {...register(input.name + "DateInitial", {required: input.required})}
-                                           defaultValue={input.defaultValue}
-                                           label={"Data de Inicio"} type={"date"} isRequired={input.required}
-                                           isInvalid={!!errors[input.name]} errorMessage={errorMessage}
-                                           radius="lg" variant="bordered" fullWidth className="custom-input"/>
-                                    <Input {...register(input.name + "DateFinal", {required: input.required})}
-                                           defaultValue={input.defaultValue}
-                                           label={"Data Final"} type={"date"} isRequired={input.required}
-                                           isInvalid={!!errors[input.name]} errorMessage={errorMessage}
-                                           radius="lg" variant="bordered" fullWidth className="custom-input"/>
-                                    <img src={minusIcon} alt="plus icon" width={25} className="cursor-pointer" onClick={() => removeTextAndDateInputWithPlus(input.name)}/>
-                                </div>
-                            ))}
+                        {textAndDateInputWithPlus.map((input) => (
+                            <div className="flex items-center gap-3" key={input.name}>
+                                <Input {...register(input.name, {required: input.required})}
+                                       defaultValue={input.defaultValue}
+                                       label={input.title} type={input.type} placeholder={input.placeholder}
+                                       isRequired={input.required} isInvalid={!!errors[input.name]}
+                                       errorMessage={errorMessage}
+                                       radius="lg" variant="bordered" fullWidth className="custom-input"/>
+                                <Controller
+                                    name={input.name + "DateInitial"}
+                                    control={control}
+                                    rules={{ required: input.required }}
+                                    render={({ field }) => (
+                                        <DatePicker
+                                            label="Data de Inicio"
+                                            isRequired={input.required}
+                                            variant="bordered"
+                                            radius="lg"
+                                            errorMessage={errorMessage}
+                                            fullWidth
+                                            classNames={{ base: "custom-input" }}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            onBlur={field.onBlur}
+                                            isInvalid={!!errors[input.name]}
+                                        />
+                                    )}
+                                />
+                                <Controller
+                                    name={input.name + "DateFinal"}
+                                    control={control}
+                                    rules={{ required: input.required }}
+                                    render={({ field }) => (
+                                        <DatePicker
+                                            label="Data Final"
+                                            isRequired={input.required}
+                                            variant="bordered"
+                                            radius="lg"
+                                            errorMessage={errorMessage}
+                                            fullWidth
+                                            classNames={{ base: "custom-input" }}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            onBlur={field.onBlur}
+                                            isInvalid={!!errors[input.name]}
+                                        />
+                                    )}
+                                />
+                                <img src={minusIcon} alt="minus icon" width={25} className="cursor-pointer" onClick={() => removeTextAndDateInputWithPlus(input.name)}/>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
