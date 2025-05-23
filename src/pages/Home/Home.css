@@ -50,7 +50,7 @@
 /* Título e subtítulo */
 .home-title-container {
   text-align: center;
-  margin-top: 8rem;
+  margin-top: 2rem;
 }
 
 .home-title {
@@ -66,54 +66,7 @@
   font-size: 16px;
   color: var(--cor-cinza-escuro);
   margin-top: 0;
-  margin-bottom: 4rem;
-}
-
-/* Input de CPF com botão de login */
-.cpf-input-container {
-  display: flex;
-  max-width: 350px;
-  width: 25%;
-  margin: 0 auto;
-  border-radius: 100px;
-  overflow: hidden;
-  border: 1px solid #ccc;
-  background-color: transparent;
-  height: 50px;
-}
-
-.cpf-input {
-  flex: 1;
-  border: none;
-  background-color: transparent;
-  padding: 0 24px;
-  font-family: "Fredoka", sans-serif;
-  font-size: 14px;
-  color: var(--cor-cinza-escuro);
-  outline: none;
-}
-
-.cpf-input::placeholder {
-  color: #888;
-}
-
-.cpf-login-button {
-  background-color: var(--cor-azul-escuro);
-  color: var(--cor-creme);
-  border: none;
-  padding: 0 24px;
-  font-family: "Fredoka", sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  height: 100%;
-  min-width: 150px;
-  transition: all 0.2s ease;
-  border-radius: 100px;
-}
-
-.cpf-login-button:hover {
-  opacity: 0.9;
+  margin-bottom: 2rem;
 }
 
 /* Slogan e seção Sobre */
@@ -141,8 +94,11 @@
   font-family: "Fredoka", sans-serif;
   font-weight: 700; /* semiBold */
   font-size: 40px;
+  align-items: center;
+  display: flex;
+  justify-content: center;
   color: var(--cor-azul-escuro);
-  margin-bottom: 4.5rem;
+  margin-bottom: 2rem;
 }
 
 .about-text {
@@ -184,18 +140,7 @@
 }
 
 /* Responsividade */
-@media (max-width: 1400px) {
-  .cpf-input-container {
-    width: 35%;
-    max-width: 350px;
-  }
-}
-
 @media (max-width: 992px) {
-  .cpf-input-container {
-    width: 45%;
-    max-width: 350px;
-  }
 
   .home-slogan {
     font-size: 28px;
@@ -244,10 +189,6 @@
     font-size: 38px;
   }
 
-  .cpf-input-container {
-    width: 60%;
-    max-width: 350px;
-  }
 
   .home-slogan {
     font-size: 25px;
@@ -259,9 +200,6 @@
 }
 
 @media (max-width: 576px) {
-  .cpf-input-container {
-    width: 80%;
-  }
 
   .home-title {
     font-size: 32px;
@@ -296,7 +234,7 @@
   }
   .home-title-container {
     text-align: center;
-    margin-top: 8rem;
+    margin-top: 2rem;
   }
   .logo h1 {
     font-size: 32px;
@@ -310,25 +248,9 @@
   .home-subtitle {
     font-size: 14px;
     padding: 0 1rem;
-    margin-bottom: 4rem;
+    margin-bottom: 2rem;
   }
 
-  .cpf-input-container {
-    width: 90%;
-    flex-direction: row;
-    height: 46px;
-  }
-
-  .cpf-input {
-    padding: 0 16px;
-    font-size: 13px;
-  }
-
-  .cpf-login-button {
-    min-width: 120px;
-    padding: 0 15px;
-    font-size: 13px;
-  }
   .home-slogan-container {
     margin-top: 5rem;
     margin-bottom: 16rem;
@@ -360,13 +282,13 @@
   }
   .home-title-container {
     text-align: center;
-    margin-top: 11rem;
+    margin-top: 2rem;
   }
 }
 
 /* Seção de Processos Seletivos */
 .processos-seletivos-section {
-  margin-top: 8rem;
+  margin-top: 2rem;
 }
 
 .processos-seletivos-header {
@@ -383,36 +305,6 @@
   color: var(--cor-azul-escuro);
   margin: 0;
   text-align: left;
-}
-
-/* Botões de filtro */
-.filter-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.filter-button {
-  font-family: "Fredoka", sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  white-space: nowrap;
-  padding: 2px 8px;
-  border-radius: 10px;
-  border: 1.5px solid #cdcdcd;
-  background-color: var(--cor-creme-claro);
-  color: var(--cor-cinza-escuro);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-button.active {
-  background-color: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-.filter-button:hover:not(.active) {
-  background-color: #eee;
 }
 
 /* Responsividade para processos seletivos */
@@ -433,24 +325,17 @@
     font-size: 30px;
   }
 
-  .filter-buttons {
-    flex-wrap: wrap;
-  }
 }
 
 @media (max-width: 576px) {
   .processos-seletivos-section {
-    margin-top: 5rem;
+    margin-top: 2rem;
   }
 
   .processos-title {
     font-size: 28px;
   }
 
-  .filter-button {
-    font-size: 12px;
-    padding: 6px 12px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -458,10 +343,6 @@
     font-size: 24px;
   }
 
-  .filter-buttons {
-    width: 100%;
-    justify-content: space-between;
-  }
 }
 
 /* Footer */

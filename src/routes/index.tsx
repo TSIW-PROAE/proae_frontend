@@ -18,11 +18,12 @@ import CandidaturaAluno from "../pages/paginaAluno/CandidaturaAluno/CandidaturaA
 import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
 import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
 import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
+import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.tsx";
 
 // Auth
 import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
-import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.tsx";
+import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
 
 const routes = [
   {
@@ -44,6 +45,7 @@ const routes = [
           { path: "portal-aluno/documentacao", element: <DocumentacaoAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <CandidaturaAluno /> },
+          { path: "portal-aluno/pendencias-aluno", element: <PendenciasAluno /> },
         ],
       },
       { path: "login-proae", element: <LoginProae /> },
