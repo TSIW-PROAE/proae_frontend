@@ -18,6 +18,7 @@ import CandidaturaAluno from "../pages/paginaAluno/CandidaturaAluno/CandidaturaA
 import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
 import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
 import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
+import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.tsx";
 
 // Auth
 import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
@@ -54,6 +55,7 @@ const routes = [
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
           { path: "portal-proae/configuracao", element: <ConfiguracaoProae /> },
+          { path: "portal-proae/cadastro-edital", element: <CadastroEdital /> },
         ],
       },
     ],

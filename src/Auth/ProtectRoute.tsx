@@ -6,7 +6,7 @@ const isAuthenticatedAluno = () => {
 };
 
 const isAuthenticatedProae = () => {
-    return false;
+    return true;
 };
 
 
