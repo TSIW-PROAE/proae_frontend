@@ -1,8 +1,10 @@
 #sideBarWrapper {
     background-color: #ffff;
     width: 95px;
-    height: 100vh;
+    height: 100%;
     border-right: 1px solid rgba(128, 128, 128, 0.5);
+    position: fixed;
+    z-index: 10;
 
     #sideBar {
         padding-top: 2rem;

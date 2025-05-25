@@ -9,13 +9,16 @@ import settingsNotSelectedIcon from "../../assets/settings-not-selected.svg";
 import settingsSelectedIcon from "../../assets/settings-selected.svg";
 import docsNotSelectedIcon from "../../assets/docs-not-selected.svg";
 import docsSelectedIcon from "../../assets/docs-selected.svg";
+import logoutIcon from "../../assets/logout-svgrepo-com 1.svg"
 
 export interface ISideBarProps {
     shouldShowDocsIcon?: boolean,
     homeIconRedirect: string,
     processIconRedirect: string,
     configIconRedirect: string,
-    docsIconRedirect?: string
+    docsIconRedirect?: string,
+    logoutIconRedirect: string,
+    logoutOnClick: () => void,
 }
 
 export interface ISideBarIconsConfig {
@@ -24,11 +27,11 @@ export interface ISideBarIconsConfig {
     alt: string,
     redirect: string,
     onClick: () => void,
-    isIconSelected: boolean,
+    isIconSelected?: boolean,
     shouldShowIcon: boolean
 }
 
-const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, shouldShowDocsIcon = false, docsIconRedirect = ""}: ISideBarProps) => {
+const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, logoutIconRedirect, logoutOnClick, shouldShowDocsIcon = false, docsIconRedirect = ""}: ISideBarProps) => {
     const navigate = useNavigate();
     const [isHomeSelected, setIsHomeSelected] = useState(true);
     const [isProcessSelected, setIsProcessSelected] = useState(false);
@@ -40,6 +43,7 @@ const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, sh
         {srcNotSelectedIcon: appsProcessNotSelectedIcon, srcSelectedIcon: appsProcessSelectedIcon, alt: 'process icon', redirect: processIconRedirect, onClick: () => setIsProcessSelected((isProcessSelected) => !isProcessSelected), isIconSelected: isProcessSelected, shouldShowIcon: true},
         {srcNotSelectedIcon: settingsNotSelectedIcon, srcSelectedIcon: settingsSelectedIcon, alt: 'settings icon', redirect: configIconRedirect, onClick: () => setIsConfigSelected((isConfigSelected) => !isConfigSelected), isIconSelected: isConfigSelected, shouldShowIcon: true},
         {srcNotSelectedIcon: docsNotSelectedIcon, srcSelectedIcon: docsSelectedIcon, alt: 'docs icon', redirect: docsIconRedirect, onClick: () => setIsDocsSelected((isDocsSelected) => !isDocsSelected), isIconSelected: isDocsSelected, shouldShowIcon: shouldShowDocsIcon},
+        {srcNotSelectedIcon: logoutIcon, srcSelectedIcon: logoutIcon, alt: 'logout icon', redirect: logoutIconRedirect, onClick: logoutOnClick, shouldShowIcon: true}
     ];
 
     function resetSelection() {
@@ -58,7 +62,7 @@ const SideBar = ({ homeIconRedirect, processIconRedirect, configIconRedirect, sh
                     </div>
                     {icons.map((iconConfig) => (
                         iconConfig.shouldShowIcon && (
-                                    <div id="iconWrapper" style={iconConfig.isIconSelected ? {'border': '2px solid #27548A'} : {}}>
+                                    <div key={iconConfig.srcSelectedIcon} id="iconWrapper" style={iconConfig.isIconSelected ? {'border': '2px solid #27548A'} : {}}>
                                         <img src={iconConfig.isIconSelected ? iconConfig.srcSelectedIcon : iconConfig.srcNotSelectedIcon} alt={iconConfig.alt} key={iconConfig.alt} onClick={() => {navigate(iconConfig.redirect); resetSelection(); iconConfig.onClick();}}/>
                                     </div>
                             )
