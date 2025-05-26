@@ -1,5 +1,4 @@
 import PendenciaItem from "@/components/PendenciaItem/PendenciaItem";
-import SideBar from "@/components/SideBar/SideBar";
 import PageLayout from "@/pages/PageLayout/PageLayout";
 import React from "react";
 
@@ -145,18 +144,8 @@ const PendenciasAluno: React.FC = () => {
     }))
     .filter((edital) => edital.pendencias.length > 0); // <-- Só mantém editais com pendências
 
-  const sidebar = (
-    <SideBar
-      homeIconRedirect="/portal-aluno"
-      processIconRedirect="/portal-aluno/processos"
-      configIconRedirect="/portal-aluno/configuracao"
-      docsIconRedirect="/portal-aluno/documentacao"
-      shouldShowDocsIcon={true}
-    />
-  );
-
   return (
-    <PageLayout sidebar={sidebar}>
+    <PageLayout>
       <h3 className="text-2xl font-medium mb-4">Pendências</h3>
       <div className="space-y-6">
         {pendenciasPorEdital.map((edital, index) => (
