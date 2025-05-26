@@ -32,7 +32,7 @@ export class MockInscription {
     }
 
     getInscriptionById(id: string) {
-        
+        console.log("Fetching inscription by ID:", id);
         return {
             modalidade: "alimentação",
             dataNascimento: "02/02/2001",

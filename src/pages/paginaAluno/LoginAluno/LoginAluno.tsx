@@ -71,7 +71,7 @@ export default function LoginAluno() {
           strategy: "password",
         });
 
-
+        console.log("Resultado do login:", result);
         console.log("Login realizado com sucesso!");
         toast.success("Login realizado com sucesso!");
         navigate("/portal-aluno");
