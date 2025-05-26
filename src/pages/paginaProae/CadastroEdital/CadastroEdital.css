@@ -1,0 +1,36 @@
+.cadastro-page {
+    /*display: flex;*/
+    /*flex-direction: column;*/
+    /*height: 100vh;*/
+}
+
+.steps-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #14374c4f;
+    height: 50px;
+    padding: 0 4rem;
+    position: sticky;
+    top: 0;
+    background-color: var(--cor-creme);
+    z-index: 10;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 8vh;
+    padding: 0 4rem;
+    border-top: 1px solid #14374c4f;
+    bottom: 0;
+    background-color: var(--cor-creme);
+    z-index: 10;
+}
