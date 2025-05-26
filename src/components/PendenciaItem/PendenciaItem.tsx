@@ -19,7 +19,6 @@ export interface PendenciaItemProps {
 
 const PendenciaItem: React.FC<PendenciaItemProps> = ({
   edital,
-  tipo,
   pendencias,
 }) => {
   const [expandido, setExpandido] = useState(false);
