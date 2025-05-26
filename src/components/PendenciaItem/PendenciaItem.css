@@ -1,10 +1,10 @@
 .pendencia-item {
-    border: 1px solid black;
+    border: 1px solid #D1D5DB;
     border-radius: 6px;
     margin-bottom: 16px;
     padding: 12px;
     background-color: var(--cor-dourado);
-    width: 100vh; /* Ocupa 100% da largura da viewport */
+    width: 130vh; /* Ocupa 100% da largura da viewport */
     box-sizing: border-box; /* Inclui padding e borda na largura total */
     margin-left: 0; /* Remove margens laterais */
     margin-right: 0;
@@ -41,8 +41,8 @@
   
   .pendencia-status {
     font-size: 0.875rem;
-    color: #d9534f; /* Vermelho */
-    font-weight: bold;
+    font-weight: 500;
+    color: #b91c1c;
   }
   
   .expand-button {
@@ -73,11 +73,14 @@
   .pendencia-detalhes ul {
     list-style-type: none;
     padding: 10px;
+    margin: 0;
+    max-height: calc(56px * 5); /* Altura máxima para 5 itens */
+    overflow-y: auto;
   }
   
   .pendencia-detalhes li {
     margin-bottom: 16px;
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid #D1D5DB;
     padding-bottom: 8px;
   }
 
@@ -96,10 +99,22 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
-    border-bottom: 1px solid #ccc;
     padding-bottom: 8px;
+  }
+
+  .pendencia-item-detalhe:first-child {
+    border-top: 1px solid #D1D5DB;
+    padding-top: 8px;
   }
 
   .pendencia-info {
     flex: 1; /* Garante que as informações ocupem o espaço disponível */
+  }
+  .pendencia-info span{
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  
+  .pendencia-info p{
+    font-size: 0.875rem;
   }
