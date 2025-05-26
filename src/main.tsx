@@ -29,25 +29,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           colorBackground: "#ffffff",
         },
       }}
-      options={{
-        allowedRedirectOrigins: [
-          "http://localhost:5173",
-          "http://localhost:3000",
-          "http://127.0.0.1:5173",
-          "http://127.0.0.1:3000",
-        ],
-        signInUrl: "/login-aluno",
-        signUpUrl: "/cadastro-aluno",
-        afterSignInUrl: "/dashboard-aluno",
-        afterSignUpUrl: "/dashboard-aluno",
-        redirectUrl: "/dashboard-aluno",
-        routing: "path",
-        path: "/",
-        basePath: "/",
-        frontendApi: "https://ideal-midge-69.clerk.accounts.dev",
-        apiUrl: "https://api.clerk.dev",
-        apiVersion: "v1",
-      }}
+      signInUrl="/login-aluno"
+      signUpUrl="/cadastro-aluno"
     >
       <Provider>
         <RouterProvider router={router} />
