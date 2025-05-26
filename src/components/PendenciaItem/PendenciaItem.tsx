@@ -46,14 +46,13 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
 
       {expandido && (
         <div className="pendencia-detalhes">
-          <h3 className="pendencia-tipo">{tipo}</h3>
           <ul>
             {pendencias.map((pendencia, index) => (
               <li key={index} className="pendencia-item-detalhe">
                 <div className="pendencia-info">
-                  <p><strong>Descrição:</strong> {pendencia.descricao}</p>
-                  <p><strong>Data de envio:</strong> {pendencia.dataEnvio}</p>
-                  <p><strong>Status:</strong> {pendencia.status}</p>
+                  <p><span>Descrição:</span> {pendencia.descricao}</p>
+                  <p><span>Data de envio:</span> {pendencia.dataEnvio}</p>
+                  <p><span>Status:</span> {pendencia.status}</p>
                 </div>
                 <div className="pendencia-actions">
                   <button className="action-button" aria-label="Mostrar arquivo">
