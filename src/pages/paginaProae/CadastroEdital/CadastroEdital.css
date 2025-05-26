@@ -1,11 +1,11 @@
 .cadastro-page {
-    /*display: flex;*/
-    /*flex-direction: column;*/
-    /*height: 100vh;*/
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .steps-container {
-    display: flex;
+    flex: 1;
     flex-direction: column;
     align-items: center;
 }
@@ -30,7 +30,6 @@
     height: 8vh;
     padding: 0 4rem;
     border-top: 1px solid #14374c4f;
-    bottom: 0;
     background-color: var(--cor-creme);
     z-index: 10;
 }

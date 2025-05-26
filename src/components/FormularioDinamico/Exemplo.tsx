@@ -1,11 +1,13 @@
-import React from "react";
 import FormularioDinamico from "./FormularioDinamico";
 import logoUfba from "../../assets/logo-ufba.png";
 
 // Exemplo de uso do FormularioDinamico
+import type { FormularioDinamicoProps } from "./FormularioDinamico";
+import type {TipoInput } from "./FormularioDinamico";
+
 export default function ExemploFormulario() {
   // Configuração do formulário
-  const configFormulario = {
+  const configFormulario: FormularioDinamicoProps = {
     titulo: "Processo de Seleção PROAE",
     subtitulo:
       "Você está se inscrevendo para o processo de Seleção para benefícios PROAE - Campus Camaçari na UFBA.",
@@ -15,7 +17,7 @@ export default function ExemploFormulario() {
         subtitulo: "Selecione as modalidades de benefício que deseja solicitar",
         inputs: [
           {
-            tipo: "radio",
+            tipo: "radio" as TipoInput,
             titulo: "Para qual modalidade deseja se inscrever?",
             nome: "modalidade",
             obrigatorio: true,
@@ -30,21 +32,21 @@ export default function ExemploFormulario() {
         titulo: "Dados pessoais",
         inputs: [
           {
-            tipo: "input",
+            tipo: "input" as TipoInput,
             titulo: "Data de nascimento",
             nome: "dataNascimento",
             obrigatorio: true,
             placeholder: "DD/MM/AAAA",
           },
           {
-            tipo: "input",
+            tipo: "input" as TipoInput,
             titulo: "CPF",
             nome: "cpf",
             obrigatorio: true,
             placeholder: "000.000.000-00",
           },
           {
-            tipo: "select",
+            tipo: "select" as TipoInput,
             titulo: "Curso",
             nome: "curso",
             obrigatorio: true,
@@ -57,7 +59,7 @@ export default function ExemploFormulario() {
             ],
           },
           {
-            tipo: "select",
+            tipo: "select" as TipoInput,
             titulo: "Campus",
             nome: "campus",
             obrigatorio: true,
@@ -70,21 +72,21 @@ export default function ExemploFormulario() {
             ],
           },
           {
-            tipo: "input",
+            tipo: "input" as TipoInput,
             titulo: "Telefone",
             nome: "telefone",
             obrigatorio: true,
             placeholder: "(00) 00000-0000",
           },
           {
-            tipo: "input",
+            tipo: "input" as TipoInput,
             titulo: "Data de Ingresso",
             nome: "dataIngresso",
             obrigatorio: true,
             placeholder: "MM/AAAA",
           },
           {
-            tipo: "input",
+            tipo: "input" as TipoInput,
             titulo: "Matrícula",
             nome: "matricula",
             obrigatorio: true,
@@ -97,28 +99,28 @@ export default function ExemploFormulario() {
         subtitulo: "Faça upload dos documentos necessários para sua inscrição",
         inputs: [
           {
-            tipo: "file",
+            tipo: "file" as TipoInput,
             titulo: "CAD ÚNICO (CadÚnico)",
             nome: "cadunico",
             obrigatorio: true,
             subtitulo: "Arquivo em formato PDF",
           },
           {
-            tipo: "file",
+            tipo: "file" as TipoInput,
             titulo: "CPF",
             nome: "cpfDoc",
             obrigatorio: true,
             subtitulo: "Arquivo em formato PDF",
           },
           {
-            tipo: "file",
+            tipo: "file" as TipoInput,
             titulo: "RG",
             nome: "rgDoc",
             obrigatorio: true,
             subtitulo: "Arquivo em formato PDF",
           },
           {
-            tipo: "file",
+            tipo: "file" as TipoInput,
             titulo: "CNH",
             nome: "cnhDoc",
             obrigatorio: false,
@@ -130,7 +132,7 @@ export default function ExemploFormulario() {
         titulo: "Informações adicionais",
         inputs: [
           {
-            tipo: "textarea",
+            tipo: "textarea" as TipoInput,
             titulo: "Justificativa",
             nome: "justificativa",
             obrigatorio: true,

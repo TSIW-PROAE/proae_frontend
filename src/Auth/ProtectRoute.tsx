@@ -1,13 +1,14 @@
 import {Navigate, Outlet, useLocation} from "react-router-dom";
 import SideBar from "@/components/SideBar/SideBar.tsx";
-
+import { useClerk } from "@clerk/clerk-react";
 
 const isAuthenticatedAluno = () => {
-    return true;
+  const { session } = useClerk();
+  return session ? true : false;
 };
 
 const isAuthenticatedProae = () => {
-    return true;
+  return false;
 };
 
 export default function ProtectedRouteAluno() {
@@ -27,7 +28,6 @@ export default function ProtectedRouteAluno() {
             </main>
         </div> : <Navigate to="/login-aluno" replace/>;
 }
-
 
 export function ProtectedRouteProae() {
     const location = useLocation();
