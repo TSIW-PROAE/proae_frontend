@@ -34,11 +34,11 @@ const SideBar: React.FC<ISideBarProps> = ({homeIconRedirect, processIconRedirect
     const location = useLocation();
 
     const icons: ISideBarIconsConfig[] = [
-        {srcNotSelectedIcon: homeNotSelectedIcon, srcSelectedIcon: homeSelectedIcon, alt: 'home icon', redirect: homeIconRedirect, shouldShowIcon: true},
-        {srcNotSelectedIcon: appsProcessNotSelectedIcon, srcSelectedIcon: appsProcessSelectedIcon, alt: 'process icon', redirect: processIconRedirect, shouldShowIcon: true},
-        {srcNotSelectedIcon: settingsNotSelectedIcon, srcSelectedIcon: settingsSelectedIcon, alt: 'settings icon', redirect: configIconRedirect, shouldShowIcon: true},
-        {srcNotSelectedIcon: docsNotSelectedIcon, srcSelectedIcon: docsSelectedIcon, alt: 'docs icon', redirect: docsIconRedirect, shouldShowIcon: shouldShowDocsIcon},
-        {srcNotSelectedIcon: logoutIcon, srcSelectedIcon: logoutIcon, alt: 'logout icon', redirect: logoutIconRedirect, shouldShowIcon: true}
+        {srcNotSelectedIcon: homeNotSelectedIcon, srcSelectedIcon: homeSelectedIcon, alt: 'Home', redirect: homeIconRedirect, shouldShowIcon: true},
+        {srcNotSelectedIcon: appsProcessNotSelectedIcon, srcSelectedIcon: appsProcessSelectedIcon, alt: 'Processos', redirect: processIconRedirect, shouldShowIcon: true},
+        {srcNotSelectedIcon: settingsNotSelectedIcon, srcSelectedIcon: settingsSelectedIcon, alt: 'Configurações', redirect: configIconRedirect, shouldShowIcon: true},
+        {srcNotSelectedIcon: docsNotSelectedIcon, srcSelectedIcon: docsSelectedIcon, alt: 'Documentos', redirect: docsIconRedirect, shouldShowIcon: shouldShowDocsIcon},
+        {srcNotSelectedIcon: logoutIcon, srcSelectedIcon: logoutIcon, alt: 'Logout', redirect: logoutIconRedirect, shouldShowIcon: true}
     ];
 
     return (
@@ -51,19 +51,25 @@ const SideBar: React.FC<ISideBarProps> = ({homeIconRedirect, processIconRedirect
                     {icons.map((iconConfig) => {
                         const isCurrentIconSelected = location.pathname === iconConfig.redirect;
 
-                        if (iconConfig.alt === 'logout icon') {
+                        if (iconConfig.alt === 'Logout') {
                             return iconConfig.shouldShowIcon && (
-                                <div key={iconConfig.alt} id="iconWrapper">
-                                    <img src={iconConfig.srcNotSelectedIcon} alt={iconConfig.alt} onClick={() => {logoutOnClick(); navigate(logoutIconRedirect)}} />
+                                <div id="option-wrapper">
+                                    <div key={iconConfig.alt} id="iconWrapper">
+                                        <img src={iconConfig.srcNotSelectedIcon} alt={iconConfig.alt} onClick={() => {logoutOnClick(); navigate(logoutIconRedirect)}} />
+                                    </div>
+                                    <p>{iconConfig.alt}</p>
                                 </div>
                             );
                         }
 
                         return (
                             iconConfig.shouldShowIcon && (
-                                <div key={iconConfig.alt} id="iconWrapper" style={isCurrentIconSelected ? {'border': '2px solid #27548A'} : {}}>
-                                    <img src={isCurrentIconSelected ? iconConfig.srcSelectedIcon : iconConfig.srcNotSelectedIcon}
-                                         alt={iconConfig.alt} onClick={() => {navigate(iconConfig.redirect)}}/>
+                                <div id="option-wrapper">
+                                    <div key={iconConfig.alt} id="iconWrapper" style={isCurrentIconSelected ? {'border': '2px solid #27548A'} : {}}>
+                                        <img src={isCurrentIconSelected ? iconConfig.srcSelectedIcon : iconConfig.srcNotSelectedIcon}
+                                             alt={iconConfig.alt} onClick={() => {navigate(iconConfig.redirect)}}/>
+                                    </div>
+                                    <p>{iconConfig.alt}</p>
                                 </div>
                             )
                         );

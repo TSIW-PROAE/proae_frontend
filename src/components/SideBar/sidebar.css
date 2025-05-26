@@ -22,6 +22,16 @@
             cursor: auto;
         }
 
+        #option-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            p {
+                font-size: 0.8rem;
+            }
+        }
+
         #iconWrapper {
             display: flex;
             align-items: center;
