@@ -1,5 +1,4 @@
 // PortalAluno.tsx
-import SideBar from "@/components/SideBar/SideBar";
 import PageLayout from "@/pages/PageLayout/PageLayout";
 import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
@@ -144,17 +143,7 @@ export default function PortalAluno() {
   ];
 
   return (
-    <PageLayout
-      sidebar={
-        <SideBar
-        homeIconRedirect="/portal-aluno"
-        processIconRedirect="/portal-aluno/processos"
-        configIconRedirect="/portal-aluno/configuracao"
-        docsIconRedirect="/portal-aluno/documentacao"
-        shouldShowDocsIcon={true}
-      />
-      }
-    >
+    <PageLayout>
       <div className="max-w-[1500px] mx-auto">
         <h1 className="text-2xl font-normal text-[#1B3A4B] mb-6">
           Olá Caio, bem vindo ao portal do aluno !

@@ -1,21 +1,15 @@
 import React from 'react';
 
 interface PageLayoutProps {
-  sidebar: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode; // Footer agora é opcional
 }
 
-const PageLayout: React.FC<PageLayoutProps> = ({ sidebar, footer, children }) => {
+const PageLayout: React.FC<PageLayoutProps> = ({ footer, children }) => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Conteúdo principal com Sidebar e Conteúdo */}
       <div className="flex flex-1">
-        {/* Sidebar */}
-        <aside>
-          {sidebar}
-        </aside>
-
         {/* Conteúdo da Página */}
         <main className="flex-1 p-6 bg-white">
           {children}
