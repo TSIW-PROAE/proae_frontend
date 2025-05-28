@@ -14,7 +14,6 @@ import toast, { Toaster } from "react-hot-toast";
 import "./FormularioDinamico.css";
 import arrowDownIcon from "../../assets/icons/arrow-down-item.svg";
 import arrowDownBegeIcon from "../../assets/icons/arrow-down-item-bege.svg";
-import uploadIcon from "../../assets/icons/upload.svg";
 import arquivoPdfIcon from "../../assets/icons/arquivo-azul-bege-pdf.svg";
 
 // Tipos de input suportados
@@ -207,7 +206,6 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [enviando, setEnviando] = useState(false);
-  const [concluido, setConcluido] = useState(false);
   const [errosValidacao, setErrosValidacao] = useState<Record<string, string>>(
     {}
   );
@@ -434,7 +432,6 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
     try {
       // Aqui você pode adicionar a lógica para enviar os dados do formulário
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulação de envio
-      setConcluido(true);
 
       // Redirecionamento após conclusão
       setTimeout(() => {

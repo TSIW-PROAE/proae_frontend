@@ -1,20 +1,20 @@
 /* Importação das fontes do Google Fonts */
-@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
   /* Cores principais */
   --cor-azul-escuro: #183b4e;
-  --cor-dourado: #dda853;
-  --cor-creme: #f5eedc;
+  --cor-dourado: #EDF2F7;
+  --cor-creme: #ffff;
   --cor-azul-medio: #27548a;
   --cor-preto: #000000;
   --cor-verde-escuro: #16353e;
-  --cor-creme-escuro: #ffe8b1;
+  --cor-creme-escuro: #DDA853;
   
 
   /* Tipografia - Famílias de fontes */
-  --fonte-titulos: "Fredoka", sans-serif;
-  --fonte-corpo: "Space Grotesk", sans-serif;
+  --fonte-titulos: "Montserrat", sans-serif;
+  --fonte-corpo: "Montserrat", sans-serif;
 
   /* Tipografia - Tamanhos de fonte */
   --tamanho-3xs: 0.5rem; /* 8px */

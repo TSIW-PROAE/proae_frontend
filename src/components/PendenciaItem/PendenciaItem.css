@@ -1,0 +1,120 @@
+.pendencia-item {
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background-color: var(--cor-dourado);
+    width: 130vh; /* Ocupa 100% da largura da viewport */
+    box-sizing: border-box; /* Inclui padding e borda na largura total */
+    margin-left: 0; /* Remove margens laterais */
+    margin-right: 0;
+  }
+  
+  .pendencia-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .pendencia-actions {
+    display: flex;
+    gap: 10px; /* Espaçamento entre os botões */
+  }
+
+  .action-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+  }
+
+  .action-button img {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .pendencia-titulo {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .pendencia-status {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #b91c1c;
+  }
+  
+  .expand-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .arrow-down-icon {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+  }
+  
+  .chevron-up .arrow-down-icon {
+    transform: rotate(180deg);
+  }
+  
+  .pendencia-detalhes {
+    margin-top: 12px;
+    padding-left: 8px;
+  }
+
+  h2{
+    font-size: 1.1rem
+  }
+
+  .pendencia-detalhes ul {
+    list-style-type: none;
+    padding: 10px;
+    margin: 0;
+    max-height: calc(56px * 5); /* Altura máxima para 5 itens */
+    overflow-y: auto;
+  }
+  
+  .pendencia-detalhes li {
+    margin-bottom: 16px;
+    border-bottom: 1px solid #D1D5DB;
+    padding-bottom: 8px;
+  }
+
+  .pendencia-tipo {
+    text-align: center; /* Centraliza o texto */
+    font-size: 1.2rem; /* Aumenta o tamanho da fonte */
+    font-weight: bold; /* Deixa o texto em negrito */
+    margin: 20px 0; /* Adiciona espaçamento acima e abaixo */
+    color: var(--cor-azul-escuro); /* Usa uma cor destacada */
+    border-bottom: 2px solid black; /* Adiciona uma linha abaixo para separação */
+    padding-bottom: 10px; /* Espaçamento entre o texto e a linha */
+  }
+
+  .pendencia-item-detalhe {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+  }
+
+  .pendencia-item-detalhe:first-child {
+    border-top: 1px solid #D1D5DB;
+    padding-top: 8px;
+  }
+
+  .pendencia-info {
+    flex: 1; /* Garante que as informações ocupem o espaço disponível */
+  }
+  .pendencia-info span{
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  
+  .pendencia-info p{
+    font-size: 0.875rem;
+  }

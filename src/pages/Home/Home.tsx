@@ -1,6 +1,5 @@
 import { Button } from "@heroui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
 import InfoCard from "../../components/InfoCard/InfoCard";
 import ProcessoSeletivo from "../../components/ProcessoSeletivo/ProcessoSeletivo";
 import restauranteIcon from "../../assets/dashboard icons/alimentação.svg";
@@ -12,12 +11,8 @@ import renovacaoIcon from "../../assets/dashboard icons/renvação.svg";
 import "./Home.css";
 
 export default function Home() {
-  const [currentFilter, setCurrentFilter] = useState("todos");
+  
   const navigate = useNavigate();
-
-  const handleFilterChange = (filter: string) => {
-    setCurrentFilter(filter);
-  };
 
   return (
     <div className="home-container">

@@ -31,10 +31,8 @@ const ProcessoSeletivo: React.FC<ProcessoSeletivoProps> = ({
   titulo,
   codigo,
   status,
-  inscricoesAbertas,
   etapas,
   documentos,
-  onInscrever,
   tema = "dourado",
 }) => {
   const [expandido, setExpandido] = useState(false);

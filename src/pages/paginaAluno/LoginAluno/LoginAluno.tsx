@@ -1,34 +1,43 @@
-import { formatCPF, validarCPFReal } from "../../../utils/utils";
 import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Switch } from "@heroui/switch";
 import { Link } from "@heroui/link";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSignIn, useClerk } from "@clerk/clerk-react";
+import { toast, Toaster } from "react-hot-toast";
 import "./LoginAluno.css";
 
 export default function LoginAluno() {
-  const [cpf, setCpf] = useState("");
+  const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [erroCpf, setErroCpf] = useState("");
+  const [erroEmail, setErroEmail] = useState("");
   const [erroSenha, setErroSenha] = useState("");
   const [lembrar, setLembrar] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const anoAtual = new Date().getFullYear();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signIn, isLoaded } = useSignIn();
+  const { session } = useClerk();
 
   useEffect(() => {
-    // Capturar o parâmetro CPF da URL quando a página carrega
     const params = new URLSearchParams(location.search);
-    const cpfParam = params.get("cpf");
+    const emailParam = params.get("email");
 
-    if (cpfParam) {
-      setCpf(formatCPF(cpfParam));
+    if (emailParam) {
+      setEmail(emailParam);
     }
-  }, [location]);
 
-  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCpf(formatCPF(e.target.value));
-    setErroCpf("");
+    // Verificar se já existe uma sessão ativa
+    if (session) {
+      navigate("/portal-aluno");
+    }
+  }, [location, session, navigate]);
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    setErroEmail("");
   };
 
   const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,33 +45,58 @@ export default function LoginAluno() {
     setErroSenha("");
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     let temErro = false;
 
-    const cpfNumeros = cpf.replace(/\D/g, "");
-
-    if (cpfNumeros.length !== 11) {
-      setErroCpf("CPF deve conter 11 números.");
+    if (!email) {
+      setErroEmail("Email é obrigatório");
       temErro = true;
-    } else if (!validarCPFReal(cpfNumeros)) {
-      setErroCpf("CPF inválido.");
+    } else if (!email.includes("@ufba.br")) {
+      setErroEmail("Email deve ser do domínio @ufba.br");
       temErro = true;
     }
 
     if (!senha) {
-      setErroSenha("Digite sua senha.");
+      setErroSenha("Digite sua senha");
       temErro = true;
     }
 
-    if (!temErro) {
-      // Continuar com o envio do formulário
-      console.log("Formulário válido, enviando...");
+    if (!temErro && isLoaded) {
+      setIsLoading(true);
+      try {
+        const result = await signIn.create({
+          identifier: email,
+          password: senha,
+          strategy: "password",
+        });
+
+        console.log("Resultado do login:", result);
+        console.log("Login realizado com sucesso!");
+        toast.success("Login realizado com sucesso!");
+        navigate("/portal-aluno");
+
+      } catch (err: any) {
+        console.error("Erro no login:", err);
+        if(err.errors[0].message == "Password is incorrect. Try again, or use another method."){
+           toast.error("senha incorreta");
+        }
+        else if (err.errors[0].message == "Couldn't find your account."){
+          toast.error("email não cadastrado");
+        }
+        else {
+          toast.error(err.errors[0].message);
+          //toast.error("Erro ao realizar login. Verifique suas credenciais.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   return (
     <div id="login" className="login-container">
+      <Toaster position="top-right" />
       <div className="login-content">
         <div className="login-form">
           <a
@@ -89,17 +123,18 @@ export default function LoginAluno() {
             <form className="login-form-container" onSubmit={handleSubmit}>
               <div className="input-container">
                 <Input
-                  id="cpf"
-                  value={cpf}
-                  label="CPF"
+                  id="email"
+                  value={email}
+                  label="Email"
                   variant="bordered"
                   radius="lg"
-                  type="text"
-                  placeholder="Digite seu CPF"
-                  onChange={handleCpfChange}
-                  isInvalid={!!erroCpf}
-                  errorMessage={erroCpf}
+                  type="email"
+                  placeholder="Digite seu email @ufba.br"
+                  onChange={handleEmailChange}
+                  isInvalid={!!erroEmail}
+                  errorMessage={erroEmail}
                   fullWidth
+                  disabled={isLoading}
                   classNames={{
                     base: "custom-input",
                   }}
@@ -119,6 +154,7 @@ export default function LoginAluno() {
                   isInvalid={!!erroSenha}
                   errorMessage={erroSenha}
                   fullWidth
+                  disabled={isLoading}
                   classNames={{
                     base: "custom-input",
                   }}
@@ -133,6 +169,7 @@ export default function LoginAluno() {
                     onValueChange={setLembrar}
                     aria-label="Lembrar-me"
                     color="primary"
+                    isDisabled={isLoading}
                   >
                     Lembrar-me
                   </Switch>
@@ -148,12 +185,18 @@ export default function LoginAluno() {
                 fullWidth
                 className="login-button"
                 color="primary"
+                isLoading={isLoading}
+                disabled={isLoading}
               >
-                Entrar
+                {isLoading ? "Entrando..." : "Entrar"}
               </Button>
 
               <div className="register-link-container">
-                <Link href="../cadastro-aluno" className="register-link" color="primary">
+                <Link
+                  href="../cadastro-aluno"
+                  className="register-link"
+                  color="primary"
+                >
                   Cadastrar-se no sistema
                 </Link>
               </div>
