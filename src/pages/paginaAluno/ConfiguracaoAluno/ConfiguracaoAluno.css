@@ -1,1 +1,29 @@
 /* Estilos para a página ConfiguracaoAluno */
+.container {
+    display: flex;
+    width: 100%;
+}
+
+#side-bar {
+    min-width: 80px;
+}
+
+#page-config-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: inherit;
+    /* overflow-x: hidden; */
+}
+
+#title {
+    display: flex;
+    justify-content: flex-start;
+    width: inherit;
+    padding: 20px;
+}
+
+.form {
+    width: 35%;
+    margin-left: 14rem;
+}
