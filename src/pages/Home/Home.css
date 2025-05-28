@@ -2,10 +2,10 @@
 .home-container {
   width: 100%;
   min-height: 100vh;
-  background-image: url("../../assets/icons/draw.svg"),
+  /* background-image: url("../../assets/icons/draw.svg"),
     url("../../assets/icons/cicle.svg"),
     url("../../assets/icons/arrow-dark.svg"),
-    url("../../assets/icons/stars-dark.svg");
+    url("../../assets/icons/stars-dark.svg"); */
 
   background-position:
     2.013% 70vh,

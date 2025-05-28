@@ -10,6 +10,37 @@
   justify-content: center;
   align-items: center;
   background-color: var(--cor-azul-escuro);
+  /* background-image: url("../../../assets/icons/emoji.svg"),
+    url("../../../assets/icons/plant.svg"),
+    url("../../../assets/icons/arrow.svg"),
+    url("../../../assets/icons/cloud.svg"),
+    url("../../../assets/icons/stars.svg"),
+    url("../../../assets/icons/swirl.svg"),
+    url("../../../assets/icons/fluff.svg"),
+    url("../../../assets/icons/thoughts.svg"); */
+
+  background-size:
+    auto 15.26%,
+    /* emoji */ auto 20%,
+    /* plant  */ auto 27.34%,
+    /* arrow */ auto 11.66%,
+    /* cloud */ auto 14.06%,
+    /* stars */ auto 17.43%,
+    /* swirl */ auto 28%,
+    /* fluff */ auto 35%; /* thoughts */
+
+  background-position:
+    2.013% 2.16%,
+    /* emoji */ 29% 0%,
+    /* plant */ 98% -0.6%,
+    /* arrow */ 100% 39.52%,
+    /* cloud */ 98% 94%,
+    /* stars */ 55.16% 100%,
+    /* swirl */ 0% 100%,
+    /* fluff */ 0% 53.27%; /* thoughts */
+
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 /* Botão de voltar */
