@@ -1,10 +1,8 @@
 #sideBarWrapper {
-    background-color: #ffff;
+    background-color: #F5EEDC;
     width: 95px;
-    height: 100%;
+    height: 100vh;
     border-right: 1px solid rgba(128, 128, 128, 0.5);
-    position: fixed;
-    z-index: 10;
 
     #sideBar {
         padding-top: 2rem;
@@ -20,16 +18,6 @@
         #proaeLogo {
             width: 55px;
             cursor: auto;
-        }
-
-        #option-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-
-            p {
-                font-size: 0.8rem;
-            }
         }
 
         #iconWrapper {
