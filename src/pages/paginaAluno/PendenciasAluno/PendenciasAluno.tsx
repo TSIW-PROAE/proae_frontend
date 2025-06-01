@@ -1,6 +1,23 @@
 import PendenciaItem from "@/components/PendenciaItem/PendenciaItem";
+import "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno.css";
 import PageLayout from "@/pages/PageLayout/PageLayout";
+import { useNavigate } from "react-router-dom";
 import React from "react";
+
+function SetaEsquerda() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={3}
+      stroke="currentColor"
+      className="w-6 h-6 text-gray-700"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+  );
+}
 
 const editalsMock = [
   {
@@ -131,6 +148,8 @@ const editalsMock = [
 ];
 
 const PendenciasAluno: React.FC = () => {
+
+  const navigate = useNavigate();
   // Adapta o mock para o formato esperado pelo PendenciaItem
   const pendenciasPorEdital = editalsMock
     .map((edital) => ({
@@ -146,7 +165,19 @@ const PendenciasAluno: React.FC = () => {
 
   return (
     <PageLayout>
-      <h3 className="text-2xl font-medium mb-4">Pendências</h3>
+      <div className="titulo-pagina">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Voltar"
+          className="flex items-center justify-center p-0 m-0 rounded-full border border-transparent hover:bg-gray-100 transition"
+          style={{
+            height: '100%',
+          }}
+        >
+          <SetaEsquerda />
+        </button>
+        <h3 className="text-2xl font-medium mb-1 leading-none">Pendências</h3>
+      </div>
       <div className="space-y-6">
         {pendenciasPorEdital.map((edital, index) => (
           <PendenciaItem
