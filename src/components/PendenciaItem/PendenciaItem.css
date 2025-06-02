@@ -4,10 +4,18 @@
     margin-bottom: 16px;
     padding: 12px;
     background-color: var(--cor-dourado);
-    width: 130vh; /* Ocupa 100% da largura da viewport */
-    box-sizing: border-box; /* Inclui padding e borda na largura total */
-    margin-left: 0; /* Remove margens laterais */
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box;
+    margin-left: 0;
     margin-right: 0;
+  }
+  
+  @media (max-width: 768px) {
+    .pendencia-item {
+      max-width: 100%;
+      padding: 8px;
+    }
   }
   
   .pendencia-header {
