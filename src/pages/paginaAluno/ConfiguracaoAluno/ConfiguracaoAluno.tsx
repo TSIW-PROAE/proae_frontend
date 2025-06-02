@@ -1,10 +1,18 @@
 import "./ConfiguracaoAluno.css";
+import AlunoForm from "../../../components/FormularioConfiguracao/Form";
 
 export default function ConfiguracaoAluno() {
   return (
-    <div>
-      <h1>Configurações do Aluno</h1>
-      <p>Aqui você pode alterar suas configurações pessoais.</p>
+    <div className="container">
+      <div id="page-config-wrapper">
+        <div id="title">
+          <h1>Perfil do Aluno</h1>
+        </div>
+        <div className="form">
+            <AlunoForm />
+        </div>
+      </div>
     </div>
   );
 }
+
