@@ -83,8 +83,28 @@ const AlunoForm = () => {
         }
     };
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // If there are validation errors, block submission
+        if (Object.keys(errosValidacao).length > 0) {
+            alert("Por favor, corrija os erros antes de salvar.");
+            return;
+        }
+
+        try {
+            const httpClient = new FetchAdapter();
+            const service = new EditarPerfilService();
+            await service.patchAlunoPerfil(httpClient, formData);
+            alert("Perfil atualizado com sucesso!");
+        } catch (error) {
+            console.error("Erro ao atualizar perfil do aluno:", error);
+            alert("Erro ao salvar. Verifique os dados e tente novamente.");
+        }
+    };
+
     return (
-        <form className="aluno-form-wrapper">
+        <form className="aluno-form-wrapper" onSubmit={handleSubmit}>
             {formSections.map((section) => (
                 <div className="form-section" key={section.title}>
                     <h2>{section.title}</h2>
