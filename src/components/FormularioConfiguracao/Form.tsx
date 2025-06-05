@@ -1,5 +1,5 @@
 // AlunoForm.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formSections } from "./FormConfig";
 import FormField from "./FormField";
 import { FormFieldProps } from "./FormField";
@@ -11,9 +11,26 @@ import {
     obterMensagemErro,
 } from "../../utils/utils";
 
+import { FetchAdapter } from "../../services/BaseRequestService/HttpClient";
+import EditarPerfilService from "../../services/EditarPerfil.service/editarPerfil.service";
+
 const AlunoForm = () => {
-    const [formData, setFormData] = useState({});
+    const [formData, setFormData] = useState<Record<string, any>>({});
     const [errosValidacao, setErrosValidacao] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const fetchPerfil = async () => {
+            try {
+                const service = new EditarPerfilService(new FetchAdapter());
+                const data = await service.getAlunoPerfil() as Record<string, any>;
+                setFormData(data); // assumes the keys match field names
+            } catch (error) {
+                console.error("Erro ao buscar perfil do aluno:", error);
+            }
+        };
+
+        fetchPerfil();
+    }, []);
 
     const handleInputChange = (
         nome: string,
@@ -32,7 +49,6 @@ const AlunoForm = () => {
             [nome]: valorFormatado,
         }));
 
-        // Limpar erro de validação ao editar o campo
         if (errosValidacao[nome]) {
             setErrosValidacao((prev) => {
                 const novosErros = { ...prev };
@@ -47,20 +63,16 @@ const AlunoForm = () => {
         valor: string | File,
         formatacao?: TipoFormatacao
     ) => {
-        // Apenas validar se for string e tiver formatação
         if (typeof valor === "string" && formatacao && valor) {
             const eValido = validarFormatacao(valor, formatacao);
 
             if (!eValido) {
                 const mensagem = obterMensagemErro(formatacao);
-
-                // Armazenar erro de validação
                 setErrosValidacao((prev) => ({
                     ...prev,
                     [nome]: mensagem,
                 }));
             } else {
-                // Limpar erro de validação se estiver válido
                 setErrosValidacao((prev) => {
                     const novosErros = { ...prev };
                     delete novosErros[nome];
@@ -89,7 +101,6 @@ const AlunoForm = () => {
                 </div>
             ))}
 
-            {/* Actions */}
             <div className="action-buttons">
                 <button className="cancel-button" type="button">Cancelar</button>
                 <button className="save-button" type="submit">Salvar</button>
@@ -99,3 +110,4 @@ const AlunoForm = () => {
 };
 
 export default AlunoForm;
+
