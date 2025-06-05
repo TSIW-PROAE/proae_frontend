@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 
 export default interface IHttpClient {
-  get<T>(url: string): Promise<T>;
+  get<T>(url: string, token?: string): Promise<T>;
 
   post<T>(url: string, data: unknown, token: string): Promise<T>;
 
@@ -28,9 +28,16 @@ export class FetchAdapter implements IHttpClient {
     this.axiosInstance.defaults.headers.common[name] = value;
   }
 
-  async get<T>(url: string): Promise<T> {
+  async get<T>(url: string, token?: string): Promise<T> {
     try {
-      const response = await this.axiosInstance.get<T>(url);
+      const headers = token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined;
+
+      const response = await this.axiosInstance.get<T>(url, {
+        headers,
+      });
+
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {

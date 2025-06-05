@@ -1,19 +1,20 @@
 // services/EditarPerfilService.ts
-import { useClerk } from "@clerk/clerk-react";
 import IHttpClient from "../BaseRequestService/HttpClient";
 
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
 export default class EditarPerfilService {
-  headerToken: string;
-
-  constructor(private readonly httpClient: IHttpClient) {
-    this.headerToken = localStorage.getItem('token') || ''; 
-  }
-
-  async getAlunoPerfil() {
-    const user = useClerk();
-    console.log(user);
+  async getAlunoPerfil(httpClient: IHttpClient) {
+    const sessionToken = getCookie('__session');
+    if (!sessionToken) {
+      throw new Error("Sessão não encontrada no cookie");
+    }
     const url = import.meta.env.VITE_API_URL_SERVICES + `/aluno`;
-    const response = await this.httpClient.get(url);
+    const response = await httpClient.get(url, sessionToken);
+    console.log(response);
     return response;
   }
 }

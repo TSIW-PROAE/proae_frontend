@@ -21,7 +21,7 @@ export const formSections = [
       },
       {
         tipo: "select",
-        nome: "pronomes",
+        nome: "pronome",
         titulo: "Pronomes",
         placeholder: "Adicione seus pronomes",
         opcoes: [
@@ -56,7 +56,7 @@ export const formSections = [
     fields: [
       {
         tipo: "input",
-        nome: "dataNascimento",
+        nome: "data_nascimento",
         titulo: "Data de nascimento",
         placeholder: "",
         type: "date",
@@ -88,7 +88,7 @@ export const formSections = [
       },
       {
         tipo: "input",
-        nome: "dataIngresso",
+        nome: "data_ingresso",
         titulo: "Data de ingresso",
         type: "month",
       },

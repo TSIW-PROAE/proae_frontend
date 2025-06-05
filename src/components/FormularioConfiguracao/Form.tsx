@@ -21,9 +21,10 @@ const AlunoForm = () => {
     useEffect(() => {
         const fetchPerfil = async () => {
             try {
-                const service = new EditarPerfilService(new FetchAdapter());
-                const data = await service.getAlunoPerfil() as Record<string, any>;
-                setFormData(data); // assumes the keys match field names
+                const httpClient = new FetchAdapter();
+                const service = new EditarPerfilService();
+                const data = await service.getAlunoPerfil(httpClient) as Record<string, any>;
+                setFormData(data.dados.aluno || {});
             } catch (error) {
                 console.error("Erro ao buscar perfil do aluno:", error);
             }
