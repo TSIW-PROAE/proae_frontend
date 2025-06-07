@@ -1,22 +1,33 @@
 // AlunoForm.tsx
+import "./Form.css";
 import { useState, useEffect } from "react";
 import { formSections } from "./FormConfig";
 import FormField from "./FormField";
 import { FormFieldProps } from "./FormField";
-import "./Form.css";
 import { TipoFormatacao } from "../FormularioDinamico/FormularioDinamico";
+import { FetchAdapter } from "../../services/BaseRequestService/HttpClient";
+import EditarPerfilService from "../../services/EditarPerfil.service/editarPerfil.service";
 import {
     formatarTexto,
     validarFormatacao,
     obterMensagemErro,
 } from "../../utils/utils";
+import {
+    Button,
+    Input,
+    Select,
+    SelectItem,
+    Radio,
+    RadioGroup,
+    Textarea,
+    Chip,
+} from "@heroui/react";
 
-import { FetchAdapter } from "../../services/BaseRequestService/HttpClient";
-import EditarPerfilService from "../../services/EditarPerfil.service/editarPerfil.service";
 
 const AlunoForm = () => {
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errosValidacao, setErrosValidacao] = useState<Record<string, string>>({});
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
         const fetchPerfil = async () => {
@@ -126,7 +137,8 @@ const AlunoForm = () => {
             console.log("Payload being sent:", payload);
             const response = await service.patchAlunoPerfil(httpClient, payload);
             console.log("Atualização bem-sucedida:", response);
-            alert("Perfil atualizado com sucesso");
+            //alert("Perfil atualizado com sucesso");
+            setShowSuccessModal(true);
 
         } catch (error) {
             console.error("Erro ao atualizar dados do aluno:", error);
@@ -135,30 +147,52 @@ const AlunoForm = () => {
     };
 
     return (
-        <form className="aluno-form-wrapper" onSubmit={handleSubmit}>
-            {formSections.map((section) => (
-                <div className="form-section" key={section.title}>
-                    <h2>{section.title}</h2>
-                    <div className={`form-layout ${section.layout}`}>
-                        {section.fields.map((campo) => (
-                            <FormField
-                                key={campo.nome}
-                                {...(campo as FormFieldProps)}
-                                formData={formData}
-                                handleInputChange={handleInputChange}
-                                handleInputBlur={handleInputBlur}
-                            />
-                        ))}
+        <>
+            <form className="aluno-form-wrapper" onSubmit={handleSubmit}>
+                {formSections.map((section) => (
+                    <div className="form-section" key={section.title}>
+                        <h2>{section.title}</h2>
+                        <div className={`form-layout ${section.layout}`}>
+                            {section.fields.map((campo) => (
+                                <FormField
+                                    key={campo.nome}
+                                    {...(campo as FormFieldProps)}
+                                    formData={formData}
+                                    handleInputChange={handleInputChange}
+                                    handleInputBlur={handleInputBlur}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+
+                <div className="action-buttons">
+                    <button className="cancel-button" type="button">Cancelar</button>
+                    <button className="save-button" type="submit">Salvar</button>
+                </div>
+            </form>
+
+            {showSuccessModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full transform transition-all duration-300 scale-100 animate-in fade-in zoom-in">
+                        <h3 className="text-lg font-semibold text-center">
+                            Perfil atualizado com sucesso!
+                        </h3>
+                        <div className="mt-4 flex justify-center">
+                            <Button
+                                color="primary"
+                                variant="solid"
+                                onClick={() => setShowSuccessModal(false)}
+                            >
+                                Fechar
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            ))}
-
-            <div className="action-buttons">
-                <button className="cancel-button" type="button">Cancelar</button>
-                <button className="save-button" type="submit">Salvar</button>
-            </div>
-        </form>
+            )}
+        </>
     );
+
 };
 
 export default AlunoForm;
