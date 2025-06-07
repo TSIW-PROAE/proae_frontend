@@ -189,7 +189,7 @@ export const formSections = [
         tipo: "input",
         nome: "data_ingresso",
         titulo: "Data de ingresso",
-        type: "month",
+        type: "date",
       },
       {
         tipo: "input",

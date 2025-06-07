@@ -27,7 +27,7 @@ const AlunoForm = () => {
                 const aluno = data.dados.aluno || {};
                 const alunoFormatado = {
                     ...aluno,
-                    data_ingresso: aluno.data_ingresso?.slice(0, 7),
+                    matricula: aluno.matricula?.substring(2) || "",
                 };
                 setFormData(alunoFormatado);
             } catch (error) {
@@ -104,19 +104,19 @@ const AlunoForm = () => {
         ];
 
         // Remove "matricula" if it's not valid
-        
-        /* if (formData.matricula && formData.matricula !== "m-undefined") {
-            camposPermitidos.push("matricula");
-        } */
 
-        const payload = Object.fromEntries(
+        if (formData.matricula && formData.matricula !== "m-undefined") {
+            camposPermitidos.push("matricula");
+        }
+
+        let payload = Object.fromEntries(
             Object.entries(formData).filter(
                 ([key, value]) =>
                     camposPermitidos.includes(key) &&
                     value !== undefined &&
                     value !== null &&
                     value !== "" &&
-                    value !== "m-undefined" // exclude this specific invalid case
+                    value !== "m-undefined"
             )
         );
 
