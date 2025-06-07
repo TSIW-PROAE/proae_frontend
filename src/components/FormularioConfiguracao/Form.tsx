@@ -24,7 +24,12 @@ const AlunoForm = () => {
                 const httpClient = new FetchAdapter();
                 const service = new EditarPerfilService();
                 const data = await service.getAlunoPerfil(httpClient) as Record<string, any>;
-                setFormData(data.dados.aluno || {});
+                const aluno = data.dados.aluno || {};
+                const alunoFormatado = {
+                    ...aluno,
+                    data_ingresso: aluno.data_ingresso?.slice(0, 7),
+                };
+                setFormData(alunoFormatado);
             } catch (error) {
                 console.error("Erro ao buscar perfil do aluno:", error);
             }
@@ -83,23 +88,49 @@ const AlunoForm = () => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
 
-        // If there are validation errors, block submission
-        if (Object.keys(errosValidacao).length > 0) {
-            alert("Por favor, corrija os erros antes de salvar.");
-            return;
-        }
+        const camposPermitidos = [
+            "nome",
+            "sobrenome",
+            "email",
+            "pronome",
+            "data_nascimento",
+            "curso",
+            "campus",
+            "data_ingresso",
+            "celular"
+        ];
+
+        // Remove "matricula" if it's not valid
+        
+        /* if (formData.matricula && formData.matricula !== "m-undefined") {
+            camposPermitidos.push("matricula");
+        } */
+
+        const payload = Object.fromEntries(
+            Object.entries(formData).filter(
+                ([key, value]) =>
+                    camposPermitidos.includes(key) &&
+                    value !== undefined &&
+                    value !== null &&
+                    value !== "" &&
+                    value !== "m-undefined" // exclude this specific invalid case
+            )
+        );
 
         try {
             const httpClient = new FetchAdapter();
             const service = new EditarPerfilService();
-            await service.patchAlunoPerfil(httpClient, formData);
-            alert("Perfil atualizado com sucesso!");
+            console.log("Payload being sent:", payload);
+            const response = await service.patchAlunoPerfil(httpClient, payload);
+            console.log("Atualização bem-sucedida:", response);
+            alert("Perfil atualizado com sucesso");
+
         } catch (error) {
-            console.error("Erro ao atualizar perfil do aluno:", error);
-            alert("Erro ao salvar. Verifique os dados e tente novamente.");
+            console.error("Erro ao atualizar dados do aluno:", error);
+            // Optional: show error feedback
         }
     };
 

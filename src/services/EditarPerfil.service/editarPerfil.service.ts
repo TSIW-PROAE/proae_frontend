@@ -18,14 +18,12 @@ export default class EditarPerfilService {
     return response;
   }
 
-  async patchAlunoPerfil(httpClient: IHttpClient, payload: Record<string, any>) {
+  async patchAlunoPerfil(httpClient: IHttpClient, data: Record<string, any>) {
     const sessionToken = getCookie('__session');
     if (!sessionToken) {
       throw new Error("Sessão não encontrada no cookie");
     }
-
     const url = import.meta.env.VITE_API_URL_SERVICES + `/aluno/update`;
-    const response = await httpClient.patch(url, payload, sessionToken);
-    return response;
+    return await httpClient.patch(url, data, sessionToken);
   }
 }
