@@ -36,7 +36,7 @@ const SideBar: React.FC<ISideBarProps> = ({homeIconRedirect, processIconRedirect
     const icons: ISideBarIconsConfig[] = [
         {srcNotSelectedIcon: homeNotSelectedIcon, srcSelectedIcon: homeSelectedIcon, alt: 'Home', redirect: homeIconRedirect, shouldShowIcon: true},
         {srcNotSelectedIcon: appsProcessNotSelectedIcon, srcSelectedIcon: appsProcessSelectedIcon, alt: 'Processos', redirect: processIconRedirect, shouldShowIcon: true},
-        {srcNotSelectedIcon: settingsNotSelectedIcon, srcSelectedIcon: settingsSelectedIcon, alt: 'Configurações', redirect: configIconRedirect, shouldShowIcon: true},
+        {srcNotSelectedIcon: settingsNotSelectedIcon, srcSelectedIcon: settingsSelectedIcon, alt: 'Perfil', redirect: configIconRedirect, shouldShowIcon: true},
         {srcNotSelectedIcon: docsNotSelectedIcon, srcSelectedIcon: docsSelectedIcon, alt: 'Documentos', redirect: docsIconRedirect, shouldShowIcon: shouldShowDocsIcon},
         {srcNotSelectedIcon: logoutIcon, srcSelectedIcon: logoutIcon, alt: 'Logout', redirect: logoutIconRedirect, shouldShowIcon: true}
     ];
