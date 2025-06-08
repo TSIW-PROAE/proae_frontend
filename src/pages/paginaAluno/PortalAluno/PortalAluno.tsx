@@ -15,7 +15,6 @@ export default function PortalAluno() {
   const [userId, setUserId] = useState('')
   const [benefits, setBenefts] = useState<any[]>([])
   const [openSelections, setOpenSelections] = useState<any[]>([])
-console.log("user", user)
   useEffect(() => {
     if (user) {
       setFirstName(user.firstName || '')
@@ -24,12 +23,13 @@ console.log("user", user)
   }, [user])
 
 
+
   const client = new FetchAdapter()
   const portalAlunoService = new PortalAlunoService(client);
 
   const getBenefits = async () => {
     try {
-        const response = await portalAlunoService.getBenefts(userId);
+        const response = await portalAlunoService.getBenefts();
         if (!response || !Array.isArray(response)) {
           throw new Error("Resposta inválida do servidor");
         }
@@ -171,7 +171,7 @@ console.log("user", user)
             <BenefitsCard benefits={benefits} />
           </div>
           <div className="w-full lg:w-1/2">
-            <OpenSelections selections={openSelections} />
+            <OpenSelections editais={openSelections} />
           </div>
         </div>
 

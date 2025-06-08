@@ -1,23 +1,23 @@
+import { getCookie } from "@/utils/utils";
 import IHttpClient from "../BaseRequestService/HttpClient";
 
 export default class PortalAlunoService {
   headerToken: string;
 
   constructor(private readonly httpClient: IHttpClient) {
-    //TODO: Implementar o token de autenticação
-    this.headerToken = localStorage.getItem('token') || '';
-    this.headerToken = "";
+    this.headerToken = getCookie('__session') || '';
+
   }
 
-  async getBenefts(id: string) {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/aluno/${id}/benefits`;
-    const response = await this.httpClient.get(url);
+  async getBenefts() {
+    const url = import.meta.env.VITE_API_URL_SERVICES + `/beneficios/aluno`;
+    const response = await this.httpClient.get(url, this.headerToken);
     return response;
   }
 
 
   async getEditals() {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/editais`;
+    const url = import.meta.env.VITE_API_URL_SERVICES + `/editais/abertos`;
     const response = await this.httpClient.get(url);
     return response;
   }
