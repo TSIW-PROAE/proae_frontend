@@ -69,9 +69,15 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({ selections }) => {
     <div className="w-full rounded-xl max-w-3xl max-h-[calc(2*15rem)] bg-white border border-[#E5E7EB] shadow-md p-6 overflow-y-auto">
       <h3 className="text-2xl font-medium text-[#1B3A4B] mb-4">Seleções abertas</h3>
 
-      {selections.map((selection, idx) => (
-        <OpenSelectionCard key={idx} {...selection} />
-      ))}
+      {selections.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          No momento, não há nenhum edital em andamento.
+        </p>
+      ) : (
+        selections.map((selection, idx) => (
+          <OpenSelectionCard key={idx} {...selection} />
+        ))
+      )}
     </div>
   );
 };

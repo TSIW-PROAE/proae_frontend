@@ -4,47 +4,64 @@ import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
+import { useClerk } from "@clerk/clerk-react";
+import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
+import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
+import { useEffect, useState } from 'react'
 
 export default function PortalAluno() {
-  const benefits = [
-    { name: "Plano de Saúde", date: "10/01/2025", active: true },
-    { name: "Vale Refeição", date: "15/11/2024", active: false },
-    { name: "Auxílio Creche", date: "01/03/2025", active: true },
-    { name: "Auxílio Creche", date: "01/03/2025", active: true },
-    { name: "Auxílio Creche", date: "01/03/2025", active: true },
-    { name: "Auxílio Creche", date: "01/03/2025", active: true },
-  ];
+  const { user } = useClerk()
+  const [firstName, setFirstName] = useState('')
+  const [userId, setUserId] = useState('')
+  const [benefits, setBenefts] = useState<any[]>([])
+  const [openSelections, setOpenSelections] = useState<any[]>([])
+console.log("user", user)
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || '')
+      setUserId(user.id)
+    }
+  }, [user])
 
-  const openSelections = [
-    {
-      title: "Bolsa Permanência 2025.2",
-      code: "05/2023",
-      status: {
-        title: "Inscrições abertas",
-        status: "open",
-        color: "green",
-      }
-    },
-    {
-      title: "Auxílio Moradia 2025.1",
-      code: "05/2023",
-       status: {
-        title: "Validação de domcumentos",
-        status: "pending",
-        color: "red", 
-      }
-    },
-    {
-      title: "Renovação de Benefícios 2025.1",
-      code: "05/2023",
-      status: {
-        title: "Inscrição Fechada",
-        status: "closed",
-        color: "red", 
-      }
 
-    },
-  ];
+  const client = new FetchAdapter()
+  const portalAlunoService = new PortalAlunoService(client);
+
+  const getBenefits = async () => {
+    try {
+        const response = await portalAlunoService.getBenefts(userId);
+        if (!response || !Array.isArray(response)) {
+          throw new Error("Resposta inválida do servidor");
+        }
+        setBenefts(response); 
+      } catch (error) {
+        console.error("Erro ao obter benefícios:", error);
+      }
+  }
+
+  const getOpenSelections = async () => {
+      try {
+        const response = await portalAlunoService.getEditals();
+        if (!response || !Array.isArray(response)) {
+          throw new Error("Resposta inválida do servidor");
+        }
+        setOpenSelections(response);
+      } catch (error) {
+        console.error("Erro ao obter seleções abertas:", error);
+      }
+  };
+
+
+  useEffect(() => {
+    if (userId) {
+      getBenefits();
+      getOpenSelections();
+    }
+  }, [userId]);
+
+  
+
+  
 
   const editalsMock = [
     {
@@ -146,7 +163,7 @@ export default function PortalAluno() {
     <PageLayout>
       <div className="max-w-[1500px] mx-auto">
         <h1 className="text-2xl font-normal text-[#1B3A4B] mb-6">
-          Olá Caio, bem vindo ao portal do aluno !
+          Olá {firstName}, bem vindo ao portal do aluno !
         </h1>
 
         <div className="flex flex-col lg:flex-row items-stretch gap-6">
