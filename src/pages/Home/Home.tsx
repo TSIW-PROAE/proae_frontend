@@ -307,7 +307,7 @@ export default function Home() {
               radius="full"
               className="footer-button secondary-button"
               as={Link}
-              to="/login-funcionario"
+              to="/login-proae"
             >
               Portal do Servidor
             </Button>
