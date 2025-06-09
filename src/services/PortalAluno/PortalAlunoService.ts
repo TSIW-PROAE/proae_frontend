@@ -22,9 +22,9 @@ export default class PortalAlunoService {
     return response;
   }
 
-  async getInscriptions(userId: string) {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/inscricoes-aluno/${userId}`;
-    const response = await this.httpClient.get(url);
+  async getInscriptions() {
+    const url = import.meta.env.VITE_API_URL_SERVICES + `/aluno/inscricoes`;
+    const response = await this.httpClient.get(url, this.headerToken);
     return response;
   }
 

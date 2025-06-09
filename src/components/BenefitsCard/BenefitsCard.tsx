@@ -2,9 +2,9 @@ import React from "react";
 import { Card, CardHeader, CardBody, CardFooter, Chip } from "@heroui/react";
 
 interface Benefit {
-  name: string;
-  date: string;
-  active: boolean;
+  titulo_beneficio: string;
+  data_inicio: string;
+  beneficio: string; // Ex: "Benefício ativo"
 }
 
 interface BenefitsCardProps {
@@ -20,7 +20,9 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
   borderColor = "#D1D5DB",     // borda cinza clara
   color = "#1B3A4B",           // texto azul petróleo
 }) => {
-  const activeBenefits = benefits.filter((b) => b.active);
+  const activeBenefits = benefits.filter((b) =>
+    b.beneficio.toLowerCase().includes("ativo")
+  );
 
   return (
     <Card
@@ -56,8 +58,10 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
                   className="grid grid-cols-3 gap-4 px-6 py-3 text-sm items-center"
                   style={{ color }}
                 >
-                  <span>{benefit.name}</span>
-                  <span>{benefit.date}</span>
+                  <span>{benefit.titulo_beneficio}</span>
+                  <span>
+                    {new Date(benefit.data_inicio).toLocaleDateString()}
+                  </span>
                   <span className="flex items-center gap-1">
                     <Chip color="success" size="sm">
                       Ativo

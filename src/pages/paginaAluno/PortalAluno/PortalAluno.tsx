@@ -8,6 +8,7 @@ import { useClerk } from "@clerk/clerk-react";
 import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { useEffect, useState } from 'react'
+import { get } from "http";
 
 export default function PortalAluno() {
   const { user } = useClerk()
@@ -15,6 +16,7 @@ export default function PortalAluno() {
   const [userId, setUserId] = useState('')
   const [benefits, setBenefts] = useState<any[]>([])
   const [openSelections, setOpenSelections] = useState<any[]>([])
+  const [inscriptions, setInscriptions] = useState<any[]>([])
   useEffect(() => {
     if (user) {
       setFirstName(user.firstName || '')
@@ -30,10 +32,8 @@ export default function PortalAluno() {
   const getBenefits = async () => {
     try {
         const response = await portalAlunoService.getBenefts();
-        if (!response || !Array.isArray(response)) {
-          throw new Error("Resposta inválida do servidor");
-        }
-        setBenefts(response); 
+        const data = response.dados.beneficios
+        setBenefts(data);
       } catch (error) {
         console.error("Erro ao obter benefícios:", error);
       }
@@ -51,11 +51,25 @@ export default function PortalAluno() {
       }
   };
 
+   const getInscriptions = async () => {
+      try {
+        const response = await portalAlunoService.getInscriptions();
+        console.log("Inscriptions response:", response);
+        if (!response || !Array.isArray(response)) {
+          throw new Error("Resposta inválida do servidor");
+        }
+        setInscriptions(response);
+      } catch (error) {
+        console.error("Erro ao obter seleções abertas:", error);
+      }
+  };
+
 
   useEffect(() => {
     if (userId) {
       getBenefits();
       getOpenSelections();
+      getInscriptions();
     }
   }, [userId]);
 
@@ -180,7 +194,7 @@ export default function PortalAluno() {
             Minhas últimas inscrições{" "}
           </h2>
           <div className="flex  flex-col gap-6">
-            {editalsMock.map((edital) => (
+            {inscriptions.map((edital) => (
               <CandidateStatus key={edital.id} edital={edital} />
             ))}
           </div>
