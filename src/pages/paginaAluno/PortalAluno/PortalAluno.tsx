@@ -8,8 +8,13 @@ import { useClerk } from "@clerk/clerk-react";
 import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { useEffect, useState } from 'react'
-import { get } from "http";
 
+
+interface ResponseData {
+  dados: {
+    beneficios: [];
+  };
+}
 export default function PortalAluno() {
   const { user } = useClerk()
   const [firstName, setFirstName] = useState('')
@@ -32,7 +37,7 @@ export default function PortalAluno() {
   const getBenefits = async () => {
     try {
         const response = await portalAlunoService.getBenefts();
-        const data = response.dados.beneficios
+        const data = (response as ResponseData).dados.beneficios;
         setBenefts(data);
       } catch (error) {
         console.error("Erro ao obter benefícios:", error);
