@@ -10,7 +10,7 @@
   justify-content: center;
   align-items: center;
   background-color: var(--cor-azul-escuro);
-  background-image: url("../../../assets/icons/emoji.svg"),
+  /*background-image: url("../../../assets/icons/emoji.svg"),
     url("../../../assets/icons/plant.svg"),
     url("../../../assets/icons/arrow.svg"),
     url("../../../assets/icons/cloud.svg"),
@@ -18,7 +18,7 @@
     url("../../../assets/icons/swirl.svg"),
     url("../../../assets/icons/fluff.svg"),
     url("../../../assets/icons/thoughts.svg");
-
+*/
   background-size:
     auto 15.26%,
     /* emoji */ auto 20%,
