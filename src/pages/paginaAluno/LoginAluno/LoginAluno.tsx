@@ -20,6 +20,7 @@ export default function LoginAluno() {
   const navigate = useNavigate();
   const { signIn, isLoaded } = useSignIn();
   const { session } = useClerk();
+  const { setActive } = useClerk();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -70,7 +71,7 @@ export default function LoginAluno() {
           password: senha,
           strategy: "password",
         });
-
+        await setActive({ session: result.createdSessionId });
         console.log("Resultado do login:", result);
         console.log("Login realizado com sucesso!");
         toast.success("Login realizado com sucesso!");

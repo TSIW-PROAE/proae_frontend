@@ -16,4 +16,5 @@ export default class CadastroAlunoService {
     const response = await this.httpClient.post(url, data, this.headerToken);
     return response;
   }
+  
 }
