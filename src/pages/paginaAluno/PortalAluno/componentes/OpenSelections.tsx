@@ -1,26 +1,29 @@
-// components/OpenSelections.tsx
 import React from "react";
 
-interface SelectionStatus {
-  title: string;
-  status: string;
-  color: string;
-}
-
-interface Selection {
-  title: string;
-  code: string;
-  status: SelectionStatus;
+interface Edital {
+  id: number;
+  tipo_edital: string;
+  descricao: string;
+  edital_url: string[];
+  titulo_edital: string;
+  quantidade_bolsas: number;
+  status_edital: string;
+  etapas: any[];
 }
 
 interface OpenSelectionsProps {
-  selections: Selection[];
+  editais: Edital[];
 }
 
-const OpenSelectionCard: React.FC<Selection> = ({ title, code, status }) => {
-  const statusLower = status.status.toLowerCase();
-  const isOpen = statusLower.includes("open");
-  const isClosed = statusLower.includes("closed");
+const OpenSelectionCard: React.FC<Edital> = ({
+  id,
+  titulo_edital,
+  status_edital,
+  edital_url,
+}) => {
+  const statusLower = status_edital.toLowerCase();
+  const isOpen = statusLower.includes("aberto");
+  const isClosed = statusLower.includes("fechado");
 
   const badgeClass = isOpen
     ? "bg-[#D1FAE5] text-[#065F46]"   // verde claro institucional
@@ -34,18 +37,23 @@ const OpenSelectionCard: React.FC<Selection> = ({ title, code, status }) => {
     <div className={`rounded-xl p-5 mb-6 ${bgColorClass}`}>
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="processo-titulo fonte-corpo">{title}</h3>
-          <p className="fonte-corpo mt-1">Edital nº {code}</p>
+          <h3 className="processo-titulo fonte-corpo">{titulo_edital}</h3>
+          <p className="fonte-corpo mt-1">Edital nº {id}</p>
 
           <span
             className={`inline-block mt-3 px-3 py-1 text-xs font-medium rounded-full uppercase tracking-wide ${badgeClass} fonte-corpo`}
           >
-            {status.title}
+            {status_edital}
           </span>
         </div>
 
-        <a href="#" className="text-sm underline font-medium fonte-corpo">
-          ver informações
+        <a
+          href={edital_url[0] || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm underline font-medium fonte-corpo"
+        >
+          Ver Edital
         </a>
       </div>
 
@@ -64,14 +72,20 @@ const OpenSelectionCard: React.FC<Selection> = ({ title, code, status }) => {
   );
 };
 
-const OpenSelections: React.FC<OpenSelectionsProps> = ({ selections }) => {
+const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
   return (
     <div className="w-full rounded-xl max-w-3xl max-h-[calc(2*15rem)] bg-white border border-[#E5E7EB] shadow-md p-6 overflow-y-auto">
       <h3 className="text-2xl font-medium text-[#1B3A4B] mb-4">Seleções abertas</h3>
 
-      {selections.map((selection, idx) => (
-        <OpenSelectionCard key={idx} {...selection} />
-      ))}
+      {editais.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          No momento, não há nenhum edital em andamento.
+        </p>
+      ) : (
+        editais.map((edital) => (
+          <OpenSelectionCard key={edital.id} {...edital} />
+        ))
+      )}
     </div>
   );
 };
