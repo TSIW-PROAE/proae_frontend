@@ -1,27 +1,19 @@
 // AlunoForm.tsx
-import "./Form.css";
-import { useState, useEffect } from "react";
-import { formSections } from "./FormConfig";
-import FormField from "./FormField";
-import { FormFieldProps } from "./FormField";
-import { TipoFormatacao } from "../FormularioDinamico/FormularioDinamico";
+import {
+    Button,
+} from "@heroui/react";
+import { useEffect, useState } from "react";
 import { FetchAdapter } from "../../services/BaseRequestService/HttpClient";
 import EditarPerfilService from "../../services/EditarPerfil.service/editarPerfil.service";
 import {
     formatarTexto,
-    validarFormatacao,
     obterMensagemErro,
+    validarFormatacao,
 } from "../../utils/utils";
-import {
-    Button,
-    Input,
-    Select,
-    SelectItem,
-    Radio,
-    RadioGroup,
-    Textarea,
-    Chip,
-} from "@heroui/react";
+import { TipoFormatacao } from "../FormularioDinamico/FormularioDinamico";
+import "./Form.css";
+import { formSections } from "./FormConfig";
+import FormField, { FormFieldProps } from "./FormField";
 
 
 const AlunoForm = () => {
