@@ -18,10 +18,9 @@ export default function ProtectedRouteAluno() {
     return isAuthenticatedAluno() ?
         <div style={shouldShowSideBar ? { display: 'flex', minHeight: '100vh' }: {}}>
             {shouldShowSideBar && (
-                <SideBar homeIconRedirect={"/portal-aluno"} processIconRedirect={"/portal-aluno/processos"}
-                         configIconRedirect={"/portal-aluno/configuracao"} docsIconRedirect={"/portal-aluno/documentacao"}
-                         shouldShowDocsIcon={true} logoutIconRedirect={"/"}
-                         logoutOnClick={() => console.log("logout logic for aluno")}/>
+                <SideBar homeIconRedirect={"/portal-aluno"} processIconRedirect={""}
+                         configIconRedirect={"/portal-aluno/configuracao"} docsIconRedirect={""}
+                         logoutIconRedirect={"/"} logoutOnClick={() => console.log("logout logic for aluno")}/>
             )}
             <main style={shouldShowSideBar ? {flexGrow: 1, marginLeft: '95px', padding: '20px'}: {}}>
                 <Outlet/>
@@ -37,8 +36,8 @@ export function ProtectedRouteProae() {
         <div style={shouldShowSideBar ? { display: 'flex', minHeight: '100vh' }: {}}>
             {shouldShowSideBar && (
                 <SideBar homeIconRedirect={"/portal-proae/inscricoes"} processIconRedirect={"/portal-proae/processos"}
-                         configIconRedirect={"/portal-proae/configuracao"} logoutIconRedirect={"/"}
-                         logoutOnClick={() => console.log("logout logic for proae")}/>
+                         docsIconRedirect={""} configIconRedirect={"/portal-proae/configuracao"}
+                         logoutIconRedirect={"/"} logoutOnClick={() => console.log("logout logic for proae")}/>
             )}
             <main style={shouldShowSideBar ? {flexGrow: 1, marginLeft: '95px', padding: '20px'}: {}}>
                 <Outlet/>

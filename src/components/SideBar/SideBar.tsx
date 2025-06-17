@@ -12,11 +12,10 @@ import logoutIcon from "../../assets/logout-svgrepo-com 1.svg"
 import React from "react";
 
 export interface ISideBarProps {
-    shouldShowDocsIcon?: boolean,
     homeIconRedirect: string,
     processIconRedirect: string,
     configIconRedirect: string,
-    docsIconRedirect?: string,
+    docsIconRedirect: string,
     logoutIconRedirect: string,
     logoutOnClick: () => void,
 }
@@ -29,15 +28,15 @@ export interface ISideBarIconsConfig {
     shouldShowIcon: boolean
 }
 
-const SideBar: React.FC<ISideBarProps> = ({homeIconRedirect, processIconRedirect, configIconRedirect, logoutIconRedirect, logoutOnClick, shouldShowDocsIcon = false, docsIconRedirect = ""}) => {
+const SideBar: React.FC<ISideBarProps> = ({homeIconRedirect, processIconRedirect, configIconRedirect, logoutIconRedirect, logoutOnClick, docsIconRedirect = ""}) => {
     const navigate = useNavigate();
     const location = useLocation();
 
     const icons: ISideBarIconsConfig[] = [
-        {srcNotSelectedIcon: homeNotSelectedIcon, srcSelectedIcon: homeSelectedIcon, alt: 'Home', redirect: homeIconRedirect, shouldShowIcon: true},
-        {srcNotSelectedIcon: appsProcessNotSelectedIcon, srcSelectedIcon: appsProcessSelectedIcon, alt: 'Processos', redirect: processIconRedirect, shouldShowIcon: true},
-        {srcNotSelectedIcon: settingsNotSelectedIcon, srcSelectedIcon: settingsSelectedIcon, alt: 'Perfil', redirect: configIconRedirect, shouldShowIcon: true},
-        {srcNotSelectedIcon: docsNotSelectedIcon, srcSelectedIcon: docsSelectedIcon, alt: 'Documentos', redirect: docsIconRedirect, shouldShowIcon: shouldShowDocsIcon},
+        {srcNotSelectedIcon: homeNotSelectedIcon, srcSelectedIcon: homeSelectedIcon, alt: 'Home', redirect: homeIconRedirect, shouldShowIcon: homeIconRedirect != ""},
+        {srcNotSelectedIcon: appsProcessNotSelectedIcon, srcSelectedIcon: appsProcessSelectedIcon, alt: 'Processos', redirect: processIconRedirect, shouldShowIcon: processIconRedirect != ""},
+        {srcNotSelectedIcon: settingsNotSelectedIcon, srcSelectedIcon: settingsSelectedIcon, alt: 'Configurações', redirect: configIconRedirect, shouldShowIcon: configIconRedirect != ""},
+        {srcNotSelectedIcon: docsNotSelectedIcon, srcSelectedIcon: docsSelectedIcon, alt: 'Documentos', redirect: docsIconRedirect, shouldShowIcon: docsIconRedirect != ""},
         {srcNotSelectedIcon: logoutIcon, srcSelectedIcon: logoutIcon, alt: 'Logout', redirect: logoutIconRedirect, shouldShowIcon: true}
     ];
 
@@ -53,9 +52,9 @@ const SideBar: React.FC<ISideBarProps> = ({homeIconRedirect, processIconRedirect
 
                         if (iconConfig.alt === 'Logout') {
                             return iconConfig.shouldShowIcon && (
-                                <div id="option-wrapper">
-                                    <div key={iconConfig.alt} id="iconWrapper">
-                                        <img src={iconConfig.srcNotSelectedIcon} alt={iconConfig.alt} onClick={() => {logoutOnClick(); navigate(logoutIconRedirect)}} />
+                                <div key={iconConfig.alt} id="option-wrapper" onClick={() => {logoutOnClick(); navigate(logoutIconRedirect)}}>
+                                    <div id="iconWrapper">
+                                        <img src={iconConfig.srcNotSelectedIcon} alt={iconConfig.alt} />
                                     </div>
                                     <p>{iconConfig.alt}</p>
                                 </div>
@@ -64,10 +63,9 @@ const SideBar: React.FC<ISideBarProps> = ({homeIconRedirect, processIconRedirect
 
                         return (
                             iconConfig.shouldShowIcon && (
-                                <div id="option-wrapper">
-                                    <div key={iconConfig.alt} id="iconWrapper" style={isCurrentIconSelected ? {'border': '2px solid #27548A'} : {}}>
-                                        <img src={isCurrentIconSelected ? iconConfig.srcSelectedIcon : iconConfig.srcNotSelectedIcon}
-                                             alt={iconConfig.alt} onClick={() => {navigate(iconConfig.redirect)}}/>
+                                <div key={iconConfig.alt} id="option-wrapper" onClick={() => {navigate(iconConfig.redirect)}}>
+                                    <div id="iconWrapper" style={isCurrentIconSelected ? {'border': '2px solid #27548A'} : {}}>
+                                        <img src={isCurrentIconSelected ? iconConfig.srcSelectedIcon : iconConfig.srcNotSelectedIcon} alt={iconConfig.alt} />
                                     </div>
                                     <p>{iconConfig.alt}</p>
                                 </div>

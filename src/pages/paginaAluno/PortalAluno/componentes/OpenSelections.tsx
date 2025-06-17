@@ -1,4 +1,5 @@
 import React from "react";
+import {useNavigate} from "react-router-dom";
 
 interface Edital {
   id: number;
@@ -15,12 +16,9 @@ interface OpenSelectionsProps {
   editais: Edital[];
 }
 
-const OpenSelectionCard: React.FC<Edital> = ({
-  id,
-  titulo_edital,
-  status_edital,
-  edital_url,
-}) => {
+
+const OpenSelectionCard: React.FC<Edital> = ({id, titulo_edital, status_edital, edital_url, descricao}) => {
+  const navigate = useNavigate();
   const statusLower = status_edital.toLowerCase();
   const isOpen = statusLower.includes("aberto");
   const isClosed = statusLower.includes("fechado");
@@ -32,6 +30,10 @@ const OpenSelectionCard: React.FC<Edital> = ({
     : "bg-[#DBEAFE] text-[#1E3A8A]";  // azul claro elegante
 
   const bgColorClass = "bg-[#EDF2F7] text-[#1B3A4B] border border-[#D1D5DB]";
+
+  const redirectToInscricao = (editalId: number): void => {
+    navigate('/portal-aluno/candidatura', {state: { editalId: editalId, tituloEdital: titulo_edital, descricaoEdital: descricao }});
+  }
 
   return (
     <div className={`rounded-xl p-5 mb-6 ${bgColorClass}`}>
@@ -59,7 +61,7 @@ const OpenSelectionCard: React.FC<Edital> = ({
 
       <div className="mt-4 flex justify-end">
         {isOpen ? (
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+          <button onClick={() => redirectToInscricao(id)} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
             REALIZAR INSCRIÇÃO
           </button>
         ) : (
