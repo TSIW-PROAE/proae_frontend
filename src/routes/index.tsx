@@ -5,14 +5,11 @@ import LoginAluno from "../pages/paginaAluno/LoginAluno/LoginAluno";
 import LoginProae from "../pages/paginaProae/LoginProae/LoginProae";
 import NotFound from "../pages/NotFound/NotFound";
 import DesignSystem from "../pages/DesignSystem/DesignSystem";
-import Inscricao from "../pages/Inscricao/Inscricao";
+import Inscricao from "@/pages/Enrollment/Inscricao.tsx";
 
 // Aluno
 import PortalAluno from "../pages/paginaAluno/PortalAluno/PortalAluno";
-import ProcessosAluno from "../pages/paginaAluno/ProcessosAluno/ProcessosAluno";
-import DocumentacaoAluno from "../pages/paginaAluno/DocumentacaoAluno/DocumentacaoAluno";
 import ConfiguracaoAluno from "../pages/paginaAluno/ConfiguracaoAluno/ConfiguracaoAluno";
-import CandidaturaAluno from "../pages/paginaAluno/CandidaturaAluno/CandidaturaAluno";
 
 // PROAE
 import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
@@ -35,20 +32,14 @@ const routes = [
         element: <Home />,
       },
       { path: "login-aluno", element: <LoginAluno /> },
-      { path: "inscricao", element: <Inscricao /> },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
       {
         element: <ProtectedRouteAluno />,
         children: [
           { path: "portal-aluno", element: <PortalAluno /> },
-          { path: "portal-aluno/processos", element: <ProcessosAluno /> },
-          { path: "portal-aluno/documentacao", element: <DocumentacaoAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
-          { path: "portal-aluno/candidatura", element: <CandidaturaAluno /> },
-          {
-            path: "portal-aluno/pendencias-aluno",
-            element: <PendenciasAluno />,
-          },
+          { path: "portal-aluno/candidatura", element: <Inscricao /> },
+          { path: "portal-aluno/pendencias-aluno", element: <PendenciasAluno />},
         ],
       },
       { path: "login-proae", element: <LoginProae /> },

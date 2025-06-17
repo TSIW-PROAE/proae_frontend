@@ -19,8 +19,9 @@ import arquivoPdfIcon from "../../assets/icons/arquivo-azul-bege-pdf.svg";
 // Tipos de input suportados
 export type TipoInput =
   | "radio"
-  | "select"
-  | "input"
+    | "single-select"
+    | "multi-select"
+    | "input"
   | "textarea"
   | "file"
   | "documentos";
@@ -35,6 +36,7 @@ export type TipoFormatacao =
   | "cnpj" // 00.000.000/0000-00
   | "rg" // 00.000.000-0
   | "moeda" // R$ 0.000,00
+    | "none"
   | "personalizado";
 
 // Interface para cada input individual
@@ -81,6 +83,7 @@ export interface FormularioDinamicoProps {
   rotaRedirecionamento: string;
   rotaCancelamento?: string;
   logoSrc?: string;
+  onSubmit?: (dados: Record<string, any>) => Promise<void>;
 }
 
 // Funções de formatação
@@ -201,7 +204,7 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
   botaoFinal,
   rotaRedirecionamento,
   rotaCancelamento,
-  logoSrc,
+  logoSrc, onSubmit
 }) => {
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -276,7 +279,7 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
 
   const handleInputChange = (
     nome: string,
-    valor: string | File,
+    valor: string | File | string[],
     formatacao?: TipoFormatacao,
     padrao?: string
   ) => {
@@ -430,13 +433,10 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
     setEnviando(true);
 
     try {
-      // Aqui você pode adicionar a lógica para enviar os dados do formulário
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulação de envio
-
-      // Redirecionamento após conclusão
-      setTimeout(() => {
+      if (onSubmit) {
+        await onSubmit(formData);
         navigate(rotaRedirecionamento);
-      }, 2000);
+      }
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
       setEnviando(false);
@@ -593,7 +593,7 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
           </div>
         );
 
-      case "select":
+      case "single-select":
         return (
           <div className="input-container" key={nome}>
             <Select
@@ -622,30 +622,64 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
           </div>
         );
 
+      case "multi-select":
+        return (
+            <div className="input-container" key={nome}>
+              <Select
+                  label={titulo}
+                  placeholder={placeholder || "Selecione uma ou mais opções"}
+                  selectedKeys={formData[nome] || []}
+                  onSelectionChange={(keys) => {
+                    const selectedArray = Array.from(keys).map(key => String(key));
+                    handleInputChange(nome, selectedArray);
+                  }}
+                  onBlur={() =>
+                      handleInputBlur(nome, formData[nome] || [], formatacao)
+                  }
+                  variant="bordered"
+                  radius="lg"
+                  isRequired={obrigatorio}
+                  isInvalid={!!erro}
+                  errorMessage={erro}
+                  fullWidth
+                  description={subtitulo}
+                  selectionMode="multiple"
+                  classNames={{
+                    base: "custom-input",
+                  }}
+              >
+                {(opcoes || []).map((opcao) => (
+                    <SelectItem key={opcao.valor}>{opcao.label}</SelectItem>
+                ))}
+              </Select>
+            </div>
+        );
+
+
       case "file":
         return (
-          <div className="input-container arquivo-container" key={nome}>
-            <div className="arquivo-item">
-              <div className="arquivo-esquerda">
-                <div className="arquivo-icone">
-                  {formData[nome] instanceof File ? (
-                    <div className="arquivo-miniatura">
-                      <img src={arquivoPdfIcon} alt="PDF" />
-                    </div>
-                  ) : (
-                    <img src={arquivoPdfIcon} alt="PDF" />
-                  )}
+            <div className="input-container arquivo-container" key={nome}>
+              <div className="arquivo-item">
+                <div className="arquivo-esquerda">
+                  <div className="arquivo-icone">
+                    {formData[nome] instanceof File ? (
+                        <div className="arquivo-miniatura">
+                          <img src={arquivoPdfIcon} alt="PDF"/>
+                        </div>
+                    ) : (
+                        <img src={arquivoPdfIcon} alt="PDF"/>
+                    )}
+                  </div>
+                  <div className="arquivo-tamanho-max">Max: 5MB</div>
                 </div>
-                <div className="arquivo-tamanho-max">Max: 5MB</div>
-              </div>
 
-              <div className="arquivo-centro">
-                <div className="arquivo-titulo">
-                  {formData[nome] instanceof File
-                    ? formData[nome].name
-                    : titulo}
-                </div>
-                <div className="arquivo-status">
+                <div className="arquivo-centro">
+                  <div className="arquivo-titulo">
+                    {formData[nome] instanceof File
+                        ? formData[nome].name
+                        : titulo}
+                  </div>
+                  <div className="arquivo-status">
                   <Chip
                     color={
                       formData[nome] instanceof File ? "success" : "warning"

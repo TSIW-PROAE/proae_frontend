@@ -98,9 +98,10 @@ export default function PortalAluno() {
             Minhas últimas inscrições{" "}
           </h2>
           <div className="flex  flex-col gap-6">
-            {inscriptions.map((edital) => (
-              <CandidateStatus key={edital.id} edital={edital} />
-            ))}
+            {inscriptions.length > 0 ? (
+                inscriptions.map((edital) => (<CandidateStatus key={edital.id} edital={edital} />))
+                ) : <h3>Você ainda não se inscreveu em nenhum edital.</h3>
+            }
           </div>
         </div>
       </div>
