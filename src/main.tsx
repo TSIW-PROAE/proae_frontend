@@ -1,4 +1,3 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { ClerkProvider } from "@clerk/clerk-react";
 
@@ -13,7 +12,6 @@ const PUBLISHABLE_KEY =
   "pk_test_aWRlYWwtbWlkZ2UtNjkuY2xlcmsuYWNjb3VudHMuZGV2JA";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY}
       appearance={{
@@ -36,5 +34,4 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <RouterProvider router={router} />
       </Provider>
     </ClerkProvider>
-  </React.StrictMode>
 );

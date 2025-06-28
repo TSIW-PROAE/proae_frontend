@@ -1,8 +1,8 @@
 import FormularioDinamico, {TipoInput, TipoFormatacao} from "../../components/FormularioDinamico/FormularioDinamico";
 import logoUfba from "../../assets/logo-ufba.png";
-import "./Enrollment.css";
+import "./Inscricao.css";
 import IHttpClient, {FetchAdapter} from "@/services/BaseRequestService/HttpClient.ts";
-import {useLocation} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {useEffect, useState} from "react";
 import LoadingScreen from "@/components/LoadingScreen/LoadingScreen.tsx";
 import {getCookie} from "@/utils/utils.tsx";
@@ -89,6 +89,7 @@ export default function Inscricao() {
   const location = useLocation();
   const { editalId, tituloEdital, descricaoEdital } = location.state || {};
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const [pages, setPages] = useState<FormsConfiguration>({titleInscricao: tituloEdital, descricaoInscricao: descricaoEdital, pages: []});
 
@@ -107,7 +108,7 @@ export default function Inscricao() {
         });
         setPages(prev => ({...prev, pages: addedPages}));
       } catch (e) {
-        console.error("Erro ao carregar as paginas:", e);
+        navigate("/portal-aluno");
       }
     };
     loadPages();
