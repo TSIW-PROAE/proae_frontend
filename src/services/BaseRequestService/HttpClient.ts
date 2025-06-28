@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from "axios";
+import { toast } from "react-hot-toast";
 
 export default interface IHttpClient {
   get<T>(url: string, token?: string): Promise<T>;
@@ -41,13 +42,9 @@ export class FetchAdapter implements IHttpClient {
       });
 
       return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(
-          error.response?.data?.message || "Erro na requisição GET"
-        );
-      }
-      throw error;
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+      throw error.response.data;
     }
   }
 
@@ -60,11 +57,7 @@ export class FetchAdapter implements IHttpClient {
       });
       return response.data;
     } catch (error: any) {
-      // if (axios.isAxiosError(error)) {
-      //   throw new Error(
-      //     error.response?.data?.message || "Erro na requisição POST"
-      //   );
-      // }
+      toast.error(error.response.data.message);
       throw error.response.data;
     }
   }
@@ -77,13 +70,9 @@ export class FetchAdapter implements IHttpClient {
         },
       });
       return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(
-          error.response?.data?.message || "Erro na requisição PUT"
-        );
-      }
-      throw error;
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+      throw error.response.data;
     }
   }
 
@@ -91,13 +80,9 @@ export class FetchAdapter implements IHttpClient {
     try {
       const response = await this.axiosInstance.delete<T>(url);
       return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(
-          error.response?.data?.message || "Erro na requisição DELETE"
-        );
-      }
-      throw error;
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+      throw error.response.data;
     }
   }
 
@@ -109,13 +94,9 @@ export class FetchAdapter implements IHttpClient {
         },
       });
       return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(
-          error.response?.data?.message || "Erro na requisição PATCH"
-        );
-      }
-      throw error;
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+      throw error.response.data;
     }
   }
 }

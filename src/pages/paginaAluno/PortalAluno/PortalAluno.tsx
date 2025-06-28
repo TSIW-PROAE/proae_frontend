@@ -1,4 +1,3 @@
-// PortalAluno.tsx
 import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import PageLayout from "@/pages/PageLayout/PageLayout";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
@@ -8,6 +7,7 @@ import { useClerk } from "@clerk/clerk-react";
 import { useEffect, useState } from 'react';
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
+import {Toaster} from "react-hot-toast";
 
 
 interface ResponseData {
@@ -59,7 +59,6 @@ export default function PortalAluno() {
    const getInscriptions = async () => {
       try {
         const response = await portalAlunoService.getInscriptions();
-        console.log("Inscriptions response:", response);
         if (!response || !Array.isArray(response)) {
           throw new Error("Resposta inválida do servidor");
         }
@@ -78,33 +77,36 @@ export default function PortalAluno() {
   }, [userId]);
 
   return (
-    <PageLayout>
-      <div className="max-w-[1500px] mx-auto">
-        <h1 className="text-2xl font-normal text-[#1B3A4B] mb-6">
-          Olá {firstName}, bem vindo ao portal do aluno !
-        </h1>
+    <>
+      <Toaster position="top-right" />
+      <PageLayout>
+        <div className="max-w-[1500px] mx-auto">
+          <h1 className="text-2xl font-normal text-[#1B3A4B] mb-6">
+            Olá {firstName}, bem vindo ao portal do aluno !
+          </h1>
 
-        <div className="flex flex-col lg:flex-row items-stretch gap-6">
-          <div className="w-full lg:w-1/2">
-            <BenefitsCard benefits={benefits} />
+          <div className="flex flex-col lg:flex-row items-stretch gap-6">
+            <div className="w-full lg:w-1/2">
+              <BenefitsCard benefits={benefits} />
+            </div>
+            <div className="w-full lg:w-1/2">
+              <OpenSelections editais={openSelections} />
+            </div>
           </div>
-          <div className="w-full lg:w-1/2">
-            <OpenSelections editais={openSelections} />
+
+          <div className="mt-10">
+            <h2 className="text-2xl font-medium text-[#1B3A4B] mb-3">
+              Minhas últimas inscrições{" "}
+            </h2>
+            <div className="flex  flex-col gap-6">
+              {inscriptions.length > 0 ? (
+                  inscriptions.map((edital) => (<CandidateStatus key={edital.id} edital={edital} />))
+              ) : <h3>Você ainda não se inscreveu em nenhum edital.</h3>
+              }
+            </div>
           </div>
         </div>
-
-        <div className="mt-10">
-          <h2 className="text-2xl font-medium text-[#1B3A4B] mb-3">
-            Minhas últimas inscrições{" "}
-          </h2>
-          <div className="flex  flex-col gap-6">
-            {inscriptions.length > 0 ? (
-                inscriptions.map((edital) => (<CandidateStatus key={edital.id} edital={edital} />))
-                ) : <h3>Você ainda não se inscreveu em nenhum edital.</h3>
-            }
-          </div>
-        </div>
-      </div>
-    </PageLayout>
+      </PageLayout>
+    </>
   );
 }
