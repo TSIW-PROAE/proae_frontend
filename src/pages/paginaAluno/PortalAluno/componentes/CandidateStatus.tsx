@@ -59,7 +59,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
   };
 
   const handleCheckPendingItems = () => {
-    navigate(`/aluno/pendencias/${edital.inscricao_id}`);
+    navigate(`/portal-aluno/pendencias/${edital.inscricao_id}`);
   };
 
   return (
