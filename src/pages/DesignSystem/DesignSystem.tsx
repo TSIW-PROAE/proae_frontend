@@ -5,15 +5,21 @@ import SideBar from "@/components/SideBar/SideBar.tsx";
 import Alert from "@/components/Alert/Alert.tsx";
 
 export default function DesignSystem() {
-
   const handleLogout = () => {
-    console.log("Logging out....")
+    console.log("Logging out....");
   };
 
   return (
     <div>
       <h1>Design System</h1>
-      <SideBar homeIconRedirect={""} processIconRedirect={""} configIconRedirect={""} logoutIconRedirect={"/"} logoutOnClick={handleLogout} shouldShowDocsIcon={true} docsIconRedirect={""}/>
+      <SideBar
+        homeIconRedirect={""}
+        processIconRedirect={""}
+        configIconRedirect={""}
+        logoutIconRedirect={"/"}
+        logoutOnClick={handleLogout}
+        docsIconRedirect={""}
+      />
       <div className="component-section">
         <h2>Botões</h2>
         <div className="component-row">
@@ -23,10 +29,39 @@ export default function DesignSystem() {
           <Button color="warning">Alerta</Button>
           <Button color="danger">Perigo</Button>
         </div>
-          <CardUserComponent aluno={{"nome": "Allan", "matricula": "2000222", "dataCadastro": "20/12/2200", "validade": "20/12/12", "status": "de boas", "foto": "", beneficios: [{"nome": "beneficio1", "edital": "sla", "validade": "20/12/2024", "status": "ativo"}]}}/>
-          <Alert titulo='Inscrição Confirmada' descricao='Inscrição realizada.' data='03/04'/>
-          <Alert titulo='Documentação Negada' descricao='Caro aluno, por favor faça o reenvio do documento de matricula devidamente atualizado, conforme o especificado no item 2.3 do edital.' data='04/04'/>
-          <Alert titulo='Documentação Pendente' descricao='Caro aluno, por favor faça o envio do CAD Único.' data='04/04'/>
+        <CardUserComponent
+          aluno={{
+            nome: "Allan",
+            matricula: "2000222",
+            dataCadastro: "20/12/2200",
+            validade: "20/12/12",
+            status: "de boas",
+            foto: "",
+            beneficios: [
+              {
+                nome: "beneficio1",
+                edital: "sla",
+                validade: "20/12/2024",
+                status: "ativo",
+              },
+            ],
+          }}
+        />
+        <Alert
+          titulo="Inscrição Confirmada"
+          descricao="Inscrição realizada."
+          data="03/04"
+        />
+        <Alert
+          titulo="Documentação Negada"
+          descricao="Caro aluno, por favor faça o reenvio do documento de matricula devidamente atualizado, conforme o especificado no item 2.3 do edital."
+          data="04/04"
+        />
+        <Alert
+          titulo="Documentação Pendente"
+          descricao="Caro aluno, por favor faça o envio do CAD Único."
+          data="04/04"
+        />
       </div>
     </div>
   );
