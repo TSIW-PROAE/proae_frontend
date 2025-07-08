@@ -59,6 +59,7 @@ export default function LoginProae() {
       // Continuar com o envio do formulário
       console.log("Formulário válido, enviando...");
     }
+    
   };
 
   return (

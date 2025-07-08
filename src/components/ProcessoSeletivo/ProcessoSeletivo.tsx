@@ -122,7 +122,7 @@ const ProcessoSeletivo: React.FC<ProcessoSeletivoProps> = ({
             {documentos.length > 0 && (
               <div className="processo-documentos-coluna">
                 <h4 style={{ color: cor }} className="documentos-titulo">Documentos:</h4>
-                <div className="documentos-lista">
+                <div className="documentos-listac">
                   {documentos.map((doc, index) => (
                     <DocumentoItem
                       key={index}
