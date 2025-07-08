@@ -1,26 +1,26 @@
+import Inscricao from "@/pages/Enrollment/Inscricao.tsx";
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
+import DesignSystem from "../pages/DesignSystem/DesignSystem";
 import Home from "../pages/Home/Home";
+import NotFound from "../pages/NotFound/NotFound";
 import LoginAluno from "../pages/paginaAluno/LoginAluno/LoginAluno";
 import LoginProae from "../pages/paginaProae/LoginProae/LoginProae";
-import NotFound from "../pages/NotFound/NotFound";
-import DesignSystem from "../pages/DesignSystem/DesignSystem";
-import Inscricao from "@/pages/Enrollment/Inscricao.tsx";
 
 // Aluno
-import PortalAluno from "../pages/paginaAluno/PortalAluno/PortalAluno";
 import ConfiguracaoAluno from "../pages/paginaAluno/ConfiguracaoAluno/ConfiguracaoAluno";
+import PortalAluno from "../pages/paginaAluno/PortalAluno/PortalAluno";
 
 // PROAE
-import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
+import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.tsx";
 import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
 import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
-import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.tsx";
+import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
 
 // Auth
-import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
 import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
+import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
 
 const routes = [
   {
@@ -39,7 +39,7 @@ const routes = [
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
-          { path: "portal-aluno/pendencias-aluno", element: <PendenciasAluno />},
+          { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
         ],
       },
       { path: "login-proae", element: <LoginProae /> },

@@ -11,6 +11,7 @@ interface Etapa {
 }
 
 interface EditalAPI {
+  inscricao_id: number;
   edital_id: number;
   titulo_edital: string;
   status_edital: string;
@@ -58,7 +59,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
   };
 
   const handleCheckPendingItems = () => {
-    navigate("/portal-aluno/pendencias-aluno");
+    navigate(`/portal-aluno/pendencias/${edital.inscricao_id}`);
   };
 
   return (

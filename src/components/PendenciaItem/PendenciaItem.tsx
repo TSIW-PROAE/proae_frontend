@@ -7,18 +7,16 @@ import "./PendenciaItem.css"; // Estilo próprio
 
 export interface Pendencia {
   descricao: string;
-  dataEnvio: string;
   status: string;
 }
 
 export interface PendenciaItemProps {
-  edital: string;
-  tipo: string;
+  titulo_edital: string;
   pendencias: Pendencia[]; // Lista de pendências
 }
 
 const PendenciaItem: React.FC<PendenciaItemProps> = ({
-  edital,
+  titulo_edital,
   pendencias,
 }) => {
   const [expandido, setExpandido] = useState(false);
@@ -29,8 +27,15 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
     <div className="pendencia-item">
       <div className="pendencia-header" onClick={alternarExpansao}>
         <div className="pendencia-titulo">
-          <h2>{edital}</h2>
-          <span className="pendencia-status">{pendencias.length} pendências</span>
+          <div className="pendencia-titulo">
+            <h2>
+              {titulo_edital}
+            </h2>
+          </div>
+          <span className="pendencia-status">
+            {pendencias.length}{" "}
+            {pendencias.length === 1 ? "pendência" : "pendências"}
+          </span>
         </div>
         <button className="expand-button" aria-label="Expandir pendência">
           <span className={expandido ? "chevron-up" : "chevron-down"}>
@@ -49,12 +54,18 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
             {pendencias.map((pendencia, index) => (
               <li key={index} className="pendencia-item-detalhe">
                 <div className="pendencia-info">
-                  <p><span>Descrição:</span> {pendencia.descricao}</p>
-                  <p><span>Data de envio:</span> {pendencia.dataEnvio}</p>
-                  <p><span>Status:</span> {pendencia.status}</p>
+                  <p>
+                    <span>Tipo:</span> {pendencia.descricao}
+                  </p>
+                  <p>
+                    <span>Status:</span> {pendencia.status}
+                  </p>
                 </div>
                 <div className="pendencia-actions">
-                  <button className="action-button" aria-label="Mostrar arquivo">
+                  <button
+                    className="action-button"
+                    aria-label="Mostrar arquivo"
+                  >
                     <img src={fileIcon} alt="Mostrar arquivo" />
                   </button>
                   <button className="action-button" aria-label="Fazer upload">
