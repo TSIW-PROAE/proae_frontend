@@ -18,19 +18,19 @@ const DocumentoItem: React.FC<DocumentoItemProps> = ({
   const cor = tema === "dourado" ? "var(--cor-azul-escuro)" : "var(--cor-creme-escuro)";
 
   return (
-    <div className="documento-item">
+    <div className="documento-itemc">
       <a
         href={url}
-        className="documento-link"
+        className="documento-linkc"
         target="_blank"
         rel="noopener noreferrer"
       >
-        <div className="documento-icone">
+        <div className="documento-iconec">
           <img src={icone} alt="PDF" />
         </div>
-        <div style={{borderBottom: `0.4px solid ${cor}`}} className="documento-info">
-          <span className="documento-titulo" style={{ color: cor }}>{titulo}</span>
-          <span className="documento-tipo" style={{ color: cor }}>PDF</span>
+        <div style={{borderBottom: `0.4px solid ${cor}`}} className="documento-infoc">
+          <span className="documento-tituloc" style={{ color: cor }}>{titulo}</span>
+          <span className="documento-tipoc" style={{ color: cor }}>PDF</span>
         </div>
       </a>
     </div>

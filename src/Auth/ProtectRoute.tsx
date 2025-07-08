@@ -8,7 +8,7 @@ const isAuthenticatedAluno = () => {
 };
 
 const isAuthenticatedProae = () => {
-  return false;
+  return true;
 };
 
 export default function ProtectedRouteAluno() {
