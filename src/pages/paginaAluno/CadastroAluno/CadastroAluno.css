@@ -137,7 +137,7 @@
   z-index: 1;
 }
 
-.input-nomes{
+.input-nomes {
   display: flex;
   flex-direction: row;
   gap: 15px;
@@ -513,7 +513,6 @@
   }
 
   .input-container {
-    
   }
 
   .portal-title {

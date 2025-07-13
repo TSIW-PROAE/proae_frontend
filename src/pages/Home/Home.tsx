@@ -76,11 +76,15 @@ export default function Home() {
                       status={
                         edital.status_edital?.toLowerCase().includes("aberto")
                           ? "aberto"
-                          : edital.status_edital?.toLowerCase().includes("fechado")
-                          ? "fechado"
-                          : "default"
+                          : edital.status_edital
+                                ?.toLowerCase()
+                                .includes("fechado")
+                            ? "fechado"
+                            : "default"
                       }
-                      inscricoesAbertas={edital.status_edital?.toLowerCase().includes("aberto")}
+                      inscricoesAbertas={edital.status_edital
+                        ?.toLowerCase()
+                        .includes("aberto")}
                       tema={idx % 2 === 0 ? "dourado" : "azul"}
                       etapas={
                         Array.isArray(edital.etapas)
@@ -111,19 +115,17 @@ export default function Home() {
       <div className="about-section">
         <h2 className="about-title">Sobre o PROAE</h2>
         <p className="about-text">
-          O PROAE - Pró-Reitoria de Ações Afirmativas e Assistência
-          Estudantil - tem como missão garantir a permanência e o sucesso
-          dos estudantes da UFBA, por meio de auxílios financeiros, apoio
-          pedagógico, ações afirmativas e acompanhamento individualizado.
-          Acreditamos que todos merecem igualdade de oportunidades para
-          alcançar seus sonhos acadêmicos.
+          O PROAE - Pró-Reitoria de Ações Afirmativas e Assistência Estudantil -
+          tem como missão garantir a permanência e o sucesso dos estudantes da
+          UFBA, por meio de auxílios financeiros, apoio pedagógico, ações
+          afirmativas e acompanhamento individualizado. Acreditamos que todos
+          merecem igualdade de oportunidades para alcançar seus sonhos
+          acadêmicos.
         </p>
 
         <div className="info-cards-grid">
           <InfoCard
-            icon={
-              <img src={restauranteIcon} alt="Restaurante Universitário" />
-            }
+            icon={<img src={restauranteIcon} alt="Restaurante Universitário" />}
             title="Restaurantes Universitários"
             description="Receba refeições subsidiadas nos Restaurantes Universitários (RU) dos campi, garantindo sua permanência na UFBA."
             backgroundColor="var(--cor-dourado)"
@@ -155,9 +157,7 @@ export default function Home() {
           />
 
           <InfoCard
-            icon={
-              <img src={residenciaIcon} alt="Residência Universitária" />
-            }
+            icon={<img src={residenciaIcon} alt="Residência Universitária" />}
             title="Residências Universitárias"
             description="Moradia para estudantes de graduação da UFBA em Salvador, prioritariamente de baixa renda e de fora de Salvador."
             backgroundColor="var(--cor-dourado)"

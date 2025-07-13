@@ -76,16 +76,16 @@ export default function LoginAluno() {
         console.log("Login realizado com sucesso!");
         toast.success("Login realizado com sucesso!");
         navigate("/portal-aluno");
-
       } catch (err: any) {
         console.error("Erro no login:", err);
-        if(err.errors[0].message == "Password is incorrect. Try again, or use another method."){
-           toast.error("senha incorreta");
-        }
-        else if (err.errors[0].message == "Couldn't find your account."){
+        if (
+          err.errors[0].message ==
+          "Password is incorrect. Try again, or use another method."
+        ) {
+          toast.error("senha incorreta");
+        } else if (err.errors[0].message == "Couldn't find your account.") {
           toast.error("email não cadastrado");
-        }
-        else {
+        } else {
           toast.error(err.errors[0].message);
           //toast.error("Erro ao realizar login. Verifique suas credenciais.");
         }

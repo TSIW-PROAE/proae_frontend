@@ -1,29 +1,418 @@
-/* Estilos para a página ConfiguracaoAluno */
-.container {
-    display: flex;
-    width: 100%;
+/* ConfiguracaoAluno - Estilos Modernos e Limpos */
+
+.config-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
-#side-bar {
-    min-width: 80px;
+/* Header Principal */
+.config-header {
+  background: transparent;
+  border-radius: 0;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: none;
+  border: none;
 }
 
-#page-config-wrapper {
-    display: flex;
+.config-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.config-welcome-section {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.config-avatar {
+  width: 64px;
+  height: 64px;
+  background: #4285f4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
+}
+
+.config-welcome-text {
+  color: #1f2937;
+}
+
+.config-welcome-title {
+  font-size: 2.5rem;
+  font-weight: 500;
+  margin: 0;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: #202124;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.config-welcome-subtitle {
+  font-size: 1.1rem;
+  margin: 0.25rem 0 0 0;
+  color: #5f6368;
+  font-weight: 400;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+.welcome-emoji {
+  font-size: 2rem;
+  margin-left: 0.5rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.notification-icon {
+  position: relative;
+  background: transparent;
+  border-radius: 50%;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.notification-icon:hover {
+  background: rgba(66, 133, 244, 0.1);
+  transform: scale(1.1);
+}
+
+.notification-icon .lucide {
+  color: #4285f4;
+  width: 24px;
+  height: 24px;
+}
+
+/* Seção de Estatísticas */
+.config-stats-section {
+  margin-bottom: 2rem;
+}
+
+.config-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.config-stat-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.config-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.config-stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+.config-stat-content {
+  flex: 1;
+}
+
+.config-stat-label {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0 0 0.125rem 0;
+  font-weight: 500;
+}
+
+.config-stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+/* Conteúdo Principal */
+.config-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.config-form-section {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.config-form-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.config-form-title-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.config-form-title-section .lucide {
+  color: #3b82f6;
+}
+
+.config-form-title {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: #202124;
+  margin: 0;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+.config-form-subtitle {
+  color: #5f6368;
+  font-size: 1rem;
+  margin: 0;
+  max-width: 600px;
+  margin: 0 auto;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+/* Loading Content */
+.config-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.config-loading-spinner {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.config-loading-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.config-loading-subtitle {
+  color: #6b7280;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.config-form-container {
+  display: flex;
+  justify-content: center;
+}
+
+.config-form-wrapper {
+  width: 100%;
+  max-width: 800px;
+}
+
+/* Animação de loading */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animação de fade-in */
+.config-stat-card,
+.config-form-section {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .config-container {
+    padding: 0.5rem;
+  }
+
+  .config-header {
+    padding: 1.5rem;
+  }
+
+  .config-welcome-section {
     flex-direction: column;
-    align-items: center;
-    width: inherit;
-    /* overflow-x: hidden; */
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .config-welcome-title {
+    font-size: 1.5rem;
+  }
+
+  .config-welcome-subtitle {
+    font-size: 1rem;
+  }
+
+  .config-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .config-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .config-stat-card {
+    padding: 0.875rem;
+  }
+
+  .config-stat-value {
+    font-size: 1.125rem;
+  }
+
+  .config-form-section {
+    padding: 1.5rem;
+  }
+
+  .config-form-title {
+    font-size: 1.5rem;
+  }
+
+  .config-form-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .config-loading-content {
+    padding: 3rem 1rem;
+  }
 }
 
-#title {
-    display: flex;
-    justify-content: flex-start;
-    width: inherit;
-    padding: 20px;
-}
+@media (max-width: 480px) {
+  .config-container {
+    padding: 0.25rem;
+  }
 
-.form {
-    width: 35%;
-    margin-left: 14rem;
+  .config-header {
+    padding: 1rem;
+  }
+
+  .config-welcome-title {
+    font-size: 1.25rem;
+  }
+
+  .config-welcome-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .config-stats-grid {
+    gap: 0.75rem;
+  }
+
+  .config-stat-card {
+    padding: 0.75rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .config-stat-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .config-form-section {
+    padding: 1rem;
+  }
+
+  .config-form-title {
+    font-size: 1.25rem;
+  }
+
+  .config-form-subtitle {
+    font-size: 0.8125rem;
+  }
+
+  .config-form-title-section {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .config-loading-content {
+    padding: 2rem 1rem;
+  }
+
+  .config-loading-title {
+    font-size: 1.125rem;
+  }
 }

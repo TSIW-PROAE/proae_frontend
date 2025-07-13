@@ -1,5 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  FileText,
+  Calendar,
+  TrendingUp,
+  ArrowRight,
+} from "lucide-react";
 
 // Tipos baseados no formato da API
 interface Etapa {
@@ -34,6 +44,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
     status_inscricao,
     possui_pendencias,
     etapas_edital,
+    inscricao_id,
   } = edital;
 
   const etapasOrdenadas = etapas_edital.sort((a, b) => a.ordem - b.ordem);
@@ -41,87 +52,185 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
 
   const hoje = new Date();
   const indiceEtapaAtual =
-    etapasOrdenadas.findIndex((etapa) => new Date(etapa.data_fim) >= hoje) !== -1
+    etapasOrdenadas.findIndex((etapa) => new Date(etapa.data_fim) >= hoje) !==
+    -1
       ? etapasOrdenadas.findIndex((etapa) => new Date(etapa.data_fim) >= hoje)
       : etapasOrdenadas.length - 1;
 
   const etapaAtualNome = nomesEtapas[indiceEtapaAtual];
   const progresso = ((indiceEtapaAtual + 1) / nomesEtapas.length) * 100;
 
-  const corStatus = status_inscricao.toLowerCase().includes("aprovada")
-    ? "text-green-600"
-    : status_inscricao.toLowerCase().includes("reprovada")
-    ? "text-red-600"
-    : "text-yellow-600";
+  const getStatusInfo = () => {
+    const statusLower = status_inscricao.toLowerCase();
+
+    if (statusLower.includes("aprovada")) {
+      return {
+        icon: CheckCircle,
+        color: "text-emerald-600",
+        bgColor: "bg-emerald-50",
+        borderColor: "border-emerald-200",
+        label: "Aprovada",
+      };
+    } else if (statusLower.includes("reprovada")) {
+      return {
+        icon: XCircle,
+        color: "text-red-600",
+        bgColor: "bg-red-50",
+        borderColor: "border-red-200",
+        label: "Reprovada",
+      };
+    } else if (statusLower.includes("pendente")) {
+      return {
+        icon: Clock,
+        color: "text-yellow-600",
+        bgColor: "bg-yellow-50",
+        borderColor: "border-yellow-200",
+        label: "Em Análise",
+      };
+    } else {
+      return {
+        icon: Clock,
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
+        label: status_inscricao,
+      };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
 
   const handleViewForm = () => {
     alert("Abrir ficha de inscrição");
   };
 
   const handleCheckPendingItems = () => {
-    navigate(`/portal-aluno/pendencias/${edital.inscricao_id}`);
+    navigate(`/portal-aluno/pendencias/${inscricao_id}`);
   };
 
   return (
-    <section className="bg-[#EDF2F7] text-[#1B3A4B] p-6 rounded-xl border border-[#D1D5DB] w-full mx-auto">
-      <h2 className="text-xl font-normal text-[#374151] mb-6">
-        <span className="text-[#6B7280]">Status da Inscrição para:</span>{" "}
-        {titulo_edital}
-      </h2>
-
-      <div className="space-y-4">
-        {/* Status */}
-        <div className="flex items-center gap-4">
-          <span className="font-semibold">Status:</span>
-          <span className={corStatus}>{status_inscricao}</span>
+    <div className="candidate-status-card">
+      <div className="status-header">
+        <div className="status-title-section">
+          <h3 className="status-title">{titulo_edital}</h3>
+          <div className="status-subtitle">
+            <Calendar className="w-4 h-4" />
+            <span>Inscrição #{inscricao_id}</span>
+          </div>
         </div>
 
-        {/* Pendências */}
+        <div
+          className={`status-badge ${statusInfo.bgColor} ${statusInfo.borderColor}`}
+        >
+          <statusInfo.icon className={`w-4 h-4 ${statusInfo.color}`} />
+          <span className={statusInfo.color}>{statusInfo.label}</span>
+        </div>
+      </div>
+
+      <div className="status-content">
+        {/* Informações de Pendências */}
         {possui_pendencias ? (
-          <div className="text-red-700 font-medium">
-            Você possui pendências de documentos.
+          <div className="alert alert-warning">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <div className="alert-content">
+              <h4 className="alert-title">Pendências de Documentação</h4>
+              <p className="alert-description">
+                Você possui documentos pendentes que precisam ser enviados ou
+                corrigidos.
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="text-green-700 font-medium">
-            Nenhuma pendência de documentos
+          <div className="alert alert-success">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            <div className="alert-content">
+              <h4 className="alert-title">Documentação Completa</h4>
+              <p className="alert-description">
+                Todos os documentos foram enviados com sucesso.
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Etapa atual */}
-        <div>
-          <span className="font-semibold">Etapa atual:</span>
-          <div className="text-sm">{etapaAtualNome}</div>
-          <div className="w-full bg-gray-300 rounded-full h-2 mt-1">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${progresso}%` }}
-            ></div>
+        {/* Progresso das Etapas */}
+        <div className="progress-section">
+          <div className="progress-header">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            <div className="progress-info">
+              <h4 className="progress-title">Progresso do Processo</h4>
+              <p className="progress-description">
+                Etapa atual: <strong>{etapaAtualNome}</strong>
+              </p>
+            </div>
           </div>
-          <div className="text-xs text-gray-700 mt-1">
-            {indiceEtapaAtual + 1} de {nomesEtapas.length} etapas
+
+          <div className="progress-bar-container">
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${progresso}%` }}
+              />
+            </div>
+            <div className="progress-text">
+              {indiceEtapaAtual + 1} de {nomesEtapas.length} etapas concluídas
+            </div>
           </div>
         </div>
 
-        {/* Botões */}
-        <div className="flex gap-4 pt-4">
-          <button
-            onClick={handleViewForm}
-            className="bg-white text-black px-4 py-2 rounded-lg border border-black hover:bg-gray-100 transition"
-          >
-            Ver Ficha de Inscrição
-          </button>
+        {/* Etapas Detalhadas */}
+        <div className="stages-section">
+          <h4 className="stages-title">Etapas do Processo</h4>
+          <div className="stages-list">
+            {etapasOrdenadas.map((etapa, index) => {
+              const isCompleted = index < indiceEtapaAtual;
+              const isCurrent = index === indiceEtapaAtual;
 
-          {possui_pendencias && (
-            <button
-              onClick={handleCheckPendingItems}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-            >
-              Verificar Pendências
-            </button>
-          )}
+              return (
+                <div
+                  key={etapa.id}
+                  className={`stage-item ${isCompleted ? "completed" : ""} ${isCurrent ? "current" : ""}`}
+                >
+                  <div className="stage-indicator">
+                    {isCompleted ? (
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    ) : isCurrent ? (
+                      <Clock className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      <div className="stage-dot" />
+                    )}
+                  </div>
+                  <div className="stage-content">
+                    <div className="stage-name">{etapa.nome}</div>
+                    <div className="stage-date">
+                      {new Date(etapa.data_inicio).toLocaleDateString()} -{" "}
+                      {new Date(etapa.data_fim).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </section>
+
+      <div className="status-actions">
+        <button onClick={handleViewForm} className="action-button secondary">
+          <FileText className="w-4 h-4" />
+          <span>Ver Ficha de Inscrição</span>
+        </button>
+
+        {possui_pendencias && (
+          <button
+            onClick={handleCheckPendingItems}
+            className="action-button primary"
+          >
+            <AlertTriangle className="w-4 h-4" />
+            <span>Resolver Pendências</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    </div>
   );
 };
 

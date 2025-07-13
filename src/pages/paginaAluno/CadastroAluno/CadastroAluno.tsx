@@ -5,7 +5,7 @@ import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { DatePicker } from "@heroui/react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { DateValue} from "@internationalized/date";
+import { DateValue } from "@internationalized/date";
 import { toast, Toaster } from "react-hot-toast";
 import "./CadastroAluno.css";
 import CadastroAlunoService from "../../../services/CadastroAluno.service/cadastroAluno.service";
@@ -370,29 +370,38 @@ export default function Cadastro() {
         toast.success("Cadastro realizado com sucesso!");
         navigate("/login-aluno"); // Redireciona para a página de login após o cadastro
       } catch (error: any) {
-        console.log(error)
+        console.log(error);
 
         let mensagemErro = error.message || "Erro ao realizar cadastro";
 
         if (mensagemErro == "Erro ao inserir aluno no clerk") {
           error.error.errors.forEach((element: { message: string }) => {
-            if(element.message == "That username is taken. Please try another."){
+            if (
+              element.message == "That username is taken. Please try another."
+            ) {
               toast.error("Matrícula já cadastrada no sistema");
-            }
-            else if(element.message == "That email address is taken. Please try another."){
+            } else if (
+              element.message ==
+              "That email address is taken. Please try another."
+            ) {
               toast.error("Email já cadastrada no sistema");
-            }
-            else if(element.message == "Password has been found in an online data breach. For account safety, please use a different password."){
-              toast.error("Sua senha foi encontada em um vazamento de dados, por favor digite uma senha diferente");
-            }
-            else if(element.message == "Username must be between 11 and 11 characters long."){
+            } else if (
+              element.message ==
+              "Password has been found in an online data breach. For account safety, please use a different password."
+            ) {
+              toast.error(
+                "Sua senha foi encontada em um vazamento de dados, por favor digite uma senha diferente"
+              );
+            } else if (
+              element.message ==
+              "Username must be between 11 and 11 characters long."
+            ) {
               toast.error("A matrícula deve conter até 11 caracteres");
-            }
-            else{
+            } else {
               toast.error(element.message);
             }
           });
-        }else{
+        } else {
           toast.error(mensagemErro);
         }
       }
