@@ -168,7 +168,7 @@ export default function Inscricao() {
     subtitulo: pages.descricaoInscricao,
     paginas: pages.pages,
     botaoFinal: "Enviar sua inscrição",
-    rotaRedirecionamento: "/portal-aluno/pendencias-aluno",
+    rotaRedirecionamento: "/portal-aluno",
     rotaCancelamento: "/portal-aluno",
     logoSrc: logoUfba,
     onSubmit: handleFormSubmit,

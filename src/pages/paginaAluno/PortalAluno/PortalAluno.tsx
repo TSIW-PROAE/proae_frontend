@@ -266,11 +266,11 @@ export default function PortalAluno() {
                   <h3 className="status-title">Documentação</h3>
                   <p className="status-description">
                     {inscriptions.filter((i) => !i.possui_pendencias).length}{" "}
-                    inscrição
+                    inscri
                     {inscriptions.filter((i) => !i.possui_pendencias).length !==
                     1
-                      ? "ões"
-                      : ""}{" "}
+                      ? "ções"
+                      : "ção"}{" "}
                     em dia
                   </p>
                 </div>
