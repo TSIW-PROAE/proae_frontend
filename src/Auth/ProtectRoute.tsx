@@ -1,33 +1,43 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import SideBar from "@/components/SideBar/SideBar.tsx";
-import { useClerk } from "@clerk/clerk-react";
+import { useContext, useEffect, useState } from "react";
+import { AuthContext } from "@/Context/AuthContext.ts";
+import { useNavigate } from "react-router-dom";
 
-const isAuthenticatedAluno = () => {
-  const { session } = useClerk();
-  return session ? true : false;
-};
 
-const isAuthenticatedProae = () => {
-  // const { session } = useClerk();
-  // return session ? true : false;
-  return true; //dados mockados por enquanto
-};
+
 
 export default function ProtectedRouteAluno() {
+  const { isAuthenticated, role, loading } = useContext(AuthContext);
+  const [showSideBar, setShowSideBar] = useState(true);
+
+  const navigate = useNavigate();
+
+useEffect(() => {
+  if(loading){
+    return;
+  }
+
   const location = useLocation();
 
   const routesToNotRenderSideBar = ["/portal-aluno/candidatura"];
   const shouldShowSideBar = !routesToNotRenderSideBar.includes(
     location.pathname
   );
+  setShowSideBar(shouldShowSideBar);
 
-  if (!isAuthenticatedAluno()) {
-    return <Navigate to="/login-aluno" replace />;
+  if (!isAuthenticated && role !== "aluno") {
+    navigate("/login-aluno", { replace: true });
+  }
+  }, [])
+
+  if(loading){
+    return <div>Loading...</div>;
   }
 
   return (
     <div className="app-layout">
-      {shouldShowSideBar && (
+      {showSideBar && (
         <SideBar
           homeIconRedirect={"/portal-aluno"}
           processIconRedirect={""}
@@ -53,7 +63,7 @@ export default function ProtectedRouteAluno() {
       )}
 
       <main
-        className={`main-content ${shouldShowSideBar ? "with-sidebar" : "without-sidebar"}`}
+        className={`main-content ${showSideBar ? "with-sidebar" : "without-sidebar"}`}
       >
         <Outlet />
       </main>
@@ -62,6 +72,9 @@ export default function ProtectedRouteAluno() {
 }
 
 export function ProtectedRouteProae() {
+const { isAuthenticated, role } = useContext(AuthContext);
+
+
   const location = useLocation();
 
   const routesToNotRenderSideBar = ["/portal-proae/cadastro-edital"];
@@ -69,7 +82,7 @@ export function ProtectedRouteProae() {
     location.pathname
   );
 
-  if (!isAuthenticatedProae()) {
+  if (!isAuthenticated && role !== "proae") {
     return <Navigate to="/login-proae" replace />;
   }
 
