@@ -1,3 +1,4 @@
+import { DateValue } from "@internationalized/date";
 import { TipoFormatacao } from "../components/FormularioDinamico/FormularioDinamico";
 
 export function formatPhone(value:string){
@@ -9,6 +10,19 @@ export function formatPhone(value:string){
     return value
 }
 
+ export const formatarData = (date: DateValue | null): string => {
+    if (!date) return "";
+    return `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
+  };
+
+ export  const formatarCelular = (celular: string): string => {
+    const numeros = celular.replace(/\D/g, "");
+    if (numeros.length === 11) {
+      return `+55${numeros}`;
+    }
+    return celular;
+  };
+
 
 export function formatCPF(fiscalDocument: string) {
     fiscalDocument = fiscalDocument.replace(/\D/g, "").slice(0, 11); // Limita a 11 dígitos
@@ -17,7 +31,7 @@ export function formatCPF(fiscalDocument: string) {
     fiscalDocument = fiscalDocument.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
     return fiscalDocument;
   }
-  
+
   export function formatCNPJ(cnpj: string) {
     cnpj = cnpj.replace(/\D/g, "").slice(0, 14); // Limita a 14 dígitos
     cnpj = cnpj.replace(/(\d{2})(\d)/, "$1.$2");
@@ -26,16 +40,16 @@ export function formatCPF(fiscalDocument: string) {
     cnpj = cnpj.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
     return cnpj;
   }
-  
+
   export function formatFiscalDocument(value: string | null) {
      if (!value) return ""
 
     const cleanedValue = value.replace(/\D/g, "");
-    
+
     if (cleanedValue.length <= 11) {
-      return formatCPF(cleanedValue); 
+      return formatCPF(cleanedValue);
     } else {
-      return formatCNPJ(cleanedValue); 
+      return formatCNPJ(cleanedValue);
     }
   }
 
@@ -43,18 +57,18 @@ export function formatCPF(fiscalDocument: string) {
 export function  validarCPFReal (cpf: string){
       cpf = cpf.replace(/\D/g, '');
       if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-  
+
       let soma = 0;
       for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
       let resto = (soma * 10) % 11;
       if (resto === 10 || resto === 11) resto = 0;
       if (resto !== parseInt(cpf.charAt(9))) return false;
-  
+
       soma = 0;
       for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
       resto = (soma * 10) % 11;
       if (resto === 10 || resto === 11) resto = 0;
-  
+
       return resto === parseInt(cpf.charAt(10));
 }
 
