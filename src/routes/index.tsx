@@ -20,7 +20,7 @@ import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
 import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
-import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
+import ProtectedRoute from "@/Auth/ProtectRoute";
 
 const routes = [
   {
@@ -34,7 +34,7 @@ const routes = [
       { path: "login-aluno", element: <LoginAluno /> },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
       {
-        element: <ProtectedRouteAluno />,
+        element: <ProtectedRoute />,
         children: [
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
@@ -44,7 +44,7 @@ const routes = [
       },
       { path: "login-proae", element: <LoginProae /> },
       {
-        element: <ProtectedRouteProae />,
+        element: <ProtectedRoute />,
         children: [
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
