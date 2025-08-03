@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { ClerkProvider } from "@clerk/clerk-react";
 
-import { Provider } from "./provider.tsx";
+
 import "@/styles/variables.css";
 import "@/styles/globals.css";
 
@@ -10,6 +10,7 @@ import { router } from "./routes";
 
 import { ReactKeycloakProvider } from "@react-keycloak/web";
 import keycloak from "./keycloak.ts";
+import AuthProvider from './providers/AuthProvider';
 
 //TODO: Criar um componente de loading para ser exibido durante o carregamento do keycloak
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -18,8 +19,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       initOptions={{onload: 'check-sso'}}
       LoadingComponent={<div>Loading...</div>}
      >
-      <Provider>
+      <AuthProvider>
         <RouterProvider router={router} />
-      </Provider>
+      </AuthProvider>
     </ReactKeycloakProvider>
 );
