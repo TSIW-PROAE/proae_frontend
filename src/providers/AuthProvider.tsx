@@ -6,7 +6,7 @@ import { useKeycloak } from "@react-keycloak/web";
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
@@ -18,7 +18,6 @@ function AuthProvider({children}: {children: React.ReactNode}){
 
   useEffect(() => {
     if(initialized){
-      setLoading(true);
       if (keycloak.authenticated) {
         setIsAuthenticated(true);
         setAuthToken(keycloak?.token as string | null);

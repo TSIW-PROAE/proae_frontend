@@ -1,17 +1,28 @@
 import { AuthContext } from "@/context/AuthContext.ts";
-import { useContext } from "react";
-import { Navigate } from "react-router-dom";
+import { useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ProtectedRouteAluno from "@/layouts/ProtectedAluno.tsx";
 import ProtectedRouteProae from "@/layouts/ProtectedProae.tsx";
 
-export default function ProtectedRoute(){
-  const {isAuthenticated, userInfo}  = useContext(AuthContext);
+export default function ProtectedRoute() {
+  const { isAuthenticated, userInfo, loading } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login-aluno" replace />;
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, loading]);
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
-  if (userInfo?.role === "aluno") {
+  if (userInfo?.role === "aluno" || userInfo?.role === undefined) {
     return <ProtectedRouteAluno />;
   }
 
@@ -19,7 +30,5 @@ export default function ProtectedRoute(){
     return <ProtectedRouteProae />;
   }
 
-  return <Navigate to="/login-aluno" replace />;
+  return null;
 }
-
-
