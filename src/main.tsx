@@ -1,6 +1,4 @@
 import ReactDOM from "react-dom/client";
-import { ClerkProvider } from "@clerk/clerk-react";
-
 
 import "@/styles/variables.css";
 import "@/styles/globals.css";
