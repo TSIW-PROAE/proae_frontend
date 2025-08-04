@@ -1,7 +1,7 @@
 import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { Button } from "@heroui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import InfoCard from "../../components/InfoCard/InfoCard";
 import ProcessoSeletivo from "../../components/ProcessoSeletivo/ProcessoSeletivo";
@@ -12,8 +12,10 @@ import buzufbaIcon from "../../assets/dashboard icons/bus.svg";
 import residenciaIcon from "../../assets/dashboard icons/apartamento.svg";
 import renovacaoIcon from "../../assets/dashboard icons/renvação.svg";
 import "./Home.css";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function Home() {
+  const {isAuthenticated, userInfo, loading: authLoading, login} = useContext(AuthContext);
   const navigate = useNavigate();
   const [editais, setEditais] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +36,28 @@ export default function Home() {
     fetchEditais();
   }, []);
 
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      if (userInfo?.role === "aluno") {
+        navigate("/portal-aluno");
+      } else if (userInfo?.role === "proae") {
+        navigate("/portal-proae/inscricoes");
+      }
+    }
+  }, [isAuthenticated, userInfo, authLoading, navigate]);
+
+  const handleAccessPortal = () => {
+    if (isAuthenticated) {
+      if (userInfo?.role === "aluno") {
+        navigate("/portal-aluno");
+      } else if (userInfo?.role === "proae") {
+        navigate("/portal-proae/inscricoes");
+      }
+    } else {
+      login();
+    }
+  };
+
   return (
     <div className="home-container">
       <header className="home-header">
@@ -41,14 +65,13 @@ export default function Home() {
           <h1>PROAE</h1>
         </div>
         <div className="header-actions">
-          <Button
-            radius="full"
-            as={Link}
-            to="/login-aluno"
-            className="login-button-dash"
-          >
-            Acesse Portal
-          </Button>
+            <Button
+              radius="full"
+              onPress={handleAccessPortal}
+              className="login-button-dash"
+            >
+              {isAuthenticated ? "Acessar Portal" : "Entrar"}
+            </Button>
         </div>
       </header>
       <main className="home-content">
