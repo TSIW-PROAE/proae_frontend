@@ -1,8 +1,11 @@
 import SideBar from "@/components/SideBar/SideBar";
 import { useLocation, Outlet } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function ProtectedRouteAluno() {
   const location = useLocation();
+  const { logout } = useContext(AuthContext);
 
   const routesToNotRenderSideBar = ["/portal-aluno/candidatura"];
   const shouldShowSideBar = !routesToNotRenderSideBar.includes(
@@ -18,21 +21,7 @@ export default function ProtectedRouteAluno() {
           configIconRedirect={"/portal-aluno/configuracao"}
           docsIconRedirect={""}
           logoutIconRedirect={"/"}
-          logoutOnClick={() => {
-            // Limpa localStorage
-            localStorage.clear();
-            // Limpa todos os cookies
-            document.cookie.split(";").forEach(function (c) {
-              document.cookie = c
-                .replace(/^ +/, "")
-                .replace(
-                  /=.*/,
-                  "=;expires=" + new Date(0).toUTCString() + ";path=/"
-                );
-            });
-            // Recarrega a página
-            window.location.reload();
-          }}
+          logoutOnClick={logout}
         />
       )}
 
