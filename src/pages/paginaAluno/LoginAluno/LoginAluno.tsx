@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Switch } from "@heroui/switch";
 import { Link } from "@heroui/link";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useSignIn, useClerk } from "@clerk/clerk-react";
-import { toast, Toaster } from "react-hot-toast";
+import { useLocation, useNavigate } from "react-router-dom";import { toast, Toaster } from "react-hot-toast";
 import "./LoginAluno.css";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function LoginAluno() {
   const [email, setEmail] = useState("");
@@ -18,23 +17,19 @@ export default function LoginAluno() {
   const anoAtual = new Date().getFullYear();
   const location = useLocation();
   const navigate = useNavigate();
-  const { signIn, isLoaded } = useSignIn();
-  const { session } = useClerk();
-  const { setActive } = useClerk();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const emailParam = params.get("email");
+    const {isAuthenticated, loading} = useContext(AuthContext);
 
     if (emailParam) {
       setEmail(emailParam);
     }
-
-    // Verificar se já existe uma sessão ativa
-    if (session) {
+    if (isAuthenticated) {
       navigate("/portal-aluno");
     }
-  }, [location, session, navigate]);
+  }, [location,  navigate]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -63,16 +58,12 @@ export default function LoginAluno() {
       temErro = true;
     }
 
-    if (!temErro && isLoaded) {
+    if (!temErro && !isLoading) {
       setIsLoading(true);
       try {
-        const result = await signIn.create({
-          identifier: email,
-          password: senha,
-          strategy: "password",
-        });
-        await setActive({ session: result.createdSessionId });
-        console.log("Resultado do login:", result);
+        // TODO: Implementar lógica de login do aluno com informações
+        // com matricula e etc
+        console.log("Resultado do login:");
         console.log("Login realizado com sucesso!");
         toast.success("Login realizado com sucesso!");
         navigate("/portal-aluno");

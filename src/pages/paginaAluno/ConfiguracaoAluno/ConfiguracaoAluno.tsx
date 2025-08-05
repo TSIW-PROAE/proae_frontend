@@ -1,19 +1,20 @@
 import "./ConfiguracaoAluno.css";
 import AlunoForm from "../../../components/FormularioConfiguracao/Form";
 import { useState, useEffect } from "react";
-import { useClerk } from "@clerk/clerk-react";
 import { User, Settings, Shield, Edit3, UserCheck } from "lucide-react";
+import { useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function ConfiguracaoAluno() {
-  const { user } = useClerk();
+  const { userInfo } = useContext(AuthContext);
   const [firstName, setFirstName] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName || "");
+    if (userInfo) {
+      setFirstName(userInfo.given_name || "");
     }
-  }, [user]);
+  }, [userInfo]);
 
   // Simular carregamento dos dados do formulário (igual ao PortalAluno)
   useEffect(() => {

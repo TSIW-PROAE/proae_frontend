@@ -2,8 +2,7 @@ import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
 import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
-import { useClerk } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
 import { Toaster } from "react-hot-toast";
@@ -18,6 +17,7 @@ import {
   AlertCircle,
   Bell,
 } from "lucide-react";
+import { AuthContext } from "@/context/AuthContext";
 
 interface ResponseData {
   dados: {
@@ -26,7 +26,7 @@ interface ResponseData {
 }
 
 export default function PortalAluno() {
-  const { user } = useClerk();
+  const { userInfo:user } = useContext(AuthContext);
   const [firstName, setFirstName] = useState("");
   const [userId, setUserId] = useState("");
   const [benefits, setBenefits] = useState<any[]>([]);
@@ -34,10 +34,12 @@ export default function PortalAluno() {
   const [inscriptions, setInscriptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+
+
   useEffect(() => {
     if (user) {
-      setFirstName(user.firstName || "");
-      setUserId(user.id);
+      setFirstName(user.given_name || "");
+      setUserId(user.email);
     }
   }, [user]);
 
@@ -310,3 +312,5 @@ export default function PortalAluno() {
     </div>
   );
 }
+
+
