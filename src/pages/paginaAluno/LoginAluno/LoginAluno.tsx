@@ -21,7 +21,7 @@ export default function LoginAluno() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const emailParam = params.get("email");
-    const {isAuthenticated, loading} = useContext(AuthContext);
+    const {isAuthenticated} = useContext(AuthContext);
 
     if (emailParam) {
       setEmail(emailParam);

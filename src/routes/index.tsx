@@ -4,8 +4,6 @@ import App from "../App";
 import DesignSystem from "../pages/DesignSystem/DesignSystem";
 import Home from "../pages/Home/Home";
 import NotFound from "../pages/NotFound/NotFound";
-import LoginAluno from "../pages/paginaAluno/LoginAluno/LoginAluno";
-import LoginProae from "../pages/paginaProae/LoginProae/LoginProae";
 
 // Aluno
 import ConfiguracaoAluno from "../pages/paginaAluno/ConfiguracaoAluno/ConfiguracaoAluno";
@@ -32,7 +30,6 @@ const routes = [
         path: "",
         element: <Home />,
       },
-      { path: "login-aluno", element: <LoginAluno /> },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
       {
         element: <ProtectedRouteAluno />,
@@ -43,7 +40,6 @@ const routes = [
           { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
         ],
       },
-      { path: "login-proae", element: <LoginProae /> },
       {
         element: <ProtectedRouteProae />,
         children: [
