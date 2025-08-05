@@ -15,8 +15,21 @@ function AuthProvider({children}: {children: React.ReactNode}){
   const login = useCallback(async () => keycloak.login(), [keycloak]);
   const logout = useCallback(async () => keycloak.logout(), [keycloak]);
   const register = useCallback(async () => keycloak.register(), [keycloak]);
+  const refreshedToken = useCallback(async () => keycloak.updateToken(30), [keycloak])
 
   useEffect(() => {
+
+    refreshedToken().catch((error) => {
+      console.error('Erro ao atualizar o token:', error);
+      logout();
+    });
+
+
+    if(keycloak.isTokenExpired()){
+      logout();
+      return;
+    }
+
     if(initialized){
       if (keycloak.authenticated) {
         setIsAuthenticated(true);
@@ -25,7 +38,8 @@ function AuthProvider({children}: {children: React.ReactNode}){
         keycloak.loadUserInfo().then((userInfo) => {
           console.log('Keycloak userInfo received:', userInfo);
 
-          const keycloakUserInfo = userInfo as any; // Type assertion para acessar propriedades
+          // TODO: Remover declaração any
+          const keycloakUserInfo = userInfo as any;
 
           const fillUserInfo: UserInfo = {
             email: keycloakUserInfo.email || '',
