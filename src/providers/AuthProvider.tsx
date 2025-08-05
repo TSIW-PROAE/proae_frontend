@@ -21,7 +21,30 @@ function AuthProvider({children}: {children: React.ReactNode}){
       if (keycloak.authenticated) {
         setIsAuthenticated(true);
         setAuthToken(keycloak?.token as string | null);
-        setUserInfo(keycloak?.userInfo as UserInfo);
+
+        keycloak.loadUserInfo().then((userInfo) => {
+          console.log('Keycloak userInfo received:', userInfo);
+
+          const keycloakUserInfo = userInfo as any; // Type assertion para acessar propriedades
+
+          const fillUserInfo: UserInfo = {
+            email: keycloakUserInfo.email || '',
+            username: keycloakUserInfo.preferred_username || keycloakUserInfo.given_name || 'unknown',
+            role: keycloakUserInfo.preferred_username === 'proae' ? 'proae' : 'aluno',
+            sub: keycloakUserInfo.sub,
+            name: keycloakUserInfo.name,
+            given_name: keycloakUserInfo.given_name,
+            family_name: keycloakUserInfo.family_name,
+            email_verified: keycloakUserInfo.email_verified
+          };
+
+          console.log('Processed UserInfo:', fillUserInfo);
+          setUserInfo(fillUserInfo);
+        }).catch((error) => {
+          console.error('Erro ao carregar userInfo:', error);
+          setUserInfo(null);
+        })
+
       } else {
         setIsAuthenticated(false);
         setAuthToken(null);
