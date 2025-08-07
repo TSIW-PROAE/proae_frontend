@@ -48,29 +48,5 @@ jobs:
       run: npm run build --if-present
       
     - name: Run tests
-      run: npm test
+      run: npm run test --coverage --verbose --passWithNoTests
       
-    - name: Create Issue on Failure
-      if: failure()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: '🚨 CI Pipeline Failed - ${{ github.ref_name }}',
-            body: `
-            ## Pipeline Failure Report
-            
-            **Branch:** ${{ github.ref_name }}
-            **Commit:** ${{ github.sha }}
-            **Author:** ${{ github.actor }}
-            **Node Version:** ${{ matrix.node-version }}
-            **Workflow:** ${{ github.workflow }}
-            
-            **Action:** [View Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
-            Please investigate and fix the issues.
-            `,
-            labels: ['ci-failure', 'bug']
-          })
