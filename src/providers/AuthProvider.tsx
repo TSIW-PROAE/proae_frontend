@@ -51,8 +51,6 @@ function AuthProvider({children}: {children: React.ReactNode}){
             family_name: keycloakUserInfo.family_name,
             email_verified: keycloakUserInfo.email_verified
           };
-
-          console.log('Processed UserInfo:', fillUserInfo);
           setUserInfo(fillUserInfo);
         }).catch((error) => {
           console.error('Erro ao carregar userInfo:', error);
