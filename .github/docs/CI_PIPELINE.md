@@ -25,10 +25,13 @@ O projeto utiliza **GitHub Actions** para automatização de CI/CD com duas pipe
 2. **Setup Node.js** com cache npm
 3. **Cache** de node_modules para otimização
 4. **Instalação** de dependências (`npm ci`)
-5. **Build** do projeto (`npm run build`)
-6. **Execução** de testes (`npm test`)
+5. **Verificações de qualidade** (`npm run check-all`)
+   - TypeScript type-check (`tsc --noEmit`)
+   - ESLint análise de código (`eslint src`)
+6. **Build** do projeto (`npm run build`)
+7. **Execução** de testes (`npm test`)
 
-#### **Duração Estimada:** 2-4 minutos
+#### **Duração Estimada:** 3-5 minutos
 
 ---
 
@@ -85,7 +88,7 @@ git push origin feature/nova-funcionalidade
 ### **Para Revisores:**
 
 #### **1. Verificar Status das Pipelines:**
-- ✅ **Node.js CI**: Build e testes passaram
+- ✅ **Node.js CI**: Qualidade, build e testes passaram
 - ✅ **CodeQL**: Sem vulnerabilidades críticas
 
 #### **2. Analisar Relatórios:**
@@ -99,9 +102,16 @@ git push origin feature/nova-funcionalidade
 ### **Node.js CI - Status:**
 | Status | Significado | Ação |
 |--------|-------------|------|
-| ✅ **Success** | Build e testes OK | Pode mergear |
-| ❌ **Failure** | Falha no build/teste | Corrigir erros |
+| ✅ **Success** | Qualidade, build e testes OK | Pode mergear |
+| ❌ **Failure** | Falha em qualidade/build/teste | Corrigir erros |
 | 🟡 **In Progress** | Executando | Aguardar |
+
+### **Detalhes das Verificações:**
+| Step | O que verifica | Falha comum |
+|------|---------------|-------------|
+| **Quality checks** | TypeScript + ESLint | Erros de tipo, código mal formatado |
+| **Build** | Compilação do projeto | Erros de sintaxe, imports |
+| **Tests** | Testes automatizados | Falhas nos testes unitários |
 
 ### **CodeQL - Alertas:**
 | Severidade | Cor | Ação Recomendada |
@@ -145,8 +155,8 @@ Pull Request → Checks (na parte inferior)
    - Marcar: "Issues", "Pull requests", "Actions"
 
 ### **Alertas Críticos:**
-- Falhas de pipeline geram **issues automáticas** (futuro)
 - Vulnerabilidades críticas aparecem na aba **Security**
+- Falhas de pipeline são visíveis em PRs e aba Actions
 
 ---
 
@@ -154,20 +164,30 @@ Pull Request → Checks (na parte inferior)
 
 ### **❌ Node.js CI Falhou:**
 
-#### **1. Erro de Build:**
+#### **1. Erro de Verificação de Qualidade:**
+```bash
+# Testar localmente
+npm run check-all
+# ou separadamente:
+npm run type-check    # Verificar erros TypeScript
+npm run lint          # Verificar problemas ESLint
+npm run lint:fix      # Corrigir automaticamente
+```
+
+#### **2. Erro de Build:**
 ```bash
 # Testar localmente
 npm ci
 npm run build
 ```
 
-#### **2. Erro de Teste:**
+#### **3. Erro de Teste:**
 ```bash
 # Executar testes localmente
 npm test
 ```
 
-#### **3. Cache Issues:**
+#### **4. Cache Issues:**
 - Re-executar pipeline (botão "Re-run jobs")
 - Ou fazer pequeno commit para invalidar cache
 
@@ -208,6 +228,7 @@ node-version: [18.x, 20.x]  # Adicionar/remover conforme necessário
 - **Duração:** Pipelines não devem passar de 10 minutos
 - **Taxa de Sucesso:** Manter acima de 95%
 - **Alertas de Segurança:** Revisar semanalmente
+- **Qualidade de Código:** Manter warnings ESLint baixo (< 10)
 
 ---
 
@@ -215,22 +236,15 @@ node-version: [18.x, 20.x]  # Adicionar/remover conforme necessário
 
 ### **Indicadores de Sucesso:**
 - ✅ **100%** dos PRs passam pelas pipelines
-- ✅ **< 5 minutos** de duração média
+- ✅ **< 6 minutos** de duração média (incluindo verificações de qualidade)
 - ✅ **Zero** vulnerabilidades críticas em produção
 - ✅ **95%+** de taxa de sucesso das pipelines
+- ✅ **< 10 warnings** ESLint por pipeline
 
 ### **Relatórios Disponíveis:**
 - **GitHub Insights:** Actions → View workflow runs
 - **Security Overview:** Security → Overview
 - **Dependency Alerts:** Security → Dependabot
-
----
-
-## Contatos e Suporte
-
-**Responsável pelas Pipelines:** [Seu Nome]  
-**Documentação Técnica:** `docs/CI_PIPELINE.md`  
-**Issues:** Criar issue no repositório com label `ci-pipeline`
 
 ---
 
