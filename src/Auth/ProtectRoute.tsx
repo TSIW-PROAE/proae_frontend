@@ -2,26 +2,16 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import SideBar from "@/components/SideBar/SideBar.tsx";
 import { useClerk } from "@clerk/clerk-react";
 
-const isAuthenticatedAluno = () => {
-  const { session } = useClerk();
-  return session ? true : false;
-};
-
-const isAuthenticatedProae = () => {
-  // const { session } = useClerk();
-  // return session ? true : false;
-  return true; //dados mockados por enquanto
-};
-
 export default function ProtectedRouteAluno() {
   const location = useLocation();
+  const { session } = useClerk();
 
   const routesToNotRenderSideBar = ["/portal-aluno/candidatura"];
   const shouldShowSideBar = !routesToNotRenderSideBar.includes(
     location.pathname
   );
 
-  if (!isAuthenticatedAluno()) {
+  if (!session) {
     return <Navigate to="/login-aluno" replace />;
   }
 
@@ -63,13 +53,16 @@ export default function ProtectedRouteAluno() {
 
 export function ProtectedRouteProae() {
   const location = useLocation();
+  // const { session } = useClerk();
+  // return session ? true : false;
+  const isAuthenticated = true; // dados mockados por enquanto
 
   const routesToNotRenderSideBar = ["/portal-proae/cadastro-edital"];
   const shouldShowSideBar = !routesToNotRenderSideBar.includes(
     location.pathname
   );
 
-  if (!isAuthenticatedProae()) {
+  if (!isAuthenticated) {
     return <Navigate to="/login-proae" replace />;
   }
 

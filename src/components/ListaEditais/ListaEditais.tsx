@@ -66,7 +66,7 @@ export default function ListaEditais({
       <div className="lista-editais-empty">
         <div className="empty-icon">📄</div>
         <h3>Nenhum edital encontrado</h3>
-        <p>Clique em "Novo Edital" para criar o primeiro edital.</p>
+        <p>Clique em &quot;Novo Edital&quot; para criar o primeiro edital.</p>
       </div>
     );
   }

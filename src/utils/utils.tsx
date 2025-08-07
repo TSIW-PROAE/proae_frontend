@@ -153,12 +153,13 @@ export function formatarTexto(
             }
             return formatted;
 
-        case "moeda":
+        case "moeda": {
             if (formatted.length === 0) return "";
             const value = parseInt(formatted) / 100;
             return `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+        }
 
-        case "personalizado":
+        case "personalizado": {
             if (!padrao) return texto;
             try {
                 return texto.replace(new RegExp(padrao), "$&");
@@ -166,6 +167,7 @@ export function formatarTexto(
                 console.error("Erro ao aplicar padrão personalizado:", e);
                 return texto;
             }
+        }
 
         default:
             return texto;
@@ -218,7 +220,7 @@ export function obterMensagemErro(formatacao: TipoFormatacao): string {
         default:
             return "Formato inválido";
     }
-};
+}
 
 export function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));

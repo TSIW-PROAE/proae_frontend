@@ -9,7 +9,7 @@ export default function NotFound() {
       <a
         href="https://github.com/TSIW-PROAE"
         target="_blank"
-        rel="noopener"
+        rel="noopener noreferrer"
         style={{ display: "flex", justifyContent: "center" }}
       >
         <img

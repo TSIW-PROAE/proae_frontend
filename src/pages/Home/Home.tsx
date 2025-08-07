@@ -25,7 +25,7 @@ export default function Home() {
         const portalAlunoService = new PortalAlunoService(client);
         const response = await portalAlunoService.getEditals();
         setEditais(Array.isArray(response) ? response : []);
-      } catch (error) {
+      } catch {
         setEditais([]);
       } finally {
         setLoading(false);

@@ -175,14 +175,15 @@ const formatarTexto = (
       }
       return formatted;
 
-    case "moeda":
+    case "moeda": {
       // R$ 0.000,00
       if (formatted.length === 0) return "";
 
       const value = parseInt(formatted) / 100;
       return `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+    }
 
-    case "personalizado":
+    case "personalizado": {
       // Usar expressão regular personalizada
       if (!padrao) return texto;
       try {
@@ -191,6 +192,7 @@ const formatarTexto = (
         console.error("Erro ao aplicar padrão personalizado:", e);
         return texto;
       }
+    }
 
     default:
       return texto;
@@ -778,7 +780,7 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
           </div>
         );
 
-      case "documentos":
+      case "documentos": {
         const documentosConfig = input as DocumentosConfig;
         return (
           <div className="input-container documentos-container" key={nome}>
@@ -919,6 +921,7 @@ const FormularioDinamico: React.FC<FormularioDinamicoProps> = ({
             {erro && <p className="mensagem-erro">{erro}</p>}
           </div>
         );
+      }
 
       default:
         return null;
