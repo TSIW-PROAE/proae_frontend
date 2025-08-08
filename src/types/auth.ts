@@ -8,10 +8,10 @@ export interface UserInfo{
 
 export interface AuthContextType{
   isAuthenticated: boolean;
-  userInfo: UserInfo | null;
-  login: (data: UserLogin) => void;
+  userInfo: UserInfo | null |UserSignup;
+  login: (data: UserLogin) => Promise<UserLoginResponse>;
   logout: () => void;
-  register: (data: UserSignup) => void;
+  register: (data: UserSignup) => Promise<any>;
   Oauth_login: () => void;
   Oauth_logout: () => void;
   Oauth_register: () => void;
@@ -39,7 +39,7 @@ export type UserLogin = {
 }
 
 export interface UserLoginResponse {
-  acess_token: string;
+  access_token: string;
   user: {
     id: number;
     nome: string;
