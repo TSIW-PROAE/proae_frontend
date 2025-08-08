@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AuthContext } from '@/context/AuthContext'
-import { UserInfo } from '@/types/auth'
+import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
+import  {FetchAdapter} from '@/services/BaseRequestService/HttpClient'
+import CadastroAlunoService from '@/services/CadastroAluno.service/cadastroAluno.service'
+import { getCookie } from '@/utils/utils'
 
 
 function AuthProvider({children}: {children: React.ReactNode}){
@@ -8,13 +11,41 @@ function AuthProvider({children}: {children: React.ReactNode}){
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
-  const login = useCallback(() => {}, [])
+  const acess_token = getCookie("token");
+
+  const client = new FetchAdapter();
+  const cadastroAlunoService = new CadastroAlunoService(client);
+
+  const login = useCallback((data: UserLogin) => {cadastroAlunoService.LoginAluno(data)}, [])
   const logout = useCallback(() => {
     setIsAuthenticated(false);
     setUserInfo(null);
   }, []);
 
-  const register = useCallback(() => {}, [])
+  const register = useCallback((data: UserSignup) => {cadastroAlunoService.createAlunoUser(data)}, [])
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (acess_token) {
+        try {
+          const response = await cadastroAlunoService.validateToken();
+          setUserInfo(response.user);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error("Authentication failed", error);
+          setIsAuthenticated(false);
+          setUserInfo(null);
+        }
+      } else {
+        setIsAuthenticated(false);
+        setUserInfo(null);
+      }
+      setLoading(false);
+    };
+    checkAuth();
+  }, [acess_token, cadastroAlunoService]);
+
+
   const Oauth_login = useCallback(() => {}, [])
   const Oauth_logout = useCallback(() => {}, [])
   const Oauth_register = useCallback(() => {}, [])

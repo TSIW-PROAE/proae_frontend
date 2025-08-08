@@ -3,10 +3,12 @@ import { createContext } from "react";
 
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
-  authToken: null,
   userInfo: null,
   login: () => {},
   logout: () => {},
   register: () => {},
+  Oauth_login: () => {},
+  Oauth_logout: () => {},
+  Oauth_register: () => {},
   loading: true,
 })
