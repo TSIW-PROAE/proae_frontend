@@ -5,7 +5,6 @@ import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { useEffect, useState, useContext } from "react";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
-import { Toaster } from "react-hot-toast";
 import {
   User,
   BookOpen,
@@ -36,7 +35,6 @@ export default function PortalAluno() {
   const [loading, setLoading] = useState(true);
 
 
-
   useEffect(() => {
     if (user) {
       setFirstName(user.nome || "");
@@ -46,6 +44,8 @@ export default function PortalAluno() {
 
   const client = new FetchAdapter();
   const portalAlunoService = new PortalAlunoService(client);
+
+  portalAlunoService.headerToken = user!.access_token || "";
 
   const getBenefits = async () => {
     try {
@@ -139,7 +139,7 @@ export default function PortalAluno() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Toaster position="top-right" />
+      {/*<Toaster position="top-right" />*/}
 
       <div className="portal-container">
         {/* Header Principal */}

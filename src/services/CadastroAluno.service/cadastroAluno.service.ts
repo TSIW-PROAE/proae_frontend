@@ -18,7 +18,6 @@ export default class CadastroAlunoService {
   async LoginAluno(data: UserLogin){
     const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/login`;
     const response: UserLoginResponse = await this.httpClient.post(url, data, "");
-    console.log(response)
     setCookie(import.meta.env.VITE_COOKIE_NAME, response.access_token, 7);
     return response;
   }

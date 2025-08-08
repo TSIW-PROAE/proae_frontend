@@ -40,7 +40,7 @@ export default function Home() {
     if (!authLoading && isAuthenticated) {
         navigate("/portal-aluno");
       } else {
-        navigate("/portal-proae/inscricoes");
+        navigate("/")
       }
   }, [isAuthenticated, userInfo, authLoading, navigate]);
 
