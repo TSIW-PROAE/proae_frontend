@@ -20,6 +20,8 @@ import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
 import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
 import ProtectedRouteAluno from "@/Auth/ProtectedRouteAluno";
 import ProtectedRouteProae from "@/Auth/ProtectedRouteProae";
+import LoginAluno from "@/pages/paginaAluno/LoginAluno/LoginAluno";
+import LoginProae from "@/pages/paginaProae/LoginProae/LoginProae";
 
 const routes = [
   {
@@ -31,15 +33,18 @@ const routes = [
         element: <Home />,
       },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
+      {path: "login-aluno", element: <LoginAluno />},
       {
         element: <ProtectedRouteAluno />,
         children: [
+          {path: "cadastro-aluno", element: <CadastroAluno />},
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
           { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
         ],
       },
+      {path: "login-proae", element: <LoginProae />},
       {
         element: <ProtectedRouteProae />,
         children: [
