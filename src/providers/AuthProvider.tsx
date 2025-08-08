@@ -9,7 +9,7 @@ import { getCookie } from '@/utils/utils'
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState<UserInfo | null | UserSignup>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   const client = new FetchAdapter();
   const cadastroAlunoService = new CadastroAlunoService(client);
@@ -17,7 +17,13 @@ function AuthProvider({children}: {children: React.ReactNode}){
   const login = useCallback(async (data: UserLogin) => {
     try {
       const response = await cadastroAlunoService.LoginAluno(data);
-      setUserInfo(response.user);
+      const fillUserInfo: UserInfo = {
+        email: response.user.email,
+        id: response.user.id,
+        nome: response.user.nome,
+        access_token: response.access_token,
+      }
+      setUserInfo(fillUserInfo);
       setIsAuthenticated(true);
       return response;
     } catch (error) {
@@ -50,6 +56,15 @@ function AuthProvider({children}: {children: React.ReactNode}){
         try {
           cadastroAlunoService.headerToken = access_token;
           const response: UserSignup | any = await cadastroAlunoService.validateToken(access_token);
+          if(userInfo == null){
+            const fillUserInfo: UserInfo = {
+            email: response.user.email,
+            id: response.user.id,
+            nome: response.user.nome,
+            access_token: response.access_token,
+          }
+            setUserInfo(fillUserInfo);
+          }
           if(!response.valid){
             throw new Error("Token inválido");
           }
