@@ -15,7 +15,7 @@ import "./Home.css";
 import { AuthContext } from "@/context/AuthContext";
 
 export default function Home() {
-  const {isAuthenticated, userInfo, loading: authLoading, login} = useContext(AuthContext);
+  const {isAuthenticated, userInfo, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [editais, setEditais] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,23 +38,19 @@ export default function Home() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      if (userInfo?.role === "aluno") {
         navigate("/portal-aluno");
       } else if (userInfo?.role === "proae") {
         navigate("/portal-proae/inscricoes");
       }
-    }
   }, [isAuthenticated, userInfo, authLoading, navigate]);
 
   const handleAccessPortal = () => {
     if (isAuthenticated) {
-      if (userInfo?.role === "aluno") {
         navigate("/portal-aluno");
       } else if (userInfo?.role === "proae") {
         navigate("/portal-proae/inscricoes");
-      }
     } else {
-      login();
+      navigate("/login-aluno");
     }
   };
 

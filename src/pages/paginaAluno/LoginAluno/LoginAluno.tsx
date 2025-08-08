@@ -18,10 +18,11 @@ export default function LoginAluno() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const { isAuthenticated, login } = useContext(AuthContext);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const emailParam = params.get("email");
-    const {isAuthenticated} = useContext(AuthContext);
 
     if (emailParam) {
       setEmail(emailParam);
@@ -29,7 +30,7 @@ export default function LoginAluno() {
     if (isAuthenticated) {
       navigate("/portal-aluno");
     }
-  }, [location,  navigate]);
+  }, [location, navigate, isAuthenticated]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -61,24 +62,15 @@ export default function LoginAluno() {
     if (!temErro && !isLoading) {
       setIsLoading(true);
       try {
-        // TODO: Implementar lógica de login do aluno com informações
-        // com matricula e etc
-        console.log("Resultado do login:");
-        console.log("Login realizado com sucesso!");
+        const response = await login({ email, senha });
         toast.success("Login realizado com sucesso!");
         navigate("/portal-aluno");
       } catch (err: any) {
         console.error("Erro no login:", err);
-        if (
-          err.errors[0].message ==
-          "Password is incorrect. Try again, or use another method."
-        ) {
-          toast.error("senha incorreta");
-        } else if (err.errors[0].message == "Couldn't find your account.") {
-          toast.error("email não cadastrado");
+        if (err?.message) {
+          toast.error(err.message);
         } else {
-          toast.error(err.errors[0].message);
-          //toast.error("Erro ao realizar login. Verifique suas credenciais.");
+          toast.error("Erro ao realizar login. Verifique suas credenciais.");
         }
       } finally {
         setIsLoading(false);
