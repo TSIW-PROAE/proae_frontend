@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { User, Settings, Shield, Edit3, UserCheck } from "lucide-react";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
+import { LoadingSpin } from "@/components/Loading/LoadingScreen";
 
 export default function ConfiguracaoAluno() {
   const { userInfo } = useContext(AuthContext);
@@ -12,7 +13,7 @@ export default function ConfiguracaoAluno() {
 
   useEffect(() => {
     if (userInfo) {
-      setFirstName(userInfo.given_name || "");
+      setFirstName(userInfo.nome || "");
     }
   }, [userInfo]);
 
@@ -27,12 +28,7 @@ export default function ConfiguracaoAluno() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando configurações...</p>
-        </div>
-      </div>
+      <LoadingSpin/>
     );
   }
 

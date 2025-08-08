@@ -18,6 +18,7 @@ import {
   Bell,
 } from "lucide-react";
 import { AuthContext } from "@/context/AuthContext";
+import { LoadingSpin } from "@/components/Loading/LoadingScreen";
 
 interface ResponseData {
   dados: {
@@ -38,7 +39,7 @@ export default function PortalAluno() {
 
   useEffect(() => {
     if (user) {
-      setFirstName(user.given_name || "");
+      setFirstName(user.nome || "");
       setUserId(user.email);
     }
   }, [user]);
@@ -132,12 +133,7 @@ export default function PortalAluno() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando seu portal...</p>
-        </div>
-      </div>
+      <LoadingSpin/>
     );
   }
 
