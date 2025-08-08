@@ -62,7 +62,7 @@ export default function LoginAluno() {
     if (!temErro && !isLoading) {
       setIsLoading(true);
       try {
-        const response = await login({ email, senha });
+        await login({ email, senha });
         toast.success("Login realizado com sucesso!");
         navigate("/portal-aluno");
       } catch (err: any) {

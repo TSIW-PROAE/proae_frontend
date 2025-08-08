@@ -9,7 +9,7 @@ export interface UserInfo{
 export interface AuthContextType{
   isAuthenticated: boolean;
   userInfo: UserInfo | null |UserSignup;
-  login: (data: UserLogin) => Promise<UserLoginResponse>;
+  login: (data: UserLogin) => Promise <UserLoginResponse>;
   logout: () => void;
   register: (data: UserSignup) => Promise<any>;
   Oauth_login: () => void;
