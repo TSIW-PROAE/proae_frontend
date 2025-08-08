@@ -5,9 +5,9 @@ export function getCookie(name: string): string | null {
   return cookie ? cookie : null;
 }
 
-export function setCookie(name: string, value: string, days: number) {
+export function setCookie(name: string, value: string, days?: number) {
   Cookie.set(name, value, {
-    expires: days,
+    expires: import.meta.env.VITE_COOKIE_EXPIRATION_DAYS ? parseInt(import.meta.env.VITE_COOKIE_EXPIRATION_DAYS) : days,
     secure: true,
     sameSite: "Strict",
   })
