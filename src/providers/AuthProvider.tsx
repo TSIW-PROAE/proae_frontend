@@ -4,50 +4,70 @@ import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
 import  {FetchAdapter} from '@/services/BaseRequestService/HttpClient'
 import CadastroAlunoService from '@/services/CadastroAluno.service/cadastroAluno.service'
 import { getCookie } from '@/utils/utils'
-import { useNavigate } from 'react-router-dom'
 
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const navigate = useNavigate();
-
-  const acess_token = getCookie("token");
+  const [userInfo, setUserInfo] = useState<UserInfo | null | UserSignup>(null);
 
   const client = new FetchAdapter();
   const cadastroAlunoService = new CadastroAlunoService(client);
 
-  const login = useCallback((data: UserLogin) => {cadastroAlunoService.LoginAluno(data)}, [])
+  const login = useCallback(async (data: UserLogin) => {
+    try {
+      const response = await cadastroAlunoService.LoginAluno(data);
+      setUserInfo(response.user);
+      setIsAuthenticated(true);
+      return response;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  }, [])
+
   const logout = useCallback(() => {
     cadastroAlunoService.LogoutAluno();
     setIsAuthenticated(false);
     setUserInfo(null);
-    navigate("/");
   }, []);
 
-  const register = useCallback((data: UserSignup) => {cadastroAlunoService.createAlunoUser(data)}, [])
+  const register = useCallback(async (data: UserSignup) => {
+    try {
+      const response = await cadastroAlunoService.createAlunoUser(data);
+      return response;
+    } catch (error) {
+      console.error("Register failed:", error);
+      throw error;
+    }
+  }, [])
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (acess_token) {
+      const access_token = getCookie("token");
+
+      if (access_token) {
         try {
-          const response = await cadastroAlunoService.validateToken();
-          setUserInfo(response.user);
+          cadastroAlunoService.headerToken = access_token;
+          const response: UserSignup | any = await cadastroAlunoService.validateToken(access_token);
+          if(!response.valid){
+            throw new Error("Token inválido");
+          }
           setIsAuthenticated(true);
         } catch (error) {
-          console.error("Authentication failed", error);
           setIsAuthenticated(false);
           setUserInfo(null);
+          cadastroAlunoService.LogoutAluno();
+        } finally {
+          setLoading(false);
         }
-      } else {
-        setIsAuthenticated(false);
-        setUserInfo(null);
+        return;
       }
+
       setLoading(false);
     };
     checkAuth();
-  }, [acess_token, cadastroAlunoService]);
+  }, []);
 
 
   const Oauth_login = useCallback(() => {}, [])
