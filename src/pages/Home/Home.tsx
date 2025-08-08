@@ -39,7 +39,7 @@ export default function Home() {
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
         navigate("/portal-aluno");
-      } else if (userInfo?.role === "proae") {
+      } else {
         navigate("/portal-proae/inscricoes");
       }
   }, [isAuthenticated, userInfo, authLoading, navigate]);
@@ -47,10 +47,8 @@ export default function Home() {
   const handleAccessPortal = () => {
     if (isAuthenticated) {
         navigate("/portal-aluno");
-      } else if (userInfo?.role === "proae") {
-        navigate("/portal-proae/inscricoes");
-    } else {
-      navigate("/login-aluno");
+      } else {
+        navigate("/login-aluno") ;
     }
   };
 
