@@ -8,7 +8,7 @@ import {
   formatarTexto,
   obterMensagemErro,
   validarFormatacao,
-} from "../../utils/utils";
+} from "../../utils/validations";
 import { TipoFormatacao } from "../FormularioDinamico/FormularioDinamico";
 import "./Form.css";
 import { formSections } from "./FormConfig";
