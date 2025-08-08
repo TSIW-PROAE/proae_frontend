@@ -279,7 +279,7 @@
 
 .processos-seletivos-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 2rem;
 }
@@ -290,14 +290,12 @@
   font-size: 40px;
   color: var(--cor-azul-escuro);
   margin: 0;
-  text-align: left;
 }
 
 /* Responsividade para processos seletivos */
 @media (max-width: 992px) {
   .processos-seletivos-header {
     flex-direction: column;
-    align-items: flex-start;
     gap: 1.5rem;
   }
 
