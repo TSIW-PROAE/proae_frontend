@@ -1,4 +1,4 @@
-import { formatCPF, validarCPFReal } from "../../../utils/utils";
+import { formatCPF, validarCPFReal } from "../../../utils/validations";
 import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
@@ -414,7 +414,7 @@ export default function Cadastro() {
       <div className="cadastro-content">
         {/* <div className="cadastro-image-container">
             <img
-                src="src/assets/logo-ufba-PROAE.png" 
+                src="src/assets/logo-ufba-PROAE.png"
                 alt="Logo UFBA"
                 className="cadastro-image"
             />

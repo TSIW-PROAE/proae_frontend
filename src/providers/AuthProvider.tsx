@@ -4,12 +4,14 @@ import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
 import  {FetchAdapter} from '@/services/BaseRequestService/HttpClient'
 import CadastroAlunoService from '@/services/CadastroAluno.service/cadastroAluno.service'
 import { getCookie } from '@/utils/utils'
+import { useNavigate } from 'react-router-dom'
 
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const navigate = useNavigate();
 
   const acess_token = getCookie("token");
 
@@ -18,8 +20,10 @@ function AuthProvider({children}: {children: React.ReactNode}){
 
   const login = useCallback((data: UserLogin) => {cadastroAlunoService.LoginAluno(data)}, [])
   const logout = useCallback(() => {
+    cadastroAlunoService.LogoutAluno();
     setIsAuthenticated(false);
     setUserInfo(null);
+    navigate("/");
   }, []);
 
   const register = useCallback((data: UserSignup) => {cadastroAlunoService.createAlunoUser(data)}, [])

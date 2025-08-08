@@ -12,3 +12,7 @@ export function setCookie(name: string, value: string, days: number) {
     sameSite: "Strict",
   })
 }
+
+export function deleteCookie(name: string) {
+  Cookie.remove(name);
+}

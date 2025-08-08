@@ -1,4 +1,4 @@
-import { setCookie } from "@/utils/utils";
+import { setCookie, deleteCookie } from "@/utils/utils";
 import IHttpClient from "../BaseRequestService/HttpClient";
 import { UserSignup, UserLogin, UserLoginResponse } from "@/types/auth";
 
@@ -26,6 +26,10 @@ export default class CadastroAlunoService {
     const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/validate`;
     const response: UserLoginResponse = await this.httpClient.get(url, this.headerToken);
     return response;
+  }
+
+  async LogoutAluno(){
+    deleteCookie("token");
   }
 
 }
