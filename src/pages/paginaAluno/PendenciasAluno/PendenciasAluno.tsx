@@ -67,7 +67,7 @@ const PendenciasAluno: React.FC = () => {
 
 
         setPendencias(documentosReprovados);
-      } catch (error) {
+      } catch {
         setPendencias([]);
         setTituloEdital("Edital");
       } finally {

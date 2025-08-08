@@ -1,4 +1,5 @@
 // AlunoForm.tsx
+import React from "react";
 import { Button } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { Save } from "lucide-react";

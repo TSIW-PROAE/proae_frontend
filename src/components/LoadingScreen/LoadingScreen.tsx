@@ -9,4 +9,4 @@ export default function LoadingScreen({ isVisible = true, message = "Carregando.
             </div>
         </div>
     );
-};
+}

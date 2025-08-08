@@ -130,7 +130,7 @@ export default function Inscricao() {
           addedPages.push({ titulo: page.texto, inputs: inputs });
         });
         setPages((prev) => ({ ...prev, pages: addedPages }));
-      } catch (e) {
+      } catch {
         navigate("/portal-aluno");
       }
     };
