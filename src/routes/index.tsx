@@ -4,8 +4,6 @@ import App from "../App";
 import DesignSystem from "../pages/DesignSystem/DesignSystem";
 import Home from "../pages/Home/Home";
 import NotFound from "../pages/NotFound/NotFound";
-import LoginAluno from "../pages/paginaAluno/LoginAluno/LoginAluno";
-import LoginProae from "../pages/paginaProae/LoginProae/LoginProae";
 
 // Aluno
 import ConfiguracaoAluno from "../pages/paginaAluno/ConfiguracaoAluno/ConfiguracaoAluno";
@@ -20,7 +18,10 @@ import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
 import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
-import ProtectedRouteAluno, { ProtectedRouteProae } from "../Auth/ProtectRoute";
+import ProtectedRouteAluno from "@/Auth/ProtectedRouteAluno";
+import ProtectedRouteProae from "@/Auth/ProtectedRouteProae";
+import LoginAluno from "@/pages/paginaAluno/LoginAluno/LoginAluno";
+import LoginProae from "@/pages/paginaProae/LoginProae/LoginProae";
 
 const routes = [
   {
@@ -31,18 +32,19 @@ const routes = [
         path: "",
         element: <Home />,
       },
-      { path: "login-aluno", element: <LoginAluno /> },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
+      {path: "login-aluno", element: <LoginAluno />},
       {
         element: <ProtectedRouteAluno />,
         children: [
+          {path: "cadastro-aluno", element: <CadastroAluno />},
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
           { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
         ],
       },
-      { path: "login-proae", element: <LoginProae /> },
+      {path: "login-proae", element: <LoginProae />},
       {
         element: <ProtectedRouteProae />,
         children: [

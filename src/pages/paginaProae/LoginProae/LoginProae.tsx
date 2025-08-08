@@ -1,4 +1,4 @@
-import { formatCPF, validarCPFReal } from "../../../utils/utils";
+import { formatCPF, validarCPFReal } from "../../../utils/validations";
 import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
@@ -59,14 +59,14 @@ export default function LoginProae() {
       // Continuar com o envio do formulário
       console.log("Formulário válido, enviando...");
     }
-    
+
   };
 
   return (
     <div id="login" className="login-container">
       <div className="login-image-container">
       <img
-        src="src/assets/logo-ufba-PROAE.png" 
+        src="src/assets/logo-ufba-PROAE.png"
         alt="Logo UFBA"
         className="login-image"
       />

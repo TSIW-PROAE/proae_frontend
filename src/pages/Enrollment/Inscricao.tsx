@@ -9,8 +9,8 @@ import IHttpClient, {
 } from "@/services/BaseRequestService/HttpClient.ts";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import LoadingScreen from "@/components/LoadingScreen/LoadingScreen.tsx";
-import { getCookie } from "@/utils/utils.tsx";
+import LoadingScreen from "@/components/Loading/LoadingScreen";
+import { getCookie } from "@/utils/utils";
 
 export type FormsConfiguration = {
   titleInscricao: string;

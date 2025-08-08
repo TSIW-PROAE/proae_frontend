@@ -2,11 +2,9 @@ import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
 import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
-import { useClerk } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
-import { Toaster } from "react-hot-toast";
 import {
   User,
   BookOpen,
@@ -18,6 +16,8 @@ import {
   AlertCircle,
   Bell,
 } from "lucide-react";
+import { AuthContext } from "@/context/AuthContext";
+import { LoadingSpin } from "@/components/Loading/LoadingScreen";
 
 interface ResponseData {
   dados: {
@@ -26,7 +26,7 @@ interface ResponseData {
 }
 
 export default function PortalAluno() {
-  const { user } = useClerk();
+  const { userInfo:user } = useContext(AuthContext);
   const [firstName, setFirstName] = useState("");
   const [userId, setUserId] = useState("");
   const [benefits, setBenefits] = useState<any[]>([]);
@@ -34,15 +34,18 @@ export default function PortalAluno() {
   const [inscriptions, setInscriptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
     if (user) {
-      setFirstName(user.firstName || "");
-      setUserId(user.id);
+      setFirstName(user.nome || "");
+      setUserId(user.email);
     }
   }, [user]);
 
   const client = new FetchAdapter();
   const portalAlunoService = new PortalAlunoService(client);
+
+  portalAlunoService.headerToken = user!.access_token || "";
 
   const getBenefits = async () => {
     try {
@@ -130,18 +133,13 @@ export default function PortalAluno() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando seu portal...</p>
-        </div>
-      </div>
+      <LoadingSpin/>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Toaster position="top-right" />
+      {/*<Toaster position="top-right" />*/}
 
       <div className="portal-container">
         {/* Header Principal */}
@@ -310,3 +308,5 @@ export default function PortalAluno() {
     </div>
   );
 }
+
+
