@@ -1,5 +1,4 @@
 export interface UserInfo{
-  access_token?: string;
   id: number;
   nome: string;
   email: string;
@@ -23,8 +22,6 @@ export type UserSignup = {
   email: string;
   senha: string;
   nome: string;
-  sobrenome: string;
-  pronome: string;
   data_nascimento: string;
   curso: string;
   campus: string;
@@ -39,12 +36,21 @@ export type UserLogin = {
 }
 
 export interface UserLoginResponse {
-  access_token: string;
+  success: string;
   user: {
-    id: number;
+    aluno_id: number
     nome: string;
     email: string;
+    matricula: string;
   };
+  [key: string]: any;
+}
+
+// TODO: Remover declaração any ao finalizar a implementação
+export interface UserSignupResponse {
+  success: string;
+  mensagem: string;
+  [key:string]: any;
 }
 
 // ideia de criar um interface para validar o signup do usuário
