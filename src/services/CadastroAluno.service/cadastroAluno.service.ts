@@ -1,31 +1,38 @@
-import { setCookie, deleteCookie } from "@/utils/utils";
+import { setCookie, deleteCookie, extractCookieFromHeaders } from "@/utils/utils";
 import IHttpClient from "../BaseRequestService/HttpClient";
 import { UserSignup, UserLogin, UserLoginResponse } from "@/types/auth";
 
 export default class CadastroAlunoService {
-  headerToken: string;
 
-  constructor(private readonly httpClient: IHttpClient) {
-    this.headerToken = "";
-  }
+  constructor(private readonly httpClient: IHttpClient) {}
 
   async createAlunoUser(data: UserSignup) {
     const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/signup`;
-    const response = await this.httpClient.post(url, data, this.headerToken);
-    return response;
+    const response = await this.httpClient.post(url, data);
+    return response.data;
   }
 
   async LoginAluno(data: UserLogin){
     const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/login`;
-    const response: UserLoginResponse = await this.httpClient.post(url, data, "");
-    setCookie(import.meta.env.VITE_COOKIE_NAME, response.access_token, 7);
-    return response;
+
+    const response = await this.httpClient.post<UserLoginResponse>(url, data)
+
+
+    const tokenFromCookie = extractCookieFromHeaders(response.headers, import.meta.env.VITE_COOKIE_NAME);
+
+
+    if (tokenFromCookie) {
+      setCookie(import.meta.env.VITE_COOKIE_NAME, tokenFromCookie, import.meta.env.VITE_COOKIE_EXPIRATION_DAYS ? parseInt(import.meta.env.VITE_COOKIE_EXPIRATION_DAYS) : 7);
+    }
+
+    return response.data;
   }
 
-  async validateToken(token: string) {
+  // TODO: Refazer implementação de tipo para o retorno da função
+  async validateToken() {
     const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/validate-token`;
-    const response: UserSignup = await this.httpClient.post(url, { token }, this.headerToken);
-    return response;
+    const response = await this.httpClient.get<{ data: any }>(url);
+    return response.data;
   }
 
   async LogoutAluno(){

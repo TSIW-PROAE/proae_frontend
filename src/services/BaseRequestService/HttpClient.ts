@@ -1,16 +1,22 @@
 import axios, { AxiosInstance } from "axios";
 import { toast } from "react-hot-toast";
 
+export interface HttpResponse<T> {
+  data: T;
+  headers: Record<string, string>;
+  status: number;
+}
+
 export default interface IHttpClient {
-  get<T>(url: string, token?: string): Promise<T>;
+  get<T>(url: string): Promise<T>;
 
-  post<T>(url: string, data: unknown, token: string): Promise<T>;
+  post<T>(url: string, data: unknown): Promise<HttpResponse<T>>;
 
-  put<T>(url: string, data: unknown, token: string): Promise<T>;
+  put<T>(url: string, data: unknown): Promise<T>;
 
-  patch<T>(url: string, data: unknown, token: string): Promise<T>; // <-- Add this
+  patch<T>(url: string, data: unknown): Promise<T>;
 
-  delete<T>(url: string, token?: string): Promise<T>;
+  delete<T>(url: string): Promise<T>;
 
   setHeader(name: string, value: string): void;
 }
@@ -31,13 +37,10 @@ export class FetchAdapter implements IHttpClient {
     this.axiosInstance.defaults.headers.common[name] = value;
   }
 
-  async get<T>(url: string, token?: string): Promise<T> {
+  async get<T>(url: string): Promise<T> {
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-      const response = await this.axiosInstance.get<T>(url, {
-        headers,
-      });
+      const response = await this.axiosInstance.get<T>(url);
 
       return response.data;
     } catch (error: any) {
@@ -46,16 +49,26 @@ export class FetchAdapter implements IHttpClient {
     }
   }
 
-  async post<T>(url: string, data: unknown, token: string): Promise<T> {
+  async post<T>(url: string, data: unknown): Promise<HttpResponse<T>> {
     try {
-      const headers: any = {};
-      if (token && token.trim() !== "") {
-        headers.Authorization = `Bearer ${token}`;
-      }
 
       const response = await this.axiosInstance.post<T>(url, data, {
-        headers,
+        withCredentials: true, // Para receber cookies
       });
+      return {
+        data: response.data,
+        headers: response.headers as Record<string, string>,
+        status: response.status,
+      };
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+      throw error.response.data;
+    }
+  }
+
+  async put<T>(url: string, data: unknown): Promise<T> {
+    try {
+      const response = await this.axiosInstance.put<T>(url, data);
       return response.data;
     } catch (error: any) {
       toast.error(error.response.data.message);
@@ -63,13 +76,10 @@ export class FetchAdapter implements IHttpClient {
     }
   }
 
-  async put<T>(url: string, data: unknown, token: string): Promise<T> {
+  async delete<T>(url: string): Promise<T> {
     try {
-      const response = await this.axiosInstance.put<T>(url, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+
+      const response = await this.axiosInstance.delete<T>(url);
       return response.data;
     } catch (error: any) {
       toast.error(error.response.data.message);
@@ -77,33 +87,10 @@ export class FetchAdapter implements IHttpClient {
     }
   }
 
-  async delete<T>(url: string, token?: string): Promise<T> {
+  async patch<T>(url: string, data: unknown): Promise<T> {
     try {
-      const headers: any = {};
-      if (token && token.trim() !== "") {
-        headers.Authorization = `Bearer ${token}`;
-      }
 
-      const response = await this.axiosInstance.delete<T>(url, {
-        headers,
-      });
-      return response.data;
-    } catch (error: any) {
-      toast.error(error.response.data.message);
-      throw error.response.data;
-    }
-  }
-
-  async patch<T>(url: string, data: unknown, token: string): Promise<T> {
-    try {
-      const headers: any = {};
-      if (token && token.trim() !== "") {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      const response = await this.axiosInstance.patch<T>(url, data, {
-        headers,
-      });
+      const response = await this.axiosInstance.patch<T>(url, data);
       return response.data;
     } catch (error: any) {
       toast.error(error.response.data.message);
