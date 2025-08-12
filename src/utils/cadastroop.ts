@@ -1,5 +1,4 @@
-
-const cursos = [
+export const cursos = [
   { valor: "Administração", label: "Administração", campus: "Salvador" },
   { valor: "Administração pública", label: "Administração pública", campus: "Salvador" },
   { valor: "Administração pública e gestão social", label: "Administração pública e gestão social", campus: "Salvador" },
