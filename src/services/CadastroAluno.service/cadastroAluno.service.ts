@@ -31,7 +31,7 @@ export default class CadastroAlunoService {
   // TODO: Refazer implementação de tipo para o retorno da função
   async validateToken() {
     const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/validate-token`;
-    const response = await this.httpClient.get<{ data: any }>(url);
+    const response = await this.httpClient.post(url, {});
     return response.data;
   }
 

@@ -40,7 +40,9 @@ export class FetchAdapter implements IHttpClient {
   async get<T>(url: string): Promise<T> {
     try {
 
-      const response = await this.axiosInstance.get<T>(url);
+      const response = await this.axiosInstance.get<T>(url, {
+        withCredentials: true,
+      });
 
       return response.data;
     } catch (error: any) {
@@ -53,7 +55,7 @@ export class FetchAdapter implements IHttpClient {
     try {
 
       const response = await this.axiosInstance.post<T>(url, data, {
-        withCredentials: true, // Para receber cookies
+        withCredentials: true,
       });
       return {
         data: response.data,
@@ -68,7 +70,9 @@ export class FetchAdapter implements IHttpClient {
 
   async put<T>(url: string, data: unknown): Promise<T> {
     try {
-      const response = await this.axiosInstance.put<T>(url, data);
+      const response = await this.axiosInstance.put<T>(url, data, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error: any) {
       toast.error(error.response.data.message);
@@ -79,7 +83,9 @@ export class FetchAdapter implements IHttpClient {
   async delete<T>(url: string): Promise<T> {
     try {
 
-      const response = await this.axiosInstance.delete<T>(url);
+      const response = await this.axiosInstance.delete<T>(url, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error: any) {
       toast.error(error.response.data.message);
