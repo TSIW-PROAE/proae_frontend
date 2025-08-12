@@ -58,6 +58,7 @@
   display: flex;
   overflow: hidden;
   position: relative;
+  flex-direction: row !important;
 }
 
 .login-form:hover {
@@ -70,12 +71,14 @@
   background-image: url("../../../assets/letras.jpg");
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 35%;
   padding: 0;
   position: relative;
+  min-height: 600px;
 }
 
 /* Overlay para melhorar o contraste */
@@ -93,6 +96,7 @@
 .form-container {
   width: 65%;
   padding: 40px;
+  box-shadow: none;
 }
 
 /* Cabeçalho */
@@ -128,6 +132,16 @@
   display: flex;
   flex-direction: column;
   min-height: 85px;
+  min-width: 284px;
+}
+
+.eye-icon {
+  cursor: pointer;
+  color: var(--cor-azul-escuro);
+  margin-left: 10px;
+  transition: color 0.2s ease;
+  min-height: 35px;
+  min-width: 35px;
 }
 
 .custom-input {
@@ -328,12 +342,12 @@
   }
 
   .login-form {
-    flex-direction: column;
+    flex-direction: column !important;
   }
 
   .logo-container {
     width: 100%;
-    height: 200px;
+    min-height: 200px;
   }
 
   .form-container {
@@ -455,6 +469,7 @@
 
   .input-container {
     min-height: 80px;
+    margin-bottom: 10px;
   }
 
   .portal-title {
@@ -464,7 +479,7 @@
 }
 
 /* Removendo a regra antiga que escondia as imagens por completo */
-/* 🔽 Media query to hide images at 935px or lower 
+/* 🔽 Media query to hide images at 935px or lower
 @media (max-width: 935px) {
     body {
         background-image: none;

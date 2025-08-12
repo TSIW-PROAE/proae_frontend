@@ -3,9 +3,10 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Switch } from "@heroui/switch";
 import { Link } from "@heroui/link";
-import { useLocation, useNavigate } from "react-router-dom";import { toast, Toaster } from "react-hot-toast";
+import { useLocation, useNavigate } from "react-router-dom"; import { toast, Toaster } from "react-hot-toast";
 import "./LoginAluno.css";
 import { AuthContext } from "@/context/AuthContext";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginAluno() {
   const [email, setEmail] = useState("");
@@ -14,6 +15,7 @@ export default function LoginAluno() {
   const [erroSenha, setErroSenha] = useState("");
   const [lembrar, setLembrar] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const anoAtual = new Date().getFullYear();
   const location = useLocation();
   const navigate = useNavigate();
@@ -131,7 +133,7 @@ export default function LoginAluno() {
                   label="Senha"
                   variant="bordered"
                   radius="lg"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Digite sua senha"
                   value={senha}
                   onChange={handleSenhaChange}
@@ -141,10 +143,25 @@ export default function LoginAluno() {
                   disabled={isLoading}
                   classNames={{
                     base: "custom-input",
+                    innerWrapper: "items-center",
+                    input: "pr-12",
                   }}
+                  endContent={
+                    <button
+                      className="focus:outline-none flex items-center justify-center h-full px-2"
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      ) : (
+                        <Eye className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      )}
+                    </button>
+                  }
                 />
               </div>
-
               <div className="login-options">
                 <div className="remember-option">
                   <Switch
