@@ -3,9 +3,11 @@ import { AuthContext } from '@/context/AuthContext'
 import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
 import  {FetchAdapter} from '@/services/BaseRequestService/HttpClient'
 import CadastroAlunoService from '@/services/CadastroAluno.service/cadastroAluno.service'
+import { useLocation } from 'react-router-dom'
 
 
 function AuthProvider({children}: {children: React.ReactNode}){
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -47,7 +49,15 @@ function AuthProvider({children}: {children: React.ReactNode}){
   }, [])
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const publicRouter = ['/login-aluno', '/cadastro-aluno', '/login-proae'];
+
+    if (publicRouter.includes(location.pathname)) {
+      setIsAuthenticated(false);
+      setUserInfo(null);
+      setLoading(false);
+      return;
+    } else{
+      const checkAuth = async () => {
 
         try {
             const response: any = await cadastroAlunoService.validateToken();
@@ -69,6 +79,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
         return;
       }
     checkAuth();
+    }
   }, []);
 
 
