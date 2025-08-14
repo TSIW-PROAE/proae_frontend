@@ -10,7 +10,6 @@ import IHttpClient, {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import LoadingScreen from "@/components/Loading/LoadingScreen";
-import { getCookie } from "@/utils/utils";
 
 export type FormsConfiguration = {
   titleInscricao: string;
@@ -64,12 +63,10 @@ export class InscricaoService {
   private static instance: InscricaoService;
   private readonly httpClient: IHttpClient;
   private readonly url;
-  private readonly headerToken: string;
 
   private constructor() {
     this.httpClient = new FetchAdapter();
     this.url = import.meta.env.VITE_API_URL_SERVICES;
-    this.headerToken = getCookie("__session") || "";
   }
 
   static getInstance(): InscricaoService {
@@ -81,20 +78,17 @@ export class InscricaoService {
 
   async fetchPagesInformation(editalId: number): Promise<PagesResponse[]> {
     return await this.httpClient.get<PagesResponse[]>(
-      this.url + "/steps/edital/" + editalId,
-      this.headerToken
-    );
+      this.url + "/steps/edital/" + editalId);
   }
 
   async saveInscricao(answers: Answers) {
     return await this.httpClient.post(
       this.url + "/inscricoes",
-      answers,
-      this.headerToken
-    );
+      answers);
   }
 }
 
+// TODO: Retirar service da camada de pages!
 export default function Inscricao() {
   const inscricaoService = InscricaoService.getInstance();
   const location = useLocation();

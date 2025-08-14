@@ -45,8 +45,6 @@ export default function PortalAluno() {
   const client = new FetchAdapter();
   const portalAlunoService = new PortalAlunoService(client);
 
-  portalAlunoService.headerToken = user!.access_token || "";
-
   const getBenefits = async () => {
     try {
       const response = await portalAlunoService.getBenefts();
