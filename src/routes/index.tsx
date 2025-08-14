@@ -37,7 +37,6 @@ const routes = [
       {
         element: <ProtectedRouteAluno />,
         children: [
-          {path: "cadastro-aluno", element: <CadastroAluno />},
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
