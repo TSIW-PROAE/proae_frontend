@@ -39,4 +39,15 @@ export default class CadastroAlunoService {
     deleteCookie(import.meta.env.VITE_COOKIE_NAME);
   }
 
+  async forgotPassword(email:string){
+    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/forgot-password`;
+    const response = await this.httpClient.post(url, { email });
+    return response.data;
+  }
+
+  async resetPassword(token: string, newPassword:string){
+    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/reset-password`;
+    const response = await this.httpClient.post(url, { token, newPassword });
+    return response.data;
+  }
 }
