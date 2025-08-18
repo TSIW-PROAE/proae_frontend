@@ -34,7 +34,7 @@ const OpenSelectionCard: React.FC<Edital> = ({
   quantidade_bolsas,
 }) => {
   const navigate = useNavigate();
-  const statusLower = status_edital.toLowerCase();
+  const statusLower = status_edital ? status_edital.toLowerCase() : "";
   const isOpen = statusLower.includes("aberto");
   const isClosed = statusLower.includes("fechado");
 
@@ -73,7 +73,7 @@ const OpenSelectionCard: React.FC<Edital> = ({
           </span>
         </div>
         <a
-          href={edital_url[0] || "#"}
+          href={edital_url && edital_url[0] ? edital_url[0] : "#"}
           target="_blank"
           rel="noopener noreferrer"
           className="external-link-icon"
@@ -87,19 +87,19 @@ const OpenSelectionCard: React.FC<Edital> = ({
         <div className="selection-card-meta">
           <div className="meta-item">
             <FileText className="w-3 h-3" />
-            <span>Nº {id}</span>
+            <span>Nº {id || 0}</span>
           </div>
           <div className="meta-item">
             <Users className="w-3 h-3" />
-            <span>{quantidade_bolsas} vagas</span>
+            <span>{quantidade_bolsas || 0} vagas</span>
           </div>
         </div>
 
-        <h3 className="selection-card-title">{titulo_edital}</h3>
+        <h3 className="selection-card-title">{titulo_edital || "Título não informado"}</h3>
         <p className="selection-card-description">
-          {descricao.length > 90
+          {descricao && descricao.length > 90
             ? `${descricao.substring(0, 90)}...`
-            : descricao}
+            : descricao || "Descrição não disponível"}
         </p>
       </div>
 
@@ -128,13 +128,13 @@ const OpenSelectionCard: React.FC<Edital> = ({
 };
 
 const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
-  const openEditais = editais.filter((edital) =>
-    edital.status_edital.toLowerCase().includes("aberto")
-  );
+  const openEditais = editais?.filter((edital) =>
+    edital.status_edital?.toLowerCase().includes("aberto")
+  ) || [];
 
-  const closedEditais = editais.filter((edital) =>
-    edital.status_edital.toLowerCase().includes("fechado")
-  );
+  const closedEditais = editais?.filter((edital) =>
+    edital.status_edital?.toLowerCase().includes("fechado")
+  ) || [];
 
   return (
     <div className="open-selections-container">
@@ -151,7 +151,7 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
         </div>
       </div>
 
-      {editais.length === 0 ? (
+      {(editais && editais.length === 0) || !editais ? (
         <div className="empty-selections">
           <div className="empty-icon">
             <Calendar className="w-8 h-8 text-gray-400" />
@@ -173,11 +173,11 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
         </div>
       )}
 
-      {editais.length > 0 && (
+      {editais && editais.length > 0 && (
         <div className="selections-footer">
           <div className="footer-info">
             <span className="total-count">
-              {editais.length} edital{editais.length !== 1 ? "s" : ""} total
+              {editais?.length || 0} edital{(editais?.length || 0) !== 1 ? "s" : ""} total
             </span>
             <span className="last-updated">Atualizado agora</span>
           </div>

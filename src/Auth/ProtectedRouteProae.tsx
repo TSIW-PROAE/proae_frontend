@@ -5,13 +5,13 @@ import ProtectedProae from "@/layouts/ProtectedProae";
 
 export default function ProtectedRouteProae() {
   const { isAuthenticated, loading } = useContext(AuthContext);
-
+  
 
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  if (!isAuthenticated) {
+  if (isAuthenticated) {
     return <Navigate to="/login-proae" replace />;
   }
 

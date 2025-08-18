@@ -7,6 +7,14 @@ import {
 import { editalService } from "../../../services/EditalService/editalService";
 import FormularioEdital from "../../../components/FormularioEdital/FormularioEdital";
 import ListaEditais from "../../../components/ListaEditais/ListaEditais";
+import {
+  FileText,
+  Plus,
+  AlertCircle,
+  BookOpen,
+  X,
+  Settings
+} from "lucide-react";
 import "./ProcessosProae.css";
 
 export default function ProcessosProae() {
@@ -113,49 +121,97 @@ export default function ProcessosProae() {
   };
 
   return (
-    <div className="processos-proae">
-      <div className="processos-header">
-        <div className="header-content">
-          <h1>Gerenciamento de Editais</h1>
-          <p>Gerencie os editais e processos seletivos da PROAE</p>
-        </div>
-        <button
-          onClick={handleNovoEdital}
-          className="btn-novo-edital"
-          disabled={isLoading}
-        >
-          ➕ Novo Edital
-        </button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="processos-container">
+        {/* Header Principal */}
+        <header className="processos-header">
+          <div className="header-content">
+            <div className="welcome-section">
+              <div className="avatar-container">
+                <div className="avatar">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="welcome-text">
+                <h1 className="welcome-title">
+                  Gerenciamento de Editais
+                </h1>
+                <p className="welcome-subtitle">
+                  Gerencie os editais e processos seletivos da PROAE
+                </p>
+              </div>
+            </div>
+
+            <div className="header-actions">
+              <button
+                onClick={handleNovoEdital}
+                className="btn-novo-edital"
+                disabled={isLoading}
+              >
+                <Plus className="w-5 h-5" />
+                <span>Novo Edital</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {error && (
+          <div className="error-message">
+            <div className="error-content">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <span>{error}</span>
+            </div>
+            <button 
+              onClick={() => setError(null)} 
+              className="btn-close-error"
+              title="Fechar mensagem de erro"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Conteúdo Principal */}
+        <main className="main-content">
+          {showForm ? (
+            <section className="form-section">
+              <div className="section-header">
+                <div className="header-info">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  <h2 className="section-title">
+                    {editingEdital ? "Editar Edital" : "Novo Edital"}
+                  </h2>
+                </div>
+              </div>
+              <div className="form-container">
+                <FormularioEdital
+                  edital={editingEdital}
+                  onSubmit={handleSubmitForm}
+                  onCancel={handleCancelForm}
+                  isLoading={isLoading}
+                />
+              </div>
+            </section>
+          ) : (
+            <section className="editais-section">
+              <div className="section-header">
+                <div className="header-info">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  <h2 className="section-title">Lista de Editais</h2>
+                </div>
+              </div>
+              <div className="lista-container">
+                <ListaEditais
+                  editais={editais}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeletarEdital}
+                  isLoading={isLoading}
+                />
+              </div>
+            </section>
+          )}
+        </main>
       </div>
-
-      {error && (
-        <div className="error-message">
-          <span>⚠️ {error}</span>
-          <button onClick={() => setError(null)} className="btn-close-error">
-            ✕
-          </button>
-        </div>
-      )}
-
-      {showForm ? (
-        <div className="form-container">
-          <FormularioEdital
-            edital={editingEdital}
-            onSubmit={handleSubmitForm}
-            onCancel={handleCancelForm}
-            isLoading={isLoading}
-          />
-        </div>
-      ) : (
-        <div className="lista-container">
-          <ListaEditais
-            editais={editais}
-            onEdit={handleEditClick}
-            onDelete={handleDeletarEdital}
-            isLoading={isLoading}
-          />
-        </div>
-      )}
     </div>
   );
 }

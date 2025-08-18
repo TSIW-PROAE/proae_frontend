@@ -1,126 +1,394 @@
-.processos-proae {
-  padding: 20px;
-  max-width: 1200px;
+/* ProcessosProae - Design fiel ao PortalAluno */
+
+.processos-container {
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 1rem;
 }
 
+/* Header Principal */
 .processos-header {
+  background: transparent;
+  border-radius: 0;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: none;
+  border: none;
+}
+
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  color: white;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.header-content h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 700;
+.welcome-section {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
 }
 
-.header-content p {
+.avatar-container {
+  position: relative;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  background: #4285f4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
+}
+
+.welcome-text {
+  color: #1f2937;
+}
+
+.welcome-title {
+  font-size: 2.5rem;
+  font-weight: 500;
   margin: 0;
-  font-size: 16px;
-  opacity: 0.9;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: #202124;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.welcome-emoji {
+  font-size: 2rem;
+  margin-left: 0.5rem;
+}
+
+.welcome-subtitle {
+  font-size: 1.1rem;
+  margin: 0.25rem 0 0 0;
+  color: #5f6368;
+  font-weight: 400;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .btn-novo-edital {
-  padding: 12px 24px;
-  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #4285f4;
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  font-size: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
 }
 
 .btn-novo-edital:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #3367d6;
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
 }
 
 .btn-novo-edital:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
+/* Seção de Estatísticas */
+.stats-section {
+  margin-bottom: 2rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 0.25rem 0;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+/* Mensagem de Erro */
 .error-message {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #991b1b;
+  font-weight: 500;
 }
 
 .btn-close-error {
   background: none;
   border: none;
-  color: #721c24;
+  color: #991b1b;
   cursor: pointer;
-  font-size: 18px;
-  padding: 0;
-  width: 20px;
-  height: 20px;
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
 }
 
 .btn-close-error:hover {
-  background-color: rgba(114, 28, 36, 0.1);
+  background-color: rgba(220, 38, 38, 0.1);
 }
 
-.form-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+/* Conteúdo Principal */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
+/* Seções */
+.form-section,
+.editais-section {
+  margin-bottom: 2rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #202124;
+  margin: 0;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+.section-actions {
+  margin-left: auto;
+}
+
+.section-count {
+  font-size: 0.875rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+/* Containers */
+.form-container,
 .lista-container {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(229, 231, 235, 0.8);
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
+.form-container:hover,
+.lista-container:hover {
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Responsividade */
 @media (max-width: 768px) {
-  .processos-proae {
-    padding: 15px;
+  .processos-container {
+    padding: 0.5rem;
   }
-  
+
   .processos-header {
+    padding: 1.5rem 0;
+  }
+
+  .header-content {
     flex-direction: column;
-    gap: 20px;
+    align-items: center;
     text-align: center;
   }
-  
-  .header-content h1 {
-    font-size: 24px;
+
+  .welcome-title {
+    font-size: 1.75rem;
   }
-  
-  .header-content p {
-    font-size: 14px;
+
+  .welcome-subtitle {
+    font-size: 1rem;
   }
-  
+
+  .avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
   .btn-novo-edital {
     width: 100%;
-    max-width: 200px;
+    max-width: 300px;
+    justify-content: center;
   }
+}
+
+@media (max-width: 480px) {
+  .processos-container {
+    padding: 0.25rem;
+  }
+
+  .processos-header {
+    padding: 1rem 0;
+  }
+
+  .welcome-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .welcome-title {
+    font-size: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-card,
+.form-container,
+.lista-container {
+  animation: fadeIn 0.6s ease-out;
 }
