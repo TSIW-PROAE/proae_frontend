@@ -78,6 +78,10 @@
   background: #ef4444;
 }
 
+.stat-dot.draft {
+  background: #f59e0b;
+}
+
 .selections-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -317,6 +321,92 @@
   border-color: #e5e7eb;
 }
 
+.bg-yellow-100.text-yellow-800.border-yellow-200 {
+  background-color: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+/* Estilos para chips de benefícios */
+.benefits-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.benefit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.benefit-chip:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.benefit-chip-name {
+  color: #374151;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.benefit-chip-count {
+  background: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  min-width: 16px;
+  text-align: center;
+}
+
+.benefit-chip.more-benefits {
+  background: #6b7280;
+  color: white;
+  border-color: #6b7280;
+  font-weight: 600;
+  justify-content: center;
+}
+
+.benefits-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  background: #3b82f6;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .selections-stats {
@@ -396,6 +486,24 @@
   .selection-card-description {
     font-size: 0.8125rem;
     line-height: 1.25;
+  }
+
+  .benefit-chip-name {
+    max-width: 50px;
+  }
+
+  .benefits-chips {
+    gap: 0.25rem;
+  }
+
+  .benefit-chip {
+    font-size: 0.625rem;
+    padding: 0.1875rem 0.375rem;
+  }
+
+  .benefit-chip-count {
+    font-size: 0.5625rem;
+    padding: 0.0625rem 0.25rem;
   }
 
   .open-selections-container {

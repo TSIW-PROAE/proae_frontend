@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   ExternalLink,
   Edit,
@@ -10,7 +10,8 @@ import {
   AlertCircle,
   Tag,
 } from "lucide-react";
-import { Edital } from "../../types/edital";
+import { Edital, Vaga } from "../../types/edital";
+import { editalService } from "../../services/EditalService/editalService";
 import "./ListaEditais.css";
 
 interface ListaEditaisProps {
@@ -25,10 +26,34 @@ const EditalCard: React.FC<{
   onEdit: (edital: Edital) => void; 
   onDelete: (id: number) => void;
 }> = ({ edital, onEdit, onDelete }) => {
+  const [vagas, setVagas] = useState<Vaga[]>([]);
+  const [loadingVagas, setLoadingVagas] = useState(false);
+
   const statusLower = edital.status_edital ? edital.status_edital.toLowerCase() : "";
-  const isOpen = statusLower.includes("aberto");
-  const isClosed = statusLower.includes("encerrado");
-  const isInProgress = statusLower.includes("andamento");
+  const isOpen = statusLower === "aberto";
+  const isClosed = statusLower === "encerrado";
+  const isInProgress = statusLower === "em_andamento";
+  const isDraft = statusLower === "rascunho";
+
+  const loadVagas = useCallback(async () => {
+    if (!edital.id || loadingVagas) return;
+    
+    setLoadingVagas(true);
+    try {
+      const vagasData = await editalService.buscarVagasDoEdital(edital.id);
+      setVagas(vagasData || []);
+    } catch (error) {
+      console.error("Erro ao carregar vagas:", error);
+      setVagas([]);
+    } finally {
+      setLoadingVagas(false);
+    }
+  }, [edital.id, loadingVagas]);
+
+  // Carregar vagas automaticamente quando o componente é montado
+  useEffect(() => {
+    loadVagas();
+  }, [loadVagas]);
 
   const getBadgeStyles = () => {
     if (isOpen) {
@@ -37,6 +62,8 @@ const EditalCard: React.FC<{
       return "bg-red-100 text-red-800 border-red-200";
     } else if (isInProgress) {
       return "bg-blue-100 text-blue-800 border-blue-200";
+    } else if (isDraft) {
+      return "bg-yellow-100 text-yellow-800 border-yellow-200";
     }
     return "bg-gray-100 text-gray-800 border-gray-200";
   };
@@ -45,6 +72,7 @@ const EditalCard: React.FC<{
     if (isOpen) return <CheckCircle className="w-3 h-3 text-emerald-600" />;
     if (isClosed) return <AlertCircle className="w-3 h-3 text-red-600" />;
     if (isInProgress) return <Clock className="w-3 h-3 text-blue-600" />;
+    if (isDraft) return <FileText className="w-3 h-3 text-yellow-600" />;
     return <Clock className="w-3 h-3 text-gray-600" />;
   };
 
@@ -52,8 +80,11 @@ const EditalCard: React.FC<{
     if (isOpen) return "Aberto";
     if (isClosed) return "Encerrado";
     if (isInProgress) return "Em Andamento";
+    if (isDraft) return "Rascunho";
     return edital.status_edital || "Status não informado";
   };
+
+  const totalVagas = vagas?.reduce((total, vaga) => total + (vaga.numero_vagas || 0), 0) || 0;
 
   return (
     <div className="selection-card">
@@ -81,7 +112,7 @@ const EditalCard: React.FC<{
           </button>
           {edital.edital_url && edital.edital_url[0] && (
             <a
-              href={edital.edital_url[0]}
+              href={edital.edital_url[0].url_documento}
               target="_blank"
               rel="noopener noreferrer"
               className="action-btn external-link"
@@ -101,7 +132,7 @@ const EditalCard: React.FC<{
           </div>
           <div className="meta-item">
             <Users className="w-3 h-3" />
-            <span>{edital.quantidade_bolsas || 0} bolsas</span>
+            <span>{totalVagas} vagas total</span>
           </div>
         </div>
 
@@ -111,12 +142,36 @@ const EditalCard: React.FC<{
             ? `${edital.descricao.substring(0, 90)}...`
             : edital.descricao || "Descrição não disponível"}
         </p>
+
+        {/* Chips de benefícios */}
+        {!loadingVagas && vagas.length > 0 && (
+          <div className="benefits-chips">
+            {vagas.slice(0, 3).map((vaga) => (
+              <div key={vaga.id} className="benefit-chip">
+                <span className="benefit-chip-name">{vaga.beneficio}</span>
+                <span className="benefit-chip-count">{vaga.numero_vagas}</span>
+              </div>
+            ))}
+            {vagas.length > 3 && (
+              <div className="benefit-chip more-benefits">
+                +{vagas.length - 3}
+              </div>
+            )}
+          </div>
+        )}
+
+        {loadingVagas && (
+          <div className="benefits-loading">
+            <div className="loading-dot"></div>
+            <span>Carregando benefícios...</span>
+          </div>
+        )}
       </div>
 
       <div className="selection-card-footer">
         <div className="card-type">
           <FileText className="w-3 h-3" />
-          <span>{edital.tipo_edital || "Tipo não informado"}</span>
+          <span>Edital PROAE</span>
         </div>
       </div>
     </div>
@@ -139,15 +194,19 @@ export default function ListaEditais({
   }
 
   const openEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase().includes("aberto")
+    edital.status_edital?.toLowerCase() === "aberto"
   ) || [];
 
   const closedEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase().includes("encerrado")
+    edital.status_edital?.toLowerCase() === "encerrado"
   ) || [];
 
   const inProgressEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase().includes("andamento")
+    edital.status_edital?.toLowerCase() === "em_andamento"
+  ) || [];
+
+  const draftEditais = editais?.filter((edital) =>
+    edital.status_edital?.toLowerCase() === "rascunho"
   ) || [];
 
   if (!editais || editais.length === 0) {
@@ -179,6 +238,10 @@ export default function ListaEditais({
             <span>{inProgressEditais.length} Em Andamento</span>
           </div>
           <div className="stat-item">
+            <div className="stat-dot draft"></div>
+            <span>{draftEditais.length} Rascunhos</span>
+          </div>
+          <div className="stat-item">
             <div className="stat-dot closed"></div>
             <span>{closedEditais.length} Encerrados</span>
           </div>
@@ -200,6 +263,16 @@ export default function ListaEditais({
         {inProgressEditais.map((edital) => (
           <EditalCard
             key={`progress-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
+
+        {/* Mostrar os rascunhos */}
+        {draftEditais.map((edital) => (
+          <EditalCard
+            key={`draft-${edital.id}`}
             edital={edital}
             onEdit={onEdit}
             onDelete={onDelete}

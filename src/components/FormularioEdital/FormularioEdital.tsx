@@ -3,7 +3,7 @@ import {
   Edital,
   CreateEditalRequest,
   UpdateEditalRequest,
-  Etapa,
+  EtapaEdital,
 } from "../../types/edital";
 import "./FormularioEdital.css";
 
@@ -21,27 +21,23 @@ export default function FormularioEdital({
   isLoading = false,
 }: FormularioEditalProps) {
   const [formData, setFormData] = useState<CreateEditalRequest>({
-    tipo_edital: "Auxilio Transporte",
-    descricao: "",
-    edital_url: [""],
     titulo_edital: "",
-    quantidade_bolsas: 0,
-    etapas: [],
+    descricao: "",
+    edital_url: [],
+    etapa_edital: [],
   });
 
-  const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [etapas, setEtapas] = useState<EtapaEdital[]>([]);
 
   useEffect(() => {
     if (edital) {
       setFormData({
-        tipo_edital: edital.tipo_edital,
-        descricao: edital.descricao,
-        edital_url: Array.isArray(edital.edital_url) ? edital.edital_url : [],
         titulo_edital: edital.titulo_edital,
-        quantidade_bolsas: edital.quantidade_bolsas,
-        etapas: edital.etapas,
+        descricao: edital.descricao || "",
+        edital_url: Array.isArray(edital.edital_url) ? edital.edital_url : [],
+        etapa_edital: Array.isArray(edital.etapa_edital) ? edital.etapa_edital : [],
       });
-      setEtapas(Array.isArray(edital.etapas) ? edital.etapas : []);
+      setEtapas(Array.isArray(edital.etapa_edital) ? edital.etapa_edital : []);
     }
   }, [edital]);
 
@@ -53,13 +49,16 @@ export default function FormularioEdital({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "quantidade_bolsas" ? parseInt(value) || 0 : value,
+      [name]: value,
     }));
   };
 
-  const handleUrlChange = (index: number, value: string) => {
-    const newUrls = [...formData.edital_url];
-    newUrls[index] = value;
+  const handleUrlChange = (index: number, field: 'titulo_documento' | 'url_documento', value: string) => {
+    const newUrls = [...(formData.edital_url || [])];
+    if (!newUrls[index]) {
+      newUrls[index] = { titulo_documento: "", url_documento: "" };
+    }
+    newUrls[index] = { ...newUrls[index], [field]: value };
     setFormData((prev) => ({
       ...prev,
       edital_url: newUrls,
@@ -69,21 +68,21 @@ export default function FormularioEdital({
   const addUrl = () => {
     setFormData((prev) => ({
       ...prev,
-      edital_url: [...prev.edital_url, ""],
+      edital_url: [...(prev.edital_url || []), { titulo_documento: "", url_documento: "" }],
     }));
   };
 
   const removeUrl = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      edital_url: prev.edital_url.filter((_, i) => i !== index),
+      edital_url: prev.edital_url?.filter((_, i) => i !== index) || [],
     }));
   };
 
   const addEtapa = () => {
-    const novaEtapa: Etapa = {
-      nome: "",
-      ordem: etapas.length + 1,
+    const novaEtapa: EtapaEdital = {
+      etapa: "",
+      ordem_elemento: etapas.length + 1,
       data_inicio: "",
       data_fim: "",
     };
@@ -92,13 +91,13 @@ export default function FormularioEdital({
 
   const updateEtapa = (
     index: number,
-    field: keyof Etapa,
+    field: keyof EtapaEdital,
     value: string | number
   ) => {
     const novasEtapas = [...etapas];
     novasEtapas[index] = {
       ...novasEtapas[index],
-      [field]: field === "ordem" ? parseInt(value as string) || 0 : value,
+      [field]: field === "ordem_elemento" ? parseInt(value as string) || 0 : value,
     };
     setEtapas(novasEtapas);
   };
@@ -111,7 +110,7 @@ export default function FormularioEdital({
     e.preventDefault();
     const dataToSubmit = {
       ...formData,
-      etapas: etapas,
+      etapa_edital: etapas,
     };
     onSubmit(dataToSubmit);
   };
@@ -121,24 +120,6 @@ export default function FormularioEdital({
       <h2>{edital ? "Editar Edital" : "Novo Edital"}</h2>
 
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="tipo_edital">Tipo de Edital *</label>
-          <select
-            id="tipo_edital"
-            name="tipo_edital"
-            value={formData.tipo_edital}
-            onChange={handleInputChange}
-            required
-          >
-            <option value="Auxilio Transporte">Auxílio Transporte</option>
-            <option value="Auxilio Alimentação">Auxílio Alimentação</option>
-            <option value="Auxilio Moradia">Auxílio Moradia</option>
-            <option value="Apoio à Inclusão Digital">
-              Apoio à Inclusão Digital
-            </option>
-          </select>
-        </div>
-
         <div className="form-group">
           <label htmlFor="titulo_edital">Título do Edital *</label>
           <input
@@ -152,38 +133,30 @@ export default function FormularioEdital({
         </div>
 
         <div className="form-group">
-          <label htmlFor="descricao">Descrição *</label>
+          <label htmlFor="descricao">Descrição</label>
           <textarea
             id="descricao"
             name="descricao"
             value={formData.descricao}
             onChange={handleInputChange}
-            required
             rows={3}
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="quantidade_bolsas">Quantidade de Bolsas *</label>
-          <input
-            type="number"
-            id="quantidade_bolsas"
-            name="quantidade_bolsas"
-            value={formData.quantidade_bolsas}
-            onChange={handleInputChange}
-            required
-            min="0"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>URLs do Edital</label>
-          {formData.edital_url.map((url, index) => (
+          <label>Documentos do Edital</label>
+          {(formData.edital_url || []).map((documento, index) => (
             <div key={index} className="url-input-group">
               <input
+                type="text"
+                value={documento.titulo_documento}
+                onChange={(e) => handleUrlChange(index, 'titulo_documento', e.target.value)}
+                placeholder="Título do documento"
+              />
+              <input
                 type="url"
-                value={url}
-                onChange={(e) => handleUrlChange(index, e.target.value)}
+                value={documento.url_documento}
+                onChange={(e) => handleUrlChange(index, 'url_documento', e.target.value)}
                 placeholder="https://exemplo.com/edital.pdf"
               />
               <button
@@ -196,7 +169,7 @@ export default function FormularioEdital({
             </div>
           ))}
           <button type="button" onClick={addUrl} className="btn-add">
-            Adicionar URL
+            Adicionar Documento
           </button>
         </div>
 
@@ -221,8 +194,8 @@ export default function FormularioEdital({
                   <input
                     id={`etapa-nome-${index}`}
                     type="text"
-                    value={etapa.nome}
-                    onChange={(e) => updateEtapa(index, "nome", e.target.value)}
+                    value={etapa.etapa}
+                    onChange={(e) => updateEtapa(index, "etapa", e.target.value)}
                     required
                   />
                 </div>
@@ -232,9 +205,9 @@ export default function FormularioEdital({
                   <input
                     id={`etapa-ordem-${index}`}
                     type="number"
-                    value={etapa.ordem}
+                    value={etapa.ordem_elemento}
                     onChange={(e) =>
-                      updateEtapa(index, "ordem", e.target.value)
+                      updateEtapa(index, "ordem_elemento", e.target.value)
                     }
                     required
                     min="1"

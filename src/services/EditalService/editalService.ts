@@ -3,6 +3,7 @@ import {
   Edital,
   CreateEditalRequest,
   UpdateEditalRequest,
+  Vaga,
 } from "../../types/edital";
 
 function getCookie(name: string): string | null {
@@ -40,6 +41,12 @@ export class EditalService {
   // Buscar edital por ID (não precisa de token)
   async buscarEditalPorId(id: number): Promise<Edital> {
     return this.httpClient.get<Edital>(`${BASE_URL}/${id}`);
+  }
+
+  // Buscar vagas de um edital (não precisa de token)
+  async buscarVagasDoEdital(editalId: number): Promise<Vaga[]> {
+    const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
+    return this.httpClient.get<Vaga[]>(`${baseUrl}/vagas/edital/${editalId}`);
   }
 
   // Criar novo edital (precisa de token)

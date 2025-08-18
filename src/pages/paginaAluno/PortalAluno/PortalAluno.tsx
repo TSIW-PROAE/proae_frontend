@@ -279,9 +279,9 @@ export default function PortalAluno() {
                 <div className="status-content">
                   <h3 className="status-title">Pendências</h3>
                   <p className="status-description">
-                    {inscriptions.filter((i) => i.possui_pendencias).length}{" "}
+                    {(inscriptions?.filter((i) => i.possui_pendencias).length || 0)}{" "}
                     item
-                    {inscriptions.filter((i) => i.possui_pendencias).length !==
+                    {(inscriptions?.filter((i) => i.possui_pendencias).length || 0) !==
                     1
                       ? "s"
                       : ""}{" "}
