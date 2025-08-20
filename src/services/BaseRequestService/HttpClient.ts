@@ -1,5 +1,4 @@
 import axios, { AxiosInstance } from "axios";
-import { toast } from "react-hot-toast";
 
 export interface HttpResponse<T> {
   data: T;
@@ -46,7 +45,6 @@ export class FetchAdapter implements IHttpClient {
 
       return response.data;
     } catch (error: any) {
-      toast.error(error.response.data.message);
       throw error.response.data;
     }
   }
@@ -63,7 +61,6 @@ export class FetchAdapter implements IHttpClient {
         status: response.status,
       };
     } catch (error: any) {
-      toast.error(error.response.data.message);
       throw error.response.data;
     }
   }
@@ -75,7 +72,6 @@ export class FetchAdapter implements IHttpClient {
       });
       return response.data;
     } catch (error: any) {
-      toast.error(error.response.data.message);
       throw error.response.data;
     }
   }
@@ -88,18 +84,15 @@ export class FetchAdapter implements IHttpClient {
       });
       return response.data;
     } catch (error: any) {
-      toast.error(error.response.data.message);
       throw error.response.data;
     }
   }
 
   async patch<T>(url: string, data: unknown): Promise<T> {
     try {
-
       const response = await this.axiosInstance.patch<T>(url, data);
       return response.data;
     } catch (error: any) {
-      toast.error(error.response.data.message);
       throw error.response.data;
     }
   }
