@@ -1,6 +1,6 @@
 import { setCookie, deleteCookie, extractCookieFromHeaders } from "@/utils/utils";
 import IHttpClient from "../BaseRequestService/HttpClient";
-import { UserSignup, UserLogin, UserLoginResponse } from "@/types/auth";
+import { UserSignup, UserLogin, UserLoginResponse, IResetPassword } from "@/types/auth";
 
 export default class CadastroAlunoService {
 
@@ -45,9 +45,9 @@ export default class CadastroAlunoService {
     return response.data;
   }
 
-  async resetPassword(token: string, newPassword:string){
+  async resetPassword(data: IResetPassword ){
     const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/reset-password`;
-    const response = await this.httpClient.post(url, { token, newPassword });
+    const response = await this.httpClient.post(url, data);
     return response.data;
   }
 }
