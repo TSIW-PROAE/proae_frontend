@@ -71,7 +71,7 @@ export default function ForgotPassword() {
         />
         <button type="submit" className="forgot-btn">
           {isLoading ? (
-            <div className="forgot-loader"></div>
+            <div className="spinner"></div>
           ) : (
             "Enviar"
           )}
