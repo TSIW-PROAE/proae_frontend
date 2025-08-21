@@ -3,8 +3,6 @@ import { AuthContext } from '@/context/AuthContext'
 import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
 import  {FetchAdapter} from '@/services/BaseRequestService/HttpClient'
 import CadastroAlunoService from '@/services/CadastroAluno.service/cadastroAluno.service'
-import { getCookie } from '@/utils/utils'
-
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,9 +17,8 @@ function AuthProvider({children}: {children: React.ReactNode}){
       const response = await cadastroAlunoService.LoginAluno(data);
       const fillUserInfo: UserInfo = {
         email: response.user.email,
-        id: response.user.id,
-        nome: response.user.nome,
-        access_token: response.access_token,
+        id: response.user.aluno_id,
+        nome: response.user.nome
       }
       setUserInfo(fillUserInfo);
       setIsAuthenticated(true);
@@ -49,26 +46,20 @@ function AuthProvider({children}: {children: React.ReactNode}){
   }, [])
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const access_token = getCookie("token");
+    // TODO: Melhorar lógica de verificação de rotas públicas e privadas
 
-      if (access_token) {
+      const checkAuth = async () => {
+
         try {
-          cadastroAlunoService.headerToken = access_token;
-          const response: UserSignup | any = await cadastroAlunoService.validateToken(access_token);
-          if(userInfo == null){
+            const response: any = await cadastroAlunoService.validateToken();
             const fillUserInfo: UserInfo = {
-            email: response.user.email,
-            id: response.user.id,
-            nome: response.user.nome,
-            access_token: response.access_token,
-          }
+              email: response.user?.email || response.email,
+              id: response.user?.id || response.user?.aluno_id || response.id,
+              nome: response.user?.nome || response.nome,
+            }
             setUserInfo(fillUserInfo);
-          }
-          if(!response.valid){
-            throw new Error("Token inválido");
-          }
-          setIsAuthenticated(true);
+            setIsAuthenticated(true);
+
         } catch (error) {
           setIsAuthenticated(false);
           setUserInfo(null);
@@ -78,10 +69,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
         }
         return;
       }
-
-      setLoading(false);
-    };
-    checkAuth();
+      checkAuth();
   }, []);
 
 
