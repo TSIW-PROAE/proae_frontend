@@ -1,4 +1,4 @@
-import { setCookie, deleteCookie, extractCookieFromHeaders } from "@/utils/utils";
+import { setCookie, extractCookieFromHeaders } from "@/utils/utils";
 import IHttpClient from "../BaseRequestService/HttpClient";
 import { UserSignup, UserLogin, UserLoginResponse, IResetPassword } from "@/types/auth";
 
@@ -14,12 +14,8 @@ export default class CadastroAlunoService {
 
   async LoginAluno(data: UserLogin){
     const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/login`;
-
     const response = await this.httpClient.post<UserLoginResponse>(url, data)
-
-
     const tokenFromCookie = extractCookieFromHeaders(response.headers, import.meta.env.VITE_COOKIE_NAME);
-
 
     if (tokenFromCookie) {
       setCookie(import.meta.env.VITE_COOKIE_NAME, tokenFromCookie, import.meta.env.VITE_COOKIE_EXPIRATION_DAYS ? parseInt(import.meta.env.VITE_COOKIE_EXPIRATION_DAYS) : 7);
@@ -36,7 +32,9 @@ export default class CadastroAlunoService {
   }
 
   async LogoutAluno(){
-    deleteCookie(import.meta.env.VITE_COOKIE_NAME);
+    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/logout`;
+    const response = await this.httpClient.post(url, {  });
+    return response.data;
   }
 
   async forgotPassword(email:string){

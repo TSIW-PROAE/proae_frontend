@@ -32,7 +32,7 @@ export default function Cadastro() {
   const anoAtual = new Date().getFullYear();
   const location = useLocation();
   const navigate = useNavigate();
-  const { validateForm, errors, setFieldError, isValid } = useFormValidation(formData);
+  const { validateForm, errors, setFieldError } = useFormValidation(formData);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -55,9 +55,9 @@ export default function Cadastro() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    validateForm();
 
-    if (isValid) {
+
+    if (validateForm()) {
       setIsSubmitting(true);
 
       const dadosFormatados = {

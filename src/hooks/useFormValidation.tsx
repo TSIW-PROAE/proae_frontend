@@ -79,7 +79,7 @@ export default function useFormValidation(formData: FormData): UseFormValidation
     setErrors(newErrors);
     const isFormValid = Object.keys(newErrors).length === 0;
     setIsValid(isFormValid);
-    
+
     return isFormValid;
   }, [formData])
 
