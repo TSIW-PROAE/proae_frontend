@@ -53,5 +53,11 @@ export interface UserSignupResponse {
   [key:string]: any;
 }
 
+export interface IResetPassword{
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 // ideia de criar um interface para validar o signup do usuário
 //interface ValidateUserSignup{}
