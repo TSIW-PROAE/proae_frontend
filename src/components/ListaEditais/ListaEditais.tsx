@@ -21,23 +21,25 @@ interface ListaEditaisProps {
   isLoading?: boolean;
 }
 
-const EditalCard: React.FC<{ 
-  edital: Edital; 
-  onEdit: (edital: Edital) => void; 
+const EditalCard: React.FC<{
+  edital: Edital;
+  onEdit: (edital: Edital) => void;
   onDelete: (id: number) => void;
 }> = ({ edital, onEdit, onDelete }) => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loadingVagas, setLoadingVagas] = useState(false);
 
-  const statusLower = edital.status_edital ? edital.status_edital.toLowerCase() : "";
-  const isOpen = statusLower === "aberto";
-  const isClosed = statusLower === "encerrado";
-  const isInProgress = statusLower === "em_andamento";
+  const statusLower = edital.status_edital
+    ? edital.status_edital.toLowerCase()
+    : "";
+  const isOpen = statusLower === "edital em aberto";
+  const isClosed = statusLower === "edital encerrado";
+  const isInProgress = statusLower === "edital em andamento";
   const isDraft = statusLower === "rascunho";
 
   const loadVagas = useCallback(async () => {
     if (!edital.id || loadingVagas) return;
-    
+
     setLoadingVagas(true);
     try {
       const vagasData = await editalService.buscarVagasDoEdital(edital.id);
@@ -48,7 +50,7 @@ const EditalCard: React.FC<{
     } finally {
       setLoadingVagas(false);
     }
-  }, [edital.id, loadingVagas]);
+  }, [edital.id]);
 
   // Carregar vagas automaticamente quando o componente é montado
   useEffect(() => {
@@ -77,17 +79,18 @@ const EditalCard: React.FC<{
   };
 
   const getStatusLabel = () => {
-    if (isOpen) return "Aberto";
-    if (isClosed) return "Encerrado";
-    if (isInProgress) return "Em Andamento";
+    if (isOpen) return "Edital em aberto";
+    if (isClosed) return "Edital encerrado";
+    if (isInProgress) return "Edital em andamento";
     if (isDraft) return "Rascunho";
     return edital.status_edital || "Status não informado";
   };
 
-  const totalVagas = vagas?.reduce((total, vaga) => total + (vaga.numero_vagas || 0), 0) || 0;
+  const totalVagas =
+    vagas?.reduce((total, vaga) => total + (vaga.numero_vagas || 0), 0) || 0;
 
   return (
-    <div className="selection-card">
+    <div className="selection-card" onClick={() => onEdit(edital)}>
       <div className="selection-card-header">
         <div className="card-status-indicator">
           {getStatusIcon()}
@@ -97,14 +100,20 @@ const EditalCard: React.FC<{
         </div>
         <div className="card-actions">
           <button
-            onClick={() => onEdit(edital)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(edital);
+            }}
             className="action-btn edit-btn"
             title="Editar edital"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => edital.id && onDelete(edital.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              edital.id && onDelete(edital.id);
+            }}
             className="action-btn delete-btn"
             title="Deletar edital"
           >
@@ -117,6 +126,7 @@ const EditalCard: React.FC<{
               rel="noopener noreferrer"
               className="action-btn external-link"
               title="Ver Edital"
+              onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink className="w-3 h-3" />
             </a>
@@ -136,14 +146,16 @@ const EditalCard: React.FC<{
           </div>
         </div>
 
-        <h3 className="selection-card-title">{edital.titulo_edital || "Título não informado"}</h3>
+        <h3 className="selection-card-title">
+          {edital.titulo_edital || "Título não informado"}
+        </h3>
         <p className="selection-card-description">
           {edital.descricao && edital.descricao.length > 90
             ? `${edital.descricao.substring(0, 90)}...`
             : edital.descricao || "Descrição não disponível"}
         </p>
 
-        {/* Chips de benefícios */}
+        {/* Chips de benefícios
         {!loadingVagas && vagas.length > 0 && (
           <div className="benefits-chips">
             {vagas.slice(0, 3).map((vaga) => (
@@ -158,14 +170,14 @@ const EditalCard: React.FC<{
               </div>
             )}
           </div>
-        )}
+        )} */}
 
-        {loadingVagas && (
+        {/* {loadingVagas && (
           <div className="benefits-loading">
             <div className="loading-dot"></div>
             <span>Carregando benefícios...</span>
           </div>
-        )}
+        )} */}
       </div>
 
       <div className="selection-card-footer">
@@ -193,21 +205,25 @@ export default function ListaEditais({
     );
   }
 
-  const openEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase() === "aberto"
-  ) || [];
+  const openEditais =
+    editais?.filter(
+      (edital) => edital.status_edital?.toLowerCase() === "edital em aberto"
+    ) || [];
 
-  const closedEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase() === "encerrado"
-  ) || [];
+  const closedEditais =
+    editais?.filter(
+      (edital) => edital.status_edital?.toLowerCase() === "edital encerrado"
+    ) || [];
 
-  const inProgressEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase() === "em_andamento"
-  ) || [];
+  const inProgressEditais =
+    editais?.filter(
+      (edital) => edital.status_edital?.toLowerCase() === "edital em andamento"
+    ) || [];
 
-  const draftEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase() === "rascunho"
-  ) || [];
+  const draftEditais =
+    editais?.filter(
+      (edital) => edital.status_edital?.toLowerCase() === "rascunho"
+    ) || [];
 
   if (!editais || editais.length === 0) {
     return (

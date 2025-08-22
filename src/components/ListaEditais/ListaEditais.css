@@ -137,6 +137,7 @@
   text-transform: uppercase;
   letter-spacing: 0.025em;
   border: 1px solid;
+  white-space: nowrap;
 }
 
 .card-actions {
