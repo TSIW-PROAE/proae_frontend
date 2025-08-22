@@ -33,7 +33,8 @@ export default function Cadastro() {
   const anoAtual = new Date().getFullYear();
   const location = useLocation();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
+  const [showConfirmaSenha, setShowConfirmaSenha] = useState(false);
   const { validateForm, errors, setFieldError, isValid } = useFormValidation(formData);
 
   useEffect(() => {
@@ -313,7 +314,7 @@ export default function Cadastro() {
                   label="Senha"
                   variant="bordered"
                   radius="lg"
-                  type="password"
+                  type={showSenha ? "text" : "password"}
                   placeholder="Digite sua senha"
                   value={formData.senha}
                   onChange={(e) => handleInputChange("senha", e.target.value)}
@@ -325,10 +326,10 @@ export default function Cadastro() {
                     <button
                       className="focus:outline-none flex items-center justify-center h-full px-2"
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShowSenha(!showSenha)}
+                      aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
                     >
-                      {showPassword ? (
+                      {showSenha ? (
                         <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
                       ) : (
                         <Eye className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
@@ -344,7 +345,7 @@ export default function Cadastro() {
                   label="Repita sua senha"
                   variant="bordered"
                   radius="lg"
-                  type="password"
+                  type={showConfirmaSenha ? "text" : "password"}
                   placeholder="Digite sua senha novamente"
                   value={formData.confirmarSenha}
                   onChange={(e) =>
@@ -358,10 +359,10 @@ export default function Cadastro() {
                     <button
                       className="focus:outline-none flex items-center justify-center h-full px-2"
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShowConfirmaSenha(!showConfirmaSenha)}
+                      aria-label={showConfirmaSenha ? "Ocultar senha" : "Mostrar senha"}
                     >
-                      {showPassword ? (
+                      {showConfirmaSenha ? (
                         <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
                       ) : (
                         <Eye className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
