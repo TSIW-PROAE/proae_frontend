@@ -319,6 +319,20 @@ export default function Cadastro() {
                   errorMessage={errors.senha}
                   fullWidth
                   classNames={{ base: "custom-input" }}
+                  endContent={
+                    <button
+                      className="focus:outline-none flex items-center justify-center h-full px-2"
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      ) : (
+                        <Eye className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      )}
+                    </button>
+                  }
                 />
               </div>
 
@@ -338,6 +352,20 @@ export default function Cadastro() {
                   errorMessage={errors.confirmarSenha}
                   fullWidth
                   classNames={{ base: "custom-input" }}
+                  endContent={
+                    <button
+                      className="focus:outline-none flex items-center justify-center h-full px-2"
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      ) : (
+                        <Eye className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      )}
+                    </button>
+                  }
                 />
               </div>
 
