@@ -330,9 +330,9 @@ export default function Cadastro() {
                       aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
                     >
                       {showSenha ? (
-                        <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
-                      ) : (
                         <Eye className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      ) : (
+                        <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
                       )}
                     </button>
                   }
@@ -363,9 +363,9 @@ export default function Cadastro() {
                       aria-label={showConfirmaSenha ? "Ocultar senha" : "Mostrar senha"}
                     >
                       {showConfirmaSenha ? (
-                        <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
-                      ) : (
                         <Eye className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                      ) : (
+                        <EyeOff className="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors" />
                       )}
                     </button>
                   }
