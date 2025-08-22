@@ -223,8 +223,8 @@ export default function PortalAluno() {
               <h2 className="section-title">Minhas Inscrições</h2>
               <div className="section-actions">
                 <span className="section-count">
-                  {inscriptions.length} inscrição
-                  {inscriptions.length !== 1 ? "ões" : ""}
+                  {inscriptions.length}
+                  {inscriptions.length === 1 ? "inscrição" : "inscrições"}
                 </span>
               </div>
             </div>
