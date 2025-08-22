@@ -352,6 +352,12 @@
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(229, 231, 235, 0.8);
+  /* Centralizar conteúdo com o ícone */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .empty-icon {
@@ -488,6 +494,9 @@
   margin-bottom: 1.25rem;
   flex: 1;
   align-content: start;
+  /* Garantir que todos os cards ocupem a mesma largura e se estiquem igualmente */
+  align-items: stretch;
+  justify-items: stretch;
 }
 
 .selection-card {
@@ -646,6 +655,12 @@
 .empty-selections {
   text-align: center;
   padding: 2rem 1rem;
+  /* Centralizar vertical e horizontalmente o estado vazio dentro do container */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
 }
 
 .empty-selections .empty-icon {

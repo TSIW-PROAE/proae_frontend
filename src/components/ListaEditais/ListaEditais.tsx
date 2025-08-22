@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  ExternalLink,
   Edit,
   Trash2,
   Users,
@@ -9,6 +8,7 @@ import {
   CheckCircle,
   AlertCircle,
   Tag,
+  Copy,
 } from "lucide-react";
 import { Edital, Vaga } from "../../types/edital";
 import { editalService } from "../../services/EditalService/editalService";
@@ -19,13 +19,15 @@ interface ListaEditaisProps {
   onEdit: (edital: Edital) => void;
   onDelete: (id: number) => void;
   isLoading?: boolean;
+  onRequestDuplicate?: (edital: Edital) => void;
 }
 
 const EditalCard: React.FC<{
   edital: Edital;
   onEdit: (edital: Edital) => void;
   onDelete: (id: number) => void;
-}> = ({ edital, onEdit, onDelete }) => {
+  onRequestDuplicate?: (edital: Edital) => void;
+}> = ({ edital, onEdit, onDelete, onRequestDuplicate }) => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loadingVagas, setLoadingVagas] = useState(false);
 
@@ -89,6 +91,11 @@ const EditalCard: React.FC<{
   const totalVagas =
     vagas?.reduce((total, vaga) => total + (vaga.numero_vagas || 0), 0) || 0;
 
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRequestDuplicate && onRequestDuplicate(edital);
+  };
+
   return (
     <div className="selection-card" onClick={() => onEdit(edital)}>
       <div className="selection-card-header">
@@ -99,6 +106,13 @@ const EditalCard: React.FC<{
           </span>
         </div>
         <div className="card-actions">
+          <button
+            onClick={handleDuplicate}
+            className="action-btn duplicate-btn"
+            title="Duplicar edital"
+          >
+            <Copy className="w-4 h-4" />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -195,6 +209,7 @@ export default function ListaEditais({
   onEdit,
   onDelete,
   isLoading = false,
+  onRequestDuplicate,
 }: ListaEditaisProps) {
   if (isLoading) {
     return (
@@ -272,6 +287,7 @@ export default function ListaEditais({
             edital={edital}
             onEdit={onEdit}
             onDelete={onDelete}
+            onRequestDuplicate={onRequestDuplicate}
           />
         ))}
 
@@ -282,6 +298,7 @@ export default function ListaEditais({
             edital={edital}
             onEdit={onEdit}
             onDelete={onDelete}
+            onRequestDuplicate={onRequestDuplicate}
           />
         ))}
 
@@ -292,6 +309,7 @@ export default function ListaEditais({
             edital={edital}
             onEdit={onEdit}
             onDelete={onDelete}
+            onRequestDuplicate={onRequestDuplicate}
           />
         ))}
 
@@ -302,6 +320,7 @@ export default function ListaEditais({
             edital={edital}
             onEdit={onEdit}
             onDelete={onDelete}
+            onRequestDuplicate={onRequestDuplicate}
           />
         ))}
       </div>

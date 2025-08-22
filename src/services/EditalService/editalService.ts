@@ -1,5 +1,4 @@
 import { FetchAdapter } from "../BaseRequestService/HttpClient";
-import { getCookie } from "@/utils/utils";
 import {
   Edital,
   CreateEditalRequest,
@@ -14,11 +13,6 @@ export class EditalService {
 
   constructor() {
     this.httpClient = new FetchAdapter();
-  }
-
-  private getToken(): string {
-    // Usa o cookie de autenticação configurado pelo AuthProvider
-    return getCookie("token") ?? "";
   }
 
   // Listar todos os editais (não precisa de token)
@@ -46,9 +40,9 @@ export class EditalService {
   async criarVaga(
     vaga: Omit<Vaga, "id" | "created_at" | "updated_at">
   ): Promise<Vaga> {
-    const token = this.getToken();
     const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
-    return this.httpClient.post<Vaga>(`${baseUrl}/vagas`, vaga, token);
+  const resp = await this.httpClient.post<Vaga>(`${baseUrl}/vagas`, vaga);
+  return resp.data;
   }
 
   // Atualizar vaga (precisa de token)
@@ -56,16 +50,14 @@ export class EditalService {
     id: number,
     vaga: Partial<Omit<Vaga, "id" | "created_at" | "updated_at">>
   ): Promise<Vaga> {
-    const token = this.getToken();
     const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
-    return this.httpClient.patch<Vaga>(`${baseUrl}/vagas/${id}`, vaga, token);
+  return this.httpClient.patch<Vaga>(`${baseUrl}/vagas/${id}`, vaga);
   }
 
   // Deletar vaga (precisa de token)
   async deletarVaga(id: number): Promise<void> {
-    const token = this.getToken();
     const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
-    return this.httpClient.delete<void>(`${baseUrl}/vagas/${id}`, token);
+  return this.httpClient.delete<void>(`${baseUrl}/vagas/${id}`);
   }
 
   // Criar novo edital (precisa de token)
@@ -86,33 +78,16 @@ export class EditalService {
     id: number,
     status: Edital["status_edital"]
   ): Promise<Edital> {
-    const token = this.getToken();
     // Alguns backends aceitam PATCH sem body para essa rota
     return this.httpClient.patch<Edital>(
       `${BASE_URL}/${id}/status/${status}`,
-      {},
-      token
-    );
-  }
-
-  // Alterar status do edital em rota específica (precisa de token)
-  async alterarStatusEdital(
-    id: number,
-    status: Edital["status_edital"]
-  ): Promise<Edital> {
-    const token = this.getToken();
-    // Alguns backends aceitam PATCH sem body para essa rota
-    return this.httpClient.patch<Edital>(
-      `${BASE_URL}/${id}/status/${status}`,
-      {},
-      token
+      {}
     );
   }
 
   // Deletar edital (precisa de token)
   async deletarEdital(id: number): Promise<void> {
-    const token = this.getToken();
-    return this.httpClient.delete<void>(`${BASE_URL}/${id}`, token);
+    return this.httpClient.delete<void>(`${BASE_URL}/${id}`);
   }
 }
 

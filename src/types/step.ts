@@ -27,6 +27,7 @@ export interface Pergunta {
     | "arquivo"
     | "email";
   tipo_Pergunta?: string;
+  tipo_formatacao?: string;
   obrigatoria?: boolean;
   obrigatoriedade?: boolean;
   opcoes_resposta?: string[];

@@ -5,6 +5,8 @@ import {
   UpdateEditalRequest,
 } from "../../../types/edital";
 import { editalService } from "../../../services/EditalService/editalService";
+import { stepService } from "../../../services/StepService/stepService";
+import { perguntaService } from "../../../services/PerguntaService/perguntaService";
 import FormularioEdital from "../../../components/FormularioEdital/FormularioEdital";
 import ListaEditais from "../../../components/ListaEditais/ListaEditais";
 import ModalEditarEdital from "../../../components/ModalEditarEdital/ModalEditarEdital";
@@ -32,6 +34,8 @@ export default function ProcessosProae() {
   const [tituloEdital, setTituloEdital] = useState("");
   const [isCreatingEdital, setIsCreatingEdital] = useState(false);
   const [isDeletingEdital, setIsDeletingEdital] = useState(false);
+  const [duplicatingEdital, setDuplicatingEdital] = useState<Edital | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   useEffect(() => {
     carregarEditais();
@@ -184,6 +188,114 @@ export default function ProcessosProae() {
       handleEditarEdital(editalData as UpdateEditalRequest);
     } else {
       handleCriarEdital(editalData as CreateEditalRequest);
+    }
+  };
+
+  const abrirModalDuplicar = (edital: Edital) => {
+    setDuplicatingEdital(edital);
+  };
+
+  const cancelarDuplicacao = () => {
+    setDuplicatingEdital(null);
+    setIsDuplicating(false);
+  };
+
+  const confirmarDuplicacao = async () => {
+    if (!duplicatingEdital) return;
+    setIsDuplicating(true);
+    setError(null);
+    try {
+      // 1) Criar novo edital apenas com título
+      const novo = await editalService.criarEdital({
+        titulo_edital: `${duplicatingEdital.titulo_edital} (cópia)`,
+      });
+
+      // 2) Atualizar infos do novo (descricao, documentos, etapas básicas se existirem no payload)
+      if (novo?.id) {
+        await editalService.atualizarEdital(novo.id, {
+          descricao: duplicatingEdital.descricao,
+          edital_url: duplicatingEdital.edital_url,
+          // Cronograma (etapa_edital) é parte do edital; duplicamos aqui
+          etapa_edital: Array.isArray(duplicatingEdital.etapa_edital)
+            ? duplicatingEdital.etapa_edital
+            : [],
+        });
+      }
+
+      // 3) Clonar vagas do edital
+      if (novo?.id && duplicatingEdital.id) {
+        const vagasOriginais = await editalService.buscarVagasDoEdital(
+          duplicatingEdital.id
+        );
+        if (Array.isArray(vagasOriginais) && vagasOriginais.length) {
+          await Promise.all(
+            vagasOriginais.map((v) =>
+              editalService.criarVaga({
+                edital_id: novo.id!,
+                beneficio: v.beneficio,
+                descricao_beneficio: v.descricao_beneficio,
+                numero_vagas: v.numero_vagas,
+              })
+            )
+          );
+        }
+      }
+
+      // 4) Clonar steps e 5) perguntas
+      if (novo?.id && Array.isArray(duplicatingEdital.etapa_edital)) {
+        // Buscar steps originais via stepService (se necessário, caso etapas venham sem id)
+        // Aqui, se não houver listagem de steps por edital além de etapa_edital, pulamos e criamos apenas texto dos steps do edital original
+      }
+
+      // Buscar steps reais do edital original
+      // Alguns locais usam StepService.listarStepsPorEdital
+      const stepsOriginais = duplicatingEdital.id
+        ? await stepService.listarStepsPorEdital(duplicatingEdital.id)
+        : [];
+
+      // Criar steps do novo
+      if (novo?.id && stepsOriginais.length) {
+        for (const step of stepsOriginais) {
+          const novoStep = await stepService.criarStep({
+            texto: step.texto || step.titulo || "",
+            edital_id: novo.id,
+          });
+
+          // Clonar perguntas do step, se houver
+          const perguntas = step.id
+            ? await perguntaService.listarPerguntasPorStep(step.id)
+            : step.perguntas || [];
+          if (novoStep?.id && perguntas.length) {
+            for (const p of perguntas) {
+              await perguntaService.criarPergunta({
+                step_id: novoStep.id,
+                pergunta: (p as any).pergunta || p.texto_pergunta || "",
+                obrigatoriedade:
+                  (p as any).obrigatoriedade ?? p.obrigatoria ?? false,
+                tipo_Pergunta:
+                  (p as any).tipo_Pergunta || p.tipo_pergunta || "input",
+                ...(p as any).tipo_formatacao
+                  ? { tipo_formatacao: (p as any).tipo_formatacao }
+                  : {},
+              } as any);
+            }
+          }
+        }
+      }
+
+      // Garantir status rascunho (se backend tiver rota específica)
+      if (novo?.id) {
+        try {
+          await editalService.alterarStatusEdital(novo.id, "RASCUNHO");
+        } catch {}
+      }
+
+      await carregarEditais();
+      cancelarDuplicacao();
+    } catch (err) {
+      console.error("Erro ao duplicar edital:", err);
+      setError("Erro ao duplicar edital. Tente novamente.");
+      setIsDuplicating(false);
     }
   };
 
@@ -416,12 +528,76 @@ export default function ProcessosProae() {
                   onEdit={handleEditClick}
                   onDelete={handleDeletarEdital}
                   isLoading={isLoading}
+                  onRequestDuplicate={abrirModalDuplicar}
                 />
               </div>
             </section>
           )}
         </main>
       </div>
+
+      {/* Modal de Duplicação */}
+      {duplicatingEdital && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 className="modal-title">
+                <FileText className="w-5 h-5 text-purple-600" />
+                Confirmar Duplicação
+              </h3>
+              <button
+                onClick={cancelarDuplicacao}
+                className="modal-close-btn"
+                disabled={isDuplicating}
+                title="Fechar modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="delete-warning">
+                <div className="warning-icon">
+                  <BookOpen className="w-8 h-8 text-emerald-600" />
+                </div>
+                <div className="warning-content">
+                  <h4 className="warning-title">Duplicar edital como rascunho?</h4>
+                  <p className="warning-message">
+                    Será criada uma cópia de <strong>"{duplicatingEdital.titulo_edital}"</strong>
+                    {" "}com status Rascunho, incluindo steps e perguntas (quando existirem).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                onClick={cancelarDuplicacao}
+                className="btn-cancel"
+                disabled={isDuplicating}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarDuplicacao}
+                className="btn-create"
+                disabled={isDuplicating}
+              >
+                {isDuplicating ? (
+                  <>
+                    <div className="spinner"></div>
+                    Duplicando...
+                  </>
+                ) : (
+                  <>
+                    Duplicar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

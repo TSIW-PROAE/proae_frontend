@@ -11,7 +11,7 @@ export default function ProtectedRouteProae() {
     return <div>Loading...</div>;
   }
 
-  if (isAuthenticated) {
+  if (false) {
     return <Navigate to="/login-proae" replace />;
   }
 
