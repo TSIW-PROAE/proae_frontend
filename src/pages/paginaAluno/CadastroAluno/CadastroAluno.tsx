@@ -12,6 +12,7 @@ import { FetchAdapter } from "../../../services/BaseRequestService/HttpClient";
 import useFormValidation, { FormData } from "@/hooks/useFormValidation";
 import { formatarData, formatarCelular, formatCPF } from "../../../utils/validations";
 import {campus} from "../../../utils/cadastroop";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Cadastro() {
   const [formData, setFormData] = useState<FormData>({
@@ -32,6 +33,7 @@ export default function Cadastro() {
   const anoAtual = new Date().getFullYear();
   const location = useLocation();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const { validateForm, errors, setFieldError, isValid } = useFormValidation(formData);
 
   useEffect(() => {
