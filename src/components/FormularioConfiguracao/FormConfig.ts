@@ -19,17 +19,6 @@ export const formSections = [
         placeholder: "Digite seu sobrenome",
         obrigatorio: true,
       },
-      {
-        tipo: "select",
-        nome: "pronome",
-        titulo: "Pronomes",
-        placeholder: "Adicione seus pronomes",
-        opcoes: [
-          { valor: "ele/dele", label: "Ele/Dele" },
-          { valor: "ela/dela", label: "Ela/Dela" },
-          { valor: "elu/delu", label: "Elu/Delu" },
-        ],
-      },
     ],
   },
   {
