@@ -1,9 +1,7 @@
-// formConfig.ts
-
 export const formSections = [
   {
     title: "Editar perfil",
-    layout: "stack", // agora só um campo, não precisa de grid
+    layout: "stack", 
     fields: [
       {
         tipo: "input",
