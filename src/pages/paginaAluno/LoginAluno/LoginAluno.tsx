@@ -175,7 +175,7 @@ export default function LoginAluno() {
                     Lembrar-me
                   </Switch>
                 </div>
-                <a href="#" className="forgot-password">
+                <a href="/forgot-password" className="forgot-password">
                   Esqueci minha senha
                 </a>
               </div>

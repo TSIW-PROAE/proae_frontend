@@ -19,7 +19,7 @@ export interface FormData {
 
 interface UseFormValidationResult {
   errors: Record<string, string>;
-  validateForm: () => void;
+  validateForm: () => boolean;
   clearErrors: () => void;
   setFieldError: (field: string, error: string) => void;
   isValid: boolean;
@@ -77,8 +77,10 @@ export default function useFormValidation(formData: FormData): UseFormValidation
     }
 
     setErrors(newErrors);
-    setIsValid(Object.keys(newErrors).length === 0);
+    const isFormValid = Object.keys(newErrors).length === 0;
+    setIsValid(isFormValid);
 
+    return isFormValid;
   }, [formData])
 
   return {

@@ -22,6 +22,8 @@ import ProtectedRouteAluno from "@/Auth/ProtectedRouteAluno";
 import ProtectedRouteProae from "@/Auth/ProtectedRouteProae";
 import LoginAluno from "@/pages/paginaAluno/LoginAluno/LoginAluno";
 import LoginProae from "@/pages/paginaProae/LoginProae/LoginProae";
+import ForgotPassword from "@/pages/paginaAluno/forgotPassword/ForgotPassword";
+import ResetPassword from "@/pages/paginaAluno/resetPassword/ResetPassoword";
 
 const routes = [
   {
@@ -34,6 +36,8 @@ const routes = [
       },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
       {path: "login-aluno", element: <LoginAluno />},
+      {path: "forgot-password", element: <ForgotPassword />},
+      {path: "reset-password", element: <ResetPassword />},
       {
         element: <ProtectedRouteAluno />,
         children: [
