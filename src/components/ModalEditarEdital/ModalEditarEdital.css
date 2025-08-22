@@ -845,6 +845,218 @@ select:focus {
   background: #f8fafc;
 }
 
+/* Questionários Section (UI-only) */
+.questionarios-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px; /* mais compacto que vagas */
+}
+
+.questionario-item {
+  background: #f8fafc;
+  border-radius: 14px; /* levemente menor */
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.questionario-editing {
+  background: white;
+  border: 2px solid #3b82f6;
+  border-radius: 14px;
+  padding: 12px; /* menor */
+}
+
+.questionario-input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.preview-editor {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.preview-input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* removido botão de adicionar prévias manualmente (UI agora só exibe prévia se existir) */
+
+.questionario-actions {
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn-save-questionario,
+.btn-edit-questionario {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-delete-questionario {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add-questionario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.btn-add-questionario:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #f8fafc;
+}
+
+.questionario-display {
+  padding: 12px 14px; /* menor que vagas */
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 8px;
+  min-height: 160px; /* um pouco mais alto para mais área de preview */
+  cursor: pointer;
+}
+
+.questionario-display:hover {
+  background: #fff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.questionario-display:active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+.questionario-preview {
+  position: relative;
+  background: rgba(255, 255, 255, 0.6); /* efeito fosco */
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-height: 80px; /* aumenta a caixa de preview */
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.preview-wrap {
+  position: relative;
+}
+
+.preview-list {
+  display: grid;
+  grid-auto-rows: minmax(0, auto);
+  gap: 6px;
+}
+
+.preview-line {
+  margin: 0;
+  color: #94a3b8; /* cor mais clara */
+  font-size: 0.8rem; /* letras pequenas */
+  line-height: 1.1rem;
+  white-space: nowrap; /* não quebrar */
+  overflow: hidden;
+  text-overflow: ellipsis; /* '...' no fim */
+}
+
+/* removido fade gradiente para um fosco sólido */
+
+.preview-empty {
+  background: #fff;
+  border: 1px dashed #e5e7eb;
+  color: #94a3b8;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.questionario-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.questionario-header h4 {
+  margin: 0;
+  font-size: 0.98rem; /* ligeiramente menor */
+  font-weight: 600;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.questionario-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.open-indicator {
+  color: #94a3b8;
+}
+
+.questionario-count {
+  background: #3b82f6;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+@media (min-width: 900px) {
+  .questionarios-grid {
+    grid-template-columns: repeat(
+      4,
+      1fr
+    ); /* mais colunas para reduzir a largura dos cards */
+  }
+}
+
+@media (min-width: 1280px) {
+  .questionarios-grid {
+    grid-template-columns: repeat(
+      5,
+      1fr
+    ); /* ainda mais estreitos em telas grandes */
+  }
+}
+
 /* estado vazio para listas */
 .empty-state {
   padding: 12px 16px;

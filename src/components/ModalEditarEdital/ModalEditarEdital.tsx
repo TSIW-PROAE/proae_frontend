@@ -8,12 +8,15 @@ import {
   Plus,
   Trash2,
   ChevronDown,
+  ChevronRight,
   CheckCircle,
   Clock,
   AlertTriangle,
   FileText,
 } from "lucide-react";
 import { Edital, DocumentoEdital, EtapaEdital, Vaga } from "../../types/edital";
+import { stepService } from "@/services/StepService/stepService";
+import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import { editalService } from "../../services/EditalService/editalService";
 import { toast } from "react-hot-toast";
 import "./ModalEditarEdital.css";
@@ -101,6 +104,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
   const [openLinks, setOpenLinks] = useState(true);
   const [openCronograma, setOpenCronograma] = useState(true);
   const [openVagas, setOpenVagas] = useState(true);
+  const [openQuestionarios, setOpenQuestionarios] = useState(true);
   // Controle de alterações locais
   const [hasChanges, setHasChanges] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -108,12 +112,27 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
   // Celebração visual após sucesso
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Estado local de Questionários (somente UI por enquanto)
+  interface QuestionarioItem {
+    id?: number; // id do step
+    titulo: string;
+    previewPerguntas: string[]; // primeiras perguntas carregadas
+  }
+  interface EditableQuestionario {
+    value: QuestionarioItem;
+    isEditing: boolean;
+  }
+  const [questionarios, setQuestionarios] = useState<EditableQuestionario[]>(
+    []
+  );
+
   const makeSnapshot = (
     t: string,
     d: string,
     docsArr: DocumentoEdital[],
     etapasArr: EtapaEdital[],
-    vagasArr: Vaga[]
+    vagasArr: Vaga[],
+    questionariosArr: QuestionarioItem[] = []
   ) => {
     const norm = {
       titulo: (t || "").trim(),
@@ -132,6 +151,12 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
         beneficio: (x.beneficio || "").trim(),
         descricao_beneficio: (x.descricao_beneficio || "").trim(),
         numero_vagas: Number(x.numero_vagas) || 0,
+      })),
+      questionarios: (questionariosArr || []).map((q) => ({
+        titulo: (q.titulo || "").trim(),
+        previewPerguntas: (q.previewPerguntas || []).map((p) =>
+          (p || "").trim()
+        ),
       })),
     };
     return JSON.stringify(norm);
@@ -159,6 +184,9 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
 
       // Carregar vagas e montar snapshot baseline assim que chegarem
       loadVagasAndInitBaseline();
+
+      // Carregar Steps deste edital e montar UI de questionários
+      loadSteps();
     }
   }, [isOpen, edital]);
 
@@ -191,13 +219,55 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
         edital.descricao || "",
         docsOrig,
         etapasOrig,
-        vagasData
+        vagasData,
+        []
       );
       baselineSnapshotRef.current = baseline;
       setInitialized(true);
       setHasChanges(false);
     } catch (error) {
       console.error("Erro ao carregar vagas:", error);
+    }
+  };
+
+  const loadSteps = async () => {
+    if (!edital.id) return;
+    try {
+      const steps = await stepService.listarStepsPorEdital(edital.id);
+      // Monta questionários com preview vazio inicialmente
+      const qs: EditableQuestionario[] = steps
+        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
+        .map((s) => ({
+          value: {
+            id: s.id,
+            titulo: s.titulo || s.texto || "",
+            previewPerguntas: [],
+          },
+          isEditing: false,
+        }));
+      setQuestionarios(qs);
+
+      // Carrega preguiçosamente as primeiras perguntas de cada step para preview
+      for (const s of steps) {
+        if (!s.id) continue;
+        try {
+          const perguntas = await perguntaService.listarPerguntasPorStep(s.id);
+          const preview = (perguntas || [])
+            .slice(0, 3)
+            .map((p) => p.texto_pergunta || p.pergunta || "");
+          setQuestionarios((prev) =>
+            prev.map((q) =>
+              q.value.id === s.id
+                ? { ...q, value: { ...q.value, previewPerguntas: preview } }
+                : q
+            )
+          );
+        } catch (e) {
+          // ignora erro de perguntas individuais
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar steps:", error);
     }
   };
 
@@ -209,10 +279,19 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
       descricao,
       documentos.map((d) => d.value),
       etapas.map((e) => e.value),
-      vagas.map((v) => v.value)
+      vagas.map((v) => v.value),
+      questionarios.map((q) => q.value)
     );
     setHasChanges(currentSnapshot !== baselineSnapshotRef.current);
-  }, [initialized, titulo, descricao, documentos, etapas, vagas]);
+  }, [
+    initialized,
+    titulo,
+    descricao,
+    documentos,
+    etapas,
+    vagas,
+    questionarios,
+  ]);
 
   const getStatusIcon = (statusValue: StatusEdital) => {
     switch (statusValue) {
@@ -298,6 +377,51 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
         etapa_edital: etapasValidas,
       });
 
+      // Sincronizar Steps (Questionários)
+      // 1) Buscar steps atuais do backend
+      const stepsExistentes = await stepService.listarStepsPorEdital(edital.id);
+      const idsExistentesSteps = new Set(
+        (stepsExistentes || []).map((s) => s.id!).filter(Boolean)
+      );
+
+      // 2) Criar/Atualizar conforme UI
+      const idsPersistentesSteps = new Set<number>();
+      let ordem = 1;
+      for (const q of questionarios) {
+        const tituloStep = q.value.titulo?.trim();
+        if (!tituloStep) continue; // ignora sem título
+        if (q.value.id) {
+          const updated = await stepService.atualizarStep(q.value.id, {
+            texto: tituloStep,
+          });
+          if (updated.id) idsPersistentesSteps.add(updated.id);
+        } else {
+          const created = await stepService.criarStep({
+            texto: tituloStep,
+            edital_id: edital.id,
+          });
+          if (created.id) {
+            idsPersistentesSteps.add(created.id);
+            // atualiza id na UI
+            setQuestionarios((prev) =>
+              prev.map((qq) =>
+                qq === q
+                  ? { ...qq, value: { ...qq.value, id: created.id } }
+                  : qq
+              )
+            );
+          }
+        }
+        ordem++;
+      }
+
+      // 3) Deletar steps removidos pela UI
+      for (const id of idsExistentesSteps) {
+        if (!idsPersistentesSteps.has(id)) {
+          await stepService.deletarStep(id);
+        }
+      }
+
       // Sincronização de Vagas: cria/atualiza/deleta
       const vagasValidas = vagas.filter(
         (vaga) => vaga.value.beneficio && vaga.value.numero_vagas > 0
@@ -343,7 +467,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
         etapas.map((e) => e.value),
         vagas
           .filter((vaga) => vaga.value.beneficio && vaga.value.numero_vagas > 0)
-          .map((v) => v.value)
+          .map((v) => v.value),
+        questionarios.map((q) => q.value)
       );
       setHasChanges(false);
       return true;
@@ -803,6 +928,175 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
                 >
                   <Plus size={16} />
                   Adicionar Vaga
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Seção de Questionários - abaixo de Vagas (UI-only) */}
+          <section className="questionarios-section-full section-card">
+            <div
+              className="section-header"
+              onClick={() => setOpenQuestionarios(!openQuestionarios)}
+            >
+              <div className="section-title">
+                <h3>
+                  <FileText size={20} /> Questionários
+                </h3>
+                <p className="section-subtitle">
+                  Organize formulários em seções com prévia de perguntas
+                </p>
+              </div>
+              <button
+                className={`section-toggle ${openQuestionarios ? "open" : ""}`}
+                aria-label="Alternar questionários"
+                title="Alternar questionários"
+              >
+                <ChevronDown size={18} />
+              </button>
+            </div>
+            {openQuestionarios && (
+              <div className="questionarios-grid section-body">
+                {questionarios.map((q, index) => (
+                  <div key={index} className="questionario-item">
+                    {q.isEditing ? (
+                      <div className="questionario-editing">
+                        <input
+                          type="text"
+                          placeholder="Título do questionário"
+                          value={q.value.titulo}
+                          onChange={(e) => {
+                            const list = [...questionarios];
+                            list[index].value.titulo = e.target.value;
+                            setQuestionarios(list);
+                          }}
+                          className="questionario-input"
+                        />
+                        <div className="questionario-actions">
+                          <button
+                            aria-label="Salvar questionário"
+                            title="Salvar questionário"
+                            onClick={() => {
+                              if (q.value.titulo.trim().length > 0) {
+                                const list = [...questionarios];
+                                list[index].isEditing = false;
+                                setQuestionarios(list);
+                              }
+                            }}
+                            className="btn-save-questionario"
+                          >
+                            <Save size={16} />
+                          </button>
+                          <button
+                            aria-label="Excluir questionário"
+                            title="Excluir questionário"
+                            onClick={() => {
+                              setQuestionarios(
+                                questionarios.filter((_, i) => i !== index)
+                              );
+                            }}
+                            className="btn-delete-questionario"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className="questionario-display"
+                        onClick={() => {
+                          // TODO: abrir editor de Steps/Perguntas deste questionário
+                          console.log("Abrir questionário", q.value);
+                        }}
+                      >
+                        <div className="questionario-preview">
+                          {q.value.previewPerguntas &&
+                          q.value.previewPerguntas.length > 0 ? (
+                            <div
+                              className="preview-list"
+                              title={q.value.previewPerguntas.join("\n")}
+                            >
+                              {q.value.previewPerguntas
+                                .filter((t) => (t || "").trim().length > 0)
+                                .slice(0, 4)
+                                .map((t, i) => (
+                                  <p key={i} className="preview-line">
+                                    {t}
+                                  </p>
+                                ))}
+                            </div>
+                          ) : (
+                            <div className="preview-empty">Sem perguntas</div>
+                          )}
+                        </div>
+                        <div className="questionario-header">
+                          <h4 title={q.value.titulo}>
+                            {q.value.titulo || "Sem título"}
+                          </h4>
+                          <div className="questionario-meta">
+                            <span className="questionario-count">
+                              {q.value.previewPerguntas?.length || 0}{" "}
+                              {(q.value.previewPerguntas?.length || 0) === 1
+                                ? "pergunta"
+                                : "perguntas"}
+                            </span>
+                            <ChevronRight
+                              className="open-indicator"
+                              size={16}
+                            />
+                            <div className="questionario-actions">
+                              {/* <button
+                                aria-label="Editar questionário"
+                                title="Editar questionário"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const list = [...questionarios];
+                                  list[index].isEditing = true;
+                                  setQuestionarios(list);
+                                }}
+                                className="btn-edit-questionario"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                aria-label="Excluir questionário"
+                                title="Excluir questionário"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setQuestionarios(
+                                    questionarios.filter((_, i) => i !== index)
+                                  );
+                                }}
+                                className="btn-delete-questionario"
+                              >
+                                <Trash2 size={16} />
+                              </button> */}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {questionarios.length === 0 && (
+                  <div className="empty-state">
+                    Nenhum questionário adicionado.
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setQuestionarios([
+                      ...questionarios,
+                      {
+                        value: { titulo: "", previewPerguntas: [] },
+                        isEditing: true,
+                      },
+                    ]);
+                  }}
+                  className="btn-add-questionario"
+                >
+                  <Plus size={16} />
+                  Adicionar Questionário
                 </button>
               </div>
             )}

@@ -119,7 +119,7 @@ const EditalCard: React.FC<{
           >
             <Trash2 className="w-4 h-4" />
           </button>
-          {edital.edital_url && edital.edital_url[0] && (
+          {/* {edital.edital_url && edital.edital_url[0] && (
             <a
               href={edital.edital_url[0].url_documento}
               target="_blank"
@@ -130,7 +130,7 @@ const EditalCard: React.FC<{
             >
               <ExternalLink className="w-3 h-3" />
             </a>
-          )}
+          )} */}
         </div>
       </div>
 
