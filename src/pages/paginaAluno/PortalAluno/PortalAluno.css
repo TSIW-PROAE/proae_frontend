@@ -278,6 +278,12 @@
   margin-bottom: 1rem;
 }
 
+/* Forçar alinhamento à esquerda dos headers somente nesta página
+   evitando conflito com outros .section-header globais */
+.portal-container .section-header {
+  justify-content: flex-start;
+}
+
 .section-title {
   font-size: 1.5rem;
   font-weight: 600;
@@ -561,6 +567,7 @@
   line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-wrap: break-word;
@@ -573,6 +580,7 @@
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
@@ -1051,12 +1059,14 @@
     font-size: 0.9375rem;
     line-height: 1.3;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .selection-card-description {
     font-size: 0.8125rem;
     line-height: 1.3;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .selections-grid {

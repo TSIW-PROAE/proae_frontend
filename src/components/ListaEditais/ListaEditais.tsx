@@ -1,4 +1,17 @@
-import { Edital } from "../../types/edital";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ExternalLink,
+  Edit,
+  Trash2,
+  Users,
+  FileText,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Tag,
+} from "lucide-react";
+import { Edital, Vaga } from "../../types/edital";
+import { editalService } from "../../services/EditalService/editalService";
 import "./ListaEditais.css";
 
 interface ListaEditaisProps {
@@ -8,50 +21,181 @@ interface ListaEditaisProps {
   isLoading?: boolean;
 }
 
+const EditalCard: React.FC<{
+  edital: Edital;
+  onEdit: (edital: Edital) => void;
+  onDelete: (id: number) => void;
+}> = ({ edital, onEdit, onDelete }) => {
+  const [vagas, setVagas] = useState<Vaga[]>([]);
+  const [loadingVagas, setLoadingVagas] = useState(false);
+
+  const statusLower = edital.status_edital
+    ? edital.status_edital.toLowerCase()
+    : "";
+  const isOpen = statusLower === "edital em aberto";
+  const isClosed = statusLower === "edital encerrado";
+  const isInProgress = statusLower === "edital em andamento";
+  const isDraft = statusLower === "rascunho";
+
+  const loadVagas = useCallback(async () => {
+    if (!edital.id || loadingVagas) return;
+
+    setLoadingVagas(true);
+    try {
+      const vagasData = await editalService.buscarVagasDoEdital(edital.id);
+      setVagas(vagasData || []);
+    } catch (error) {
+      console.error("Erro ao carregar vagas:", error);
+      setVagas([]);
+    } finally {
+      setLoadingVagas(false);
+    }
+  }, [edital.id]);
+
+  // Carregar vagas automaticamente quando o componente é montado
+  useEffect(() => {
+    loadVagas();
+  }, [loadVagas]);
+
+  const getBadgeStyles = () => {
+    if (isOpen) {
+      return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    } else if (isClosed) {
+      return "bg-red-100 text-red-800 border-red-200";
+    } else if (isInProgress) {
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    } else if (isDraft) {
+      return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    }
+    return "bg-gray-100 text-gray-800 border-gray-200";
+  };
+
+  const getStatusIcon = () => {
+    if (isOpen) return <CheckCircle className="w-3 h-3 text-emerald-600" />;
+    if (isClosed) return <AlertCircle className="w-3 h-3 text-red-600" />;
+    if (isInProgress) return <Clock className="w-3 h-3 text-blue-600" />;
+    if (isDraft) return <FileText className="w-3 h-3 text-yellow-600" />;
+    return <Clock className="w-3 h-3 text-gray-600" />;
+  };
+
+  const getStatusLabel = () => {
+    if (isOpen) return "Edital em aberto";
+    if (isClosed) return "Edital encerrado";
+    if (isInProgress) return "Edital em andamento";
+    if (isDraft) return "Rascunho";
+    return edital.status_edital || "Status não informado";
+  };
+
+  const totalVagas =
+    vagas?.reduce((total, vaga) => total + (vaga.numero_vagas || 0), 0) || 0;
+
+  return (
+    <div className="selection-card" onClick={() => onEdit(edital)}>
+      <div className="selection-card-header">
+        <div className="card-status-indicator">
+          {getStatusIcon()}
+          <span className={`status-badge-small ${getBadgeStyles()}`}>
+            {getStatusLabel()}
+          </span>
+        </div>
+        <div className="card-actions">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(edital);
+            }}
+            className="action-btn edit-btn"
+            title="Editar edital"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              edital.id && onDelete(edital.id);
+            }}
+            className="action-btn delete-btn"
+            title="Deletar edital"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          {/* {edital.edital_url && edital.edital_url[0] && (
+            <a
+              href={edital.edital_url[0].url_documento}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="action-btn external-link"
+              title="Ver Edital"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )} */}
+        </div>
+      </div>
+
+      <div className="selection-card-body">
+        <div className="selection-card-meta">
+          <div className="meta-item">
+            <Tag className="w-3 h-3" />
+            <span>#{edital.id || 0}</span>
+          </div>
+          <div className="meta-item">
+            <Users className="w-3 h-3" />
+            <span>{totalVagas} vagas total</span>
+          </div>
+        </div>
+
+        <h3 className="selection-card-title">
+          {edital.titulo_edital || "Título não informado"}
+        </h3>
+        <p className="selection-card-description">
+          {edital.descricao && edital.descricao.length > 90
+            ? `${edital.descricao.substring(0, 90)}...`
+            : edital.descricao || "Descrição não disponível"}
+        </p>
+
+        {/* Chips de benefícios
+        {!loadingVagas && vagas.length > 0 && (
+          <div className="benefits-chips">
+            {vagas.slice(0, 3).map((vaga) => (
+              <div key={vaga.id} className="benefit-chip">
+                <span className="benefit-chip-name">{vaga.beneficio}</span>
+                <span className="benefit-chip-count">{vaga.numero_vagas}</span>
+              </div>
+            ))}
+            {vagas.length > 3 && (
+              <div className="benefit-chip more-benefits">
+                +{vagas.length - 3}
+              </div>
+            )}
+          </div>
+        )} */}
+
+        {/* {loadingVagas && (
+          <div className="benefits-loading">
+            <div className="loading-dot"></div>
+            <span>Carregando benefícios...</span>
+          </div>
+        )} */}
+      </div>
+
+      <div className="selection-card-footer">
+        <div className="card-type">
+          <FileText className="w-3 h-3" />
+          <span>Edital PROAE</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ListaEditais({
   editais,
   onEdit,
   onDelete,
   isLoading = false,
 }: ListaEditaisProps) {
-  const formatarData = (dataString: string) => {
-    return new Date(dataString).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Edital em aberto":
-        return "status-aberto";
-      case "Edital em andamento":
-        return "status-andamento";
-      case "Edital encerrado":
-        return "status-encerrado";
-      default:
-        return "status-default";
-    }
-  };
-
-  const getTipoIcon = (tipo: string) => {
-    switch (tipo) {
-      case "Auxilio Transporte":
-        return "🚌";
-      case "Auxilio Alimentação":
-        return "🍽️";
-      case "Auxilio Moradia":
-        return "🏠";
-      case "Apoio à Inclusão Digital":
-        return "💻";
-      default:
-        return "📄";
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="lista-editais-loading">
@@ -61,121 +205,117 @@ export default function ListaEditais({
     );
   }
 
-  if (editais.length === 0) {
+  const openEditais =
+    editais?.filter(
+      (edital) => edital.status_edital?.toLowerCase() === "edital em aberto"
+    ) || [];
+
+  const closedEditais =
+    editais?.filter(
+      (edital) => edital.status_edital?.toLowerCase() === "edital encerrado"
+    ) || [];
+
+  const inProgressEditais =
+    editais?.filter(
+      (edital) => edital.status_edital?.toLowerCase() === "edital em andamento"
+    ) || [];
+
+  const draftEditais =
+    editais?.filter(
+      (edital) => edital.status_edital?.toLowerCase() === "rascunho"
+    ) || [];
+
+  if (!editais || editais.length === 0) {
     return (
-      <div className="lista-editais-empty">
-        <div className="empty-icon">📄</div>
-        <h3>Nenhum edital encontrado</h3>
-        <p>Clique em "Novo Edital" para criar o primeiro edital.</p>
+      <div className="open-selections-container">
+        <div className="empty-selections">
+          <div className="empty-icon">
+            <FileText className="w-12 h-12 text-gray-400" />
+          </div>
+          <h3 className="empty-title">Nenhum edital encontrado</h3>
+          <p className="empty-description">
+            Clique em "Novo Edital" para criar o primeiro edital.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="lista-editais">
-      <div className="editais-grid">
-        {editais.map((edital) => (
-          <div key={edital.id} className="edital-card">
-            <div className="edital-header">
-              <div className="edital-tipo">
-                <span className="tipo-icon">
-                  {getTipoIcon(edital.tipo_edital)}
-                </span>
-                <span className="tipo-texto">{edital.tipo_edital}</span>
-              </div>
-              <div
-                className={`edital-status ${getStatusColor(edital.status_edital)}`}
-              >
-                {edital.status_edital}
-              </div>
-            </div>
-
-            <div className="edital-content">
-              <h3 className="edital-titulo">{edital.titulo_edital}</h3>
-              <p className="edital-descricao">{edital.descricao}</p>
-
-              <div className="edital-info">
-                <div className="info-item">
-                  <span className="info-label">Bolsas:</span>
-                  <span className="info-value">{edital.quantidade_bolsas}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Etapas:</span>
-                  <span className="info-value">
-                    {Array.isArray(edital.etapas) ? edital.etapas.length : 0}
-                  </span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Criado:</span>
-                  <span className="info-value">
-                    {edital.created_at
-                      ? formatarData(edital.created_at)
-                      : "N/A"}
-                  </span>
-                </div>
-              </div>
-
-              {edital.etapas && Array.isArray(edital.etapas) && edital.etapas.length > 0 && (
-                <div className="edital-etapas">
-                  <h4>Etapas do Processo:</h4>
-                  <div className="etapas-list">
-                    {edital.etapas
-                      .sort((a, b) => a.ordem - b.ordem)
-                      .map((etapa, index) => (
-                        <div key={index} className="etapa-item">
-                          <span className="etapa-ordem">{etapa.ordem}.</span>
-                          <span className="etapa-nome">{etapa.nome}</span>
-                          <span className="etapa-datas">
-                            {formatarData(etapa.data_inicio)} -{" "}
-                            {formatarData(etapa.data_fim)}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {edital.edital_url &&
-                Array.isArray(edital.edital_url) &&
-                edital.edital_url.length > 0 && (
-                  <div className="edital-urls">
-                    <h4>Documentos:</h4>
-                    <div className="urls-list">
-                      {edital.edital_url.map((url, index) => (
-                        <a
-                          key={index}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="url-link"
-                        >
-                          📄 Documento {index + 1}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-            </div>
-
-            <div className="edital-actions">
-              <button
-                onClick={() => onEdit(edital)}
-                className="btn-edit"
-                title="Editar edital"
-              >
-                ✏️ Editar
-              </button>
-              <button
-                onClick={() => edital.id && onDelete(edital.id)}
-                className="btn-delete"
-                title="Deletar edital"
-              >
-                🗑️ Deletar
-              </button>
-            </div>
+    <div className="open-selections-container">
+      <div className="selections-header">
+        <div className="selections-stats">
+          <div className="stat-item">
+            <div className="stat-dot open"></div>
+            <span>{openEditais.length} Abertos</span>
           </div>
+          <div className="stat-item">
+            <div className="stat-dot progress"></div>
+            <span>{inProgressEditais.length} Em Andamento</span>
+          </div>
+          <div className="stat-item">
+            <div className="stat-dot draft"></div>
+            <span>{draftEditais.length} Rascunhos</span>
+          </div>
+          <div className="stat-item">
+            <div className="stat-dot closed"></div>
+            <span>{closedEditais.length} Encerrados</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="selections-grid">
+        {/* Primeiro mostrar os editais abertos */}
+        {openEditais.map((edital) => (
+          <EditalCard
+            key={`open-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
+
+        {/* Depois mostrar os editais em andamento */}
+        {inProgressEditais.map((edital) => (
+          <EditalCard
+            key={`progress-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
+
+        {/* Mostrar os rascunhos */}
+        {draftEditais.map((edital) => (
+          <EditalCard
+            key={`draft-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
+
+        {/* Por último mostrar os editais encerrados */}
+        {closedEditais.map((edital) => (
+          <EditalCard
+            key={`closed-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
         ))}
       </div>
+
+      {editais.length > 0 && (
+        <div className="selections-footer">
+          <div className="footer-info">
+            <span className="total-count">
+              {editais.length} edital{editais.length !== 1 ? "s" : ""} total
+            </span>
+            <span className="last-updated">Atualizado agora</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,50 +1,47 @@
-export interface Etapa {
-  id?: number;
-  nome: string;
-  ordem: number;
+export interface EtapaEdital {
+  etapa: string;
+  ordem_elemento: number;
   data_inicio: string;
   data_fim: string;
 }
 
-export interface Edital {
+export interface DocumentoEdital {
+  titulo_documento: string;
+  url_documento: string;
+}
+
+export interface Vaga {
   id?: number;
-  tipo_edital:
-    | "Auxilio Transporte"
-    | "Auxilio Alimentação"
-    | "Auxilio Moradia"
-    | "Apoio à Inclusão Digital";
-  descricao: string;
-  edital_url: string[];
-  titulo_edital: string;
-  quantidade_bolsas: number;
-  status_edital:
-    | "Edital em aberto"
-    | "Edital encerrado"
-    | "Edital em andamento";
+  edital_id: number;
+  beneficio: string;
+  descricao_beneficio: string;
+  numero_vagas: number;
   created_at?: string;
   updated_at?: string;
-  etapas: Etapa[];
+}
+
+export interface Edital {
+  id?: number;
+  titulo_edital: string;
+  descricao?: string;
+  edital_url?: DocumentoEdital[];
+  status_edital: "RASCUNHO" | "ABERTO" | "ENCERRADO" | "EM_ANDAMENTO";
+  etapa_edital?: EtapaEdital[];
+  vagas?: Vaga[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreateEditalRequest {
-  tipo_edital:
-    | "Auxilio Transporte"
-    | "Auxilio Alimentação"
-    | "Auxilio Moradia"
-    | "Apoio à Inclusão Digital";
-  descricao: string;
-  edital_url: string[];
   titulo_edital: string;
-  quantidade_bolsas: number;
-  etapas: Etapa[];
+  descricao?: string;
+  edital_url?: DocumentoEdital[];
+  etapa_edital?: EtapaEdital[];
 }
 
 export interface UpdateEditalRequest {
-  status_edital?:
-    | "Edital em aberto"
-    | "Edital encerrado"
-    | "Edital em andamento";
   titulo_edital?: string;
-  quantidade_bolsas?: number;
-  etapas?: Etapa[];
+  descricao?: string;
+  edital_url?: DocumentoEdital[];
+  etapa_edital?: EtapaEdital[];
 }

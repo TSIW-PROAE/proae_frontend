@@ -94,9 +94,9 @@ export default function PortalAluno() {
     {
       icon: Award,
       label: "Benefícios Ativos",
-      value: benefits.filter((b) =>
+      value: benefits?.filter((b) =>
         b.beneficio?.toLowerCase().includes("ativo")
-      ).length,
+      ).length || 0,
       color: "bg-emerald-500",
       bgColor: "bg-emerald-50",
       textColor: "text-emerald-700",
@@ -104,9 +104,9 @@ export default function PortalAluno() {
     {
       icon: BookOpen,
       label: "Seleções Abertas",
-      value: openSelections.filter((s) =>
+      value: openSelections?.filter((s) =>
         s.status_edital?.toLowerCase().includes("aberto")
-      ).length,
+      ).length || 0,
       color: "bg-blue-500",
       bgColor: "bg-blue-50",
       textColor: "text-blue-700",
@@ -114,7 +114,7 @@ export default function PortalAluno() {
     {
       icon: FileText,
       label: "Inscrições Ativas",
-      value: inscriptions.length,
+      value: inscriptions?.length || 0,
       color: "bg-purple-500",
       bgColor: "bg-purple-50",
       textColor: "text-purple-700",
@@ -122,7 +122,7 @@ export default function PortalAluno() {
     {
       icon: Clock,
       label: "Pendências",
-      value: inscriptions.filter((i) => i.possui_pendencias).length,
+      value: inscriptions?.filter((i) => i.possui_pendencias).length || 0,
       color: "bg-amber-500",
       bgColor: "bg-amber-50",
       textColor: "text-amber-700",
@@ -162,9 +162,9 @@ export default function PortalAluno() {
             <div className="header-actions">
               <div className="notification-icon">
                 <Bell className="w-5 h-5" />
-                {inscriptions.filter((i) => i.possui_pendencias).length > 0 && (
+                {(inscriptions?.filter((i) => i.possui_pendencias).length || 0) > 0 && (
                   <span className="notification-badge">
-                    {inscriptions.filter((i) => i.possui_pendencias).length}
+                    {inscriptions?.filter((i) => i.possui_pendencias).length || 0}
                   </span>
                 )}
               </div>
@@ -223,14 +223,14 @@ export default function PortalAluno() {
               <h2 className="section-title">Minhas Inscrições</h2>
               <div className="section-actions">
                 <span className="section-count">
-                  {inscriptions.length} inscrição
-                  {inscriptions.length !== 1 ? "ões" : ""}
+                  {inscriptions?.length || 0} inscrição
+                  {(inscriptions?.length || 0) !== 1 ? "ões" : ""}
                 </span>
               </div>
             </div>
 
             <div className="inscriptions-container">
-              {inscriptions.length > 0 ? (
+              {(inscriptions && inscriptions.length > 0) ? (
                 <div className="inscriptions-grid">
                   {inscriptions.map((edital, index) => (
                     <div key={edital.id || index} className="inscription-card">
@@ -261,9 +261,9 @@ export default function PortalAluno() {
                 <div className="status-content">
                   <h3 className="status-title">Documentação</h3>
                   <p className="status-description">
-                    {inscriptions.filter((i) => !i.possui_pendencias).length}{" "}
+                    {(inscriptions?.filter((i) => !i.possui_pendencias).length || 0)}{" "}
                     inscri
-                    {inscriptions.filter((i) => !i.possui_pendencias).length !==
+                    {(inscriptions?.filter((i) => !i.possui_pendencias).length || 0) !==
                     1
                       ? "ções"
                       : "ção"}{" "}
@@ -277,9 +277,9 @@ export default function PortalAluno() {
                 <div className="status-content">
                   <h3 className="status-title">Pendências</h3>
                   <p className="status-description">
-                    {inscriptions.filter((i) => i.possui_pendencias).length}{" "}
+                    {(inscriptions?.filter((i) => i.possui_pendencias).length || 0)}{" "}
                     item
-                    {inscriptions.filter((i) => i.possui_pendencias).length !==
+                    {(inscriptions?.filter((i) => i.possui_pendencias).length || 0) !==
                     1
                       ? "s"
                       : ""}{" "}
