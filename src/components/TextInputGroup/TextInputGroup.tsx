@@ -14,7 +14,7 @@ export interface TextInputGroupProps {
   questions: string[];
   options: Option[];
   values?: Record<string, Record<string, string>>;
-  onChange?: (optionValue: string, questionIndex: number, value: string) => void;
+  onChange?: (optionValue: string, questionName: string, value: string) => void;
 }
 
 export default function TextInputGroup({
@@ -28,24 +28,24 @@ export default function TextInputGroup({
 }: TextInputGroupProps) {
   const [inputValues, setInputValues] = useState<Record<string, Record<string, string>>>(values);
 
-  const handleInputChange = (optionValue: string, questionIndex: number, value: string) => {
+  const handleInputChange = (optionValue: string, question: string, value: string) => {
     const newValues = {
       ...inputValues,
       [optionValue]: {
         ...inputValues[optionValue],
-        [`question_${questionIndex}`]: value
+        [question]: value
       }
     };
     setInputValues(newValues);
-    onChange?.(optionValue, questionIndex, value);
+    onChange?.(optionValue, question, value);
   };
 
-  const getInputValue = (optionValue: string, questionIndex: number): string => {
-    return inputValues[optionValue]?.[`question_${questionIndex}`] || '';
+  const getInputValue = (optionValue: string, question: string): string => {
+    return inputValues[optionValue]?.[question] || '';
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
+    <div className="w-full max-w-6xl">
       <div className="mb-4">
         <h3 className="text-base font-medium text-gray-800 sm:text-lg">
           {title}
@@ -54,18 +54,14 @@ export default function TextInputGroup({
         {description && <p className="text-sm text-gray-600 mt-1">{description}</p>}
       </div>
 
-      {/* Versão Desktop/Tablet */}
       <div className="hidden sm:block overflow-x-auto">
         <div className="min-w-full">
-          {/* Cabeçalho com as questions */}
           <div
             className="grid gap-1 mb-3"
             style={{ gridTemplateColumns: `minmax(200px, 1fr) repeat(${questions.length}, minmax(150px, 500px))` }}
           >
-            {/* Célula vazia para alinhamento */}
             <div></div>
 
-            {/* Headers das questions */}
             {questions.map((question, index) => (
               <div
                 key={index}
@@ -92,13 +88,14 @@ export default function TextInputGroup({
                   </label>
                 </div>
 
+                {/* Inputs de texto */}
                 {questions.map((question, questionIndex) => (
                   <div key={`${optionIndex}-${questionIndex}`} className="px-1">
                     <Input
                       size="sm"
                       placeholder="Digite..."
-                      value={getInputValue(option.value, questionIndex)}
-                      onChange={(e) => handleInputChange(option.value, questionIndex, e.target.value)}
+                      value={getInputValue(option.value, question)}
+                      onChange={(e) => handleInputChange(option.value, question, e.target.value)}
                       classNames={{
                         input: "text-xs",
                         inputWrapper: "min-h-unit-8 h-8"
@@ -129,8 +126,8 @@ export default function TextInputGroup({
                     label={option.label}
                     size="sm"
                     placeholder="Digite sua resposta..."
-                    value={getInputValue(option.value, questionIndex)}
-                    onChange={(e) => handleInputChange(option.value, questionIndex, e.target.value)}
+                    value={getInputValue(option.value, question)}
+                    onChange={(e) => handleInputChange(option.value, question, e.target.value)}
                     classNames={{
                       label: "text-xs font-medium text-blue-700",
                       input: "text-sm"

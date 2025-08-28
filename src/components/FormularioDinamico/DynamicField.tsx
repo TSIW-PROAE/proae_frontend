@@ -147,7 +147,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             return(
               <SelectGroup
                 title={titulo}
-                questions={input.questions?.map((q, index) => ({ id: `question_${index}`, label: q })) || []}
+                questions={input.questions?.map((q) => ({ id: q, label: q })) || []}
                 options={options as SelectOption[]}
                 required={obrigatorio}
                 error={error?.message}
@@ -170,13 +170,13 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                 description={subtitulo}
                 required={obrigatorio}
                 values={field.value as Record<string, Record<string, string>> || {}}
-                onChange={(optionValue, questionIndex, value) => {
+                onChange={(optionValue, questionName, value) => {
                   const currentValues = field.value as Record<string, Record<string, string>> || {};
                   const newValues = {
                     ...currentValues,
                     [optionValue]: {
                       ...(currentValues[optionValue] || {}),
-                      [`question_${questionIndex}`]: value
+                      [questionName]: value
                     }
                   };
                   const finalValue = formatValue ? formatValue(newValues) : newValues;
