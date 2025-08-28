@@ -127,6 +127,22 @@ export const createDynamicSchema = (fields: InputConfig[]) => {
       }
     }
 
+    if (field.tipo === 'selectGroup') {
+      fieldSchema = field.obrigatorio
+        ? z.record(z.string(), z.string()).refine(obj => Object.keys(obj).length > 0, {
+            message: `${field.titulo} é obrigatório`
+          })
+        : z.record(z.string(), z.string()).optional();
+    }
+
+    if (field.tipo === 'textInputGroup') {
+      fieldSchema = field.obrigatorio
+        ? z.record(z.string(), z.record(z.string(), z.string())).refine(obj => Object.keys(obj).length > 0, {
+            message: `${field.titulo} é obrigatório`
+          })
+        : z.record(z.string(), z.record(z.string(), z.string())).optional();
+    }
+
     schemaObject[field.nome] = fieldSchema;
   });
 
