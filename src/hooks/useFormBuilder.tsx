@@ -1,8 +1,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { createDynamicSchema } from "@/components/FormularioDinamico/dynamicSchema";
 import { UseFormBuilderProps, UseFormBuilderReturn, InputConfig } from "@/types/dynamicForm";
+import { filtrarPaginasCondicionais } from "@/utils/conditionalLogic";
 
 export function useFormBuilder({
   config,
@@ -21,8 +22,13 @@ export function useFormBuilder({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pageErrors, setPageErrors] = useState<Record<number, string[]> | null>(null);
 
+  const formData = form.watch();
 
-  const totalPages = config.paginas.length;
+  const paginasVisiveis = useMemo(() => {
+    return filtrarPaginasCondicionais(config.paginas, formData);
+  }, [config.paginas, formData]);
+
+  const totalPages = paginasVisiveis.length;
 
   const progress = ((currentPage + 1) / totalPages) * 100;
   const isLastPage = currentPage === totalPages;
@@ -33,7 +39,7 @@ export function useFormBuilder({
       return true;
     }
 
-    const currentPageConfig = config.paginas[currentPage - 1];
+    const currentPageConfig = paginasVisiveis[currentPage - 1];
     const fieldsToValidate = currentPageConfig.inputs.map((input: InputConfig) => input.nome);
 
 
@@ -53,7 +59,7 @@ export function useFormBuilder({
 
     setPageErrors(prev => ({ ...prev, [currentPage]: [] }));
     return true;
-  }, [currentPage, form, config.paginas]);
+  }, [currentPage, form, paginasVisiveis]);
 
   const nextPage = useCallback(async (): Promise<boolean> => {
 
@@ -64,13 +70,13 @@ export function useFormBuilder({
       return false;
     }
 
-    if (currentPage < config.paginas.length) {
+    if (currentPage < paginasVisiveis.length) {
       setCurrentPage(prev => prev + 1);
       window.scrollTo(0, 0);
     }
 
     return isValid;
-  }, [currentPage, config.paginas.length, validateCurrentPage]);
+  }, [currentPage, paginasVisiveis.length, validateCurrentPage]);
 
   const prevPage = useCallback(() => {
     if (currentPage > 0) {
@@ -80,11 +86,11 @@ export function useFormBuilder({
   }, [currentPage]);
 
   const goToPage = useCallback((page: number) => {
-    if (page >= 0 && page < config.paginas.length) {
+    if (page >= 0 && page < paginasVisiveis.length) {
       setCurrentPage(page);
       window.scrollTo(0, 0);
     }
-  }, [config.paginas.length]);
+  }, [paginasVisiveis.length]);
 
   const submitForm = useCallback(async () => {
     setIsSubmitting(true);
@@ -124,6 +130,7 @@ export function useFormBuilder({
     submitForm,
     resetForm,
     isSubmitting,
-    pageErrors
+    pageErrors,
+    paginasVisiveis
   };
 }
