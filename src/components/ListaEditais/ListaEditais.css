@@ -36,10 +36,8 @@
   padding: 1.25rem;
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(229, 231, 235, 0.8);
-  height: fit-content;
-  min-height: 380px;
-  max-height: 580px;
-  overflow-y: auto;
+  min-height: 70vh;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -49,6 +47,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .selections-stats {
@@ -89,12 +88,45 @@
   background: #f59e0b;
 }
 
+/* Container para conteúdo scrollável */
+.selections-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.25rem;
+  min-height: 0; /* Permite que o flex funcione corretamente */
+}
+
+.selections-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.selections-content::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+  margin: 8px 0; /* Margem superior e inferior para não colar nos cards */
+}
+
+.selections-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  min-height: 40px; /* Altura mínima do thumb */
+}
+
+.selections-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  border-color: #cbd5e1;
+}
+
+.selections-content::-webkit-scrollbar-thumb:active {
+  background: #6b7280;
+}
+
 .selections-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 0.75rem;
-  margin-bottom: 1.25rem;
-  flex: 1;
   align-content: start;
 }
 
@@ -527,31 +559,63 @@
   }
 }
 
-/* Scrollbar customizada igual ao OpenSelections */
-.open-selections-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.open-selections-container::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
-}
-
-.open-selections-container::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.open-selections-container::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
 /* Estilos para visualização em tabela */
-.table-container {
-  margin-bottom: 1.25rem;
-  overflow-x: auto;
-  border-radius: 12px;
+.table-header-fixed {
+  /* //background: #f8fafc; */
   border: 1px solid #e2e8f0;
+  border-bottom: none;
+  border-radius: 9px 9px 0px 0px;
+  overflow: visible;
+  margin-bottom: 0px;
+  flex-shrink: 0; /* Impede que o cabeçalho seja comprimido */
+  z-index: 1; /* Garante que fica acima de outros elementos */
+  min-height: 48px; /* Altura mínima */
+  display: block; /* Força a visibilidade */
+  /* padding-right: 8px; */
+}
+
+.editais-table-header {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+  font-size: 0.875rem;
+  table-layout: fixed;
+}
+
+.table-container {
+  flex: 1;
+  overflow-y: auto;
+  border-radius: 0px 0px 12px 12px;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  padding-right: 8px; /* Espaço para a scrollbar */
+  margin-right: 0px; /* Compensa o padding para manter alinhamento */
+}
+
+.table-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  min-height: 40px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  border-color: #cbd5e1;
+}
+
+.table-container::-webkit-scrollbar-thumb:active {
+  background: #6b7280;
 }
 
 .editais-table {
@@ -559,6 +623,7 @@
   border-collapse: collapse;
   background: white;
   font-size: 0.875rem;
+  table-layout: fixed;
 }
 
 .table-header {
@@ -574,7 +639,45 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: none;
+  border-right: none; /* Remove as barras verticais */
+  height: 48px; /* Altura fixa para garantir visibilidade */
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.table-header-cell:nth-child(1) {
+  /* ID */
+  width: 80px;
+  min-width: 80px;
+}
+
+.table-header-cell:nth-child(2) {
+  /* Título */
+  width: 40%;
+  min-width: 200px;
+}
+
+.table-header-cell:nth-child(3) {
+  /* Status */
+  width: 120px;
+  min-width: 120px;
+}
+
+.table-header-cell:nth-child(4) {
+  /* Vagas */
+  width: 100px;
+  min-width: 100px;
+}
+
+.table-header-cell:nth-child(5) {
+  /* Ações */
+  width: 120px;
+  min-width: 120px;
+}
+
+.table-header-cell:last-child {
+  border-right: none;
 }
 
 .table-body {
@@ -585,6 +688,14 @@
   border-bottom: 1px solid #f1f5f9;
   transition: all 0.2s ease;
   cursor: pointer;
+}
+
+.table-row:first-child {
+  border-top: none;
+}
+
+.table-row:hover {
+  background: #f8fafc;
 }
 
 .table-row:hover {
@@ -601,14 +712,39 @@
   color: #374151;
 }
 
-.id-cell {
+.table-cell:nth-child(1) {
+  /* ID */
   width: 80px;
-  font-weight: 500;
-  color: #6b7280;
+  min-width: 80px;
 }
 
-.title-cell {
-  min-width: 250px;
+.table-cell:nth-child(2) {
+  /* Título */
+  width: 40%;
+  min-width: 200px;
+}
+
+.table-cell:nth-child(3) {
+  /* Status */
+  width: 120px;
+  min-width: 120px;
+}
+
+.table-cell:nth-child(4) {
+  /* Vagas */
+  width: 100px;
+  min-width: 100px;
+}
+
+.table-cell:nth-child(5) {
+  /* Ações */
+  width: 120px;
+  min-width: 120px;
+}
+
+.id-cell {
+  font-weight: 500;
+  color: #6b7280;
 }
 
 .table-title {

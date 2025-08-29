@@ -398,111 +398,122 @@ export default function ListaEditais({
   }
 
   const renderGridView = () => (
-    <div className="selections-grid">
-      {/* Primeiro mostrar os editais abertos */}
-      {openEditais.map((edital) => (
-        <EditalCard
-          key={`open-${edital.id}`}
-          edital={edital}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onRequestDuplicate={onRequestDuplicate}
-        />
-      ))}
+    <div className="selections-content">
+      <div className="selections-grid">
+        {/* Primeiro mostrar os editais abertos */}
+        {openEditais.map((edital) => (
+          <EditalCard
+            key={`open-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onRequestDuplicate={onRequestDuplicate}
+          />
+        ))}
 
-      {/* Depois mostrar os editais em andamento */}
-      {inProgressEditais.map((edital) => (
-        <EditalCard
-          key={`progress-${edital.id}`}
-          edital={edital}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onRequestDuplicate={onRequestDuplicate}
-        />
-      ))}
+        {/* Depois mostrar os editais em andamento */}
+        {inProgressEditais.map((edital) => (
+          <EditalCard
+            key={`progress-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onRequestDuplicate={onRequestDuplicate}
+          />
+        ))}
 
-      {/* Mostrar os rascunhos */}
-      {draftEditais.map((edital) => (
-        <EditalCard
-          key={`draft-${edital.id}`}
-          edital={edital}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onRequestDuplicate={onRequestDuplicate}
-        />
-      ))}
+        {/* Mostrar os rascunhos */}
+        {draftEditais.map((edital) => (
+          <EditalCard
+            key={`draft-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onRequestDuplicate={onRequestDuplicate}
+          />
+        ))}
 
-      {/* Por último mostrar os editais encerrados */}
-      {closedEditais.map((edital) => (
-        <EditalCard
-          key={`closed-${edital.id}`}
-          edital={edital}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onRequestDuplicate={onRequestDuplicate}
-        />
-      ))}
+        {/* Por último mostrar os editais encerrados */}
+        {closedEditais.map((edital) => (
+          <EditalCard
+            key={`closed-${edital.id}`}
+            edital={edital}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onRequestDuplicate={onRequestDuplicate}
+          />
+        ))}
+      </div>
     </div>
   );
 
   const renderTableView = () => (
-    <div className="table-container">
-      <table className="editais-table">
-        <thead className="table-header">
-          <tr>
-            <th className="table-header-cell">ID</th>
-            <th className="table-header-cell">Título</th>
-            <th className="table-header-cell">Status</th>
-            <th className="table-header-cell">Vagas</th>
-            <th className="table-header-cell">Ações</th>
-          </tr>
-        </thead>
-        <tbody className="table-body">
-          {/* Primeiro mostrar os editais abertos */}
-          {openEditais.map((edital) => (
-            <EditalTableRow
-              key={`open-${edital.id}`}
-              edital={edital}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onRequestDuplicate={onRequestDuplicate}
-            />
-          ))}
+    <div className="selections-content">
+      {/* Cabeçalho fixo da tabela */}
+      <div className="table-header-fixed">
+        <table className="editais-table-header">
+          <thead>
+            <tr>
+              <th className="table-header-cell">ID</th>
+              <th className="table-header-cell">Título</th>
+              <th className="table-header-cell">Status</th>
+              <th className="table-header-cell">Vagas</th>
+              <th className="table-header-cell">Ações</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
 
-          {/* Depois mostrar os editais em andamento */}
-          {inProgressEditais.map((edital) => (
-            <EditalTableRow
-              key={`progress-${edital.id}`}
-              edital={edital}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onRequestDuplicate={onRequestDuplicate}
-            />
-          ))}
+      {/* Container scrollável com os dados */}
+      <div className="table-container">
+        <table className="editais-table">
+          <tbody className="table-body">
+            {/* Primeiro mostrar os editais abertos */}
+            {openEditais.map((edital) => (
+              <EditalTableRow
+                key={`open-${edital.id}`}
+                edital={edital}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onRequestDuplicate={onRequestDuplicate}
+              />
+            ))}
 
-          {/* Mostrar os rascunhos */}
-          {draftEditais.map((edital) => (
-            <EditalTableRow
-              key={`draft-${edital.id}`}
-              edital={edital}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onRequestDuplicate={onRequestDuplicate}
-            />
-          ))}
+            {/* Depois mostrar os editais em andamento */}
+            {inProgressEditais.map((edital) => (
+              <EditalTableRow
+                key={`progress-${edital.id}`}
+                edital={edital}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onRequestDuplicate={onRequestDuplicate}
+              />
+            ))}
 
-          {/* Por último mostrar os editais encerrados */}
-          {closedEditais.map((edital) => (
-            <EditalTableRow
-              key={`closed-${edital.id}`}
-              edital={edital}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onRequestDuplicate={onRequestDuplicate}
-            />
-          ))}
-        </tbody>
-      </table>
+            {/* Mostrar os rascunhos */}
+            {draftEditais.map((edital) => (
+              <EditalTableRow
+                key={`draft-${edital.id}`}
+                edital={edital}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onRequestDuplicate={onRequestDuplicate}
+              />
+            ))}
+
+            {/* Por último mostrar os editais encerrados */}
+            {closedEditais.map((edital) => (
+              <EditalTableRow
+                key={`closed-${edital.id}`}
+                edital={edital}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onRequestDuplicate={onRequestDuplicate}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 
