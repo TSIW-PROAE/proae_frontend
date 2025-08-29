@@ -123,6 +123,40 @@
   background: #6b7280;
 }
 
+/* Grid de cards */
+.cards-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px; /* Espaço para a scrollbar */
+  margin-right: -4px; /* Compensa o padding para manter alinhamento */
+}
+
+.cards-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cards-container::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+.cards-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  min-height: 40px;
+}
+
+.cards-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  border-color: #cbd5e1;
+}
+
+.cards-container::-webkit-scrollbar-thumb:active {
+  background: #6b7280;
+}
+
 .selections-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
