@@ -76,7 +76,7 @@ const inputsVisiveis = filtrarInputsCondicionais(currentPageConfig.inputs, formD
        <div className={`
       min-h-screen min-w-screen flex items-center flex-col justify-between p-4
       `}>
-      <section className={`flex flex-col w-full gap-10 justify-between items-start`}>
+      <section className={`flex flex-col w-full gap-10 justify-between items-start pl-16 pr-16`}>
         <section className='formulario-conteudo'>
           <h1>{currentPageConfig.titulo}</h1>
         </section>
@@ -87,7 +87,9 @@ const inputsVisiveis = filtrarInputsCondicionais(currentPageConfig.inputs, formD
         form={form}
         />
       ))}
-      <div className="footer w-full flex justify-around">
+
+      </section>
+<div className="footer w-full flex justify-around">
           <Button onPress={prevPage} disabled={currentPage === 0}>
             Voltar
           </Button>
@@ -106,8 +108,6 @@ const inputsVisiveis = filtrarInputsCondicionais(currentPageConfig.inputs, formD
             </Button>
           )}
         </div>
-      </section>
-
         </div>
     </FormProvider>
   )

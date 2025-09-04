@@ -139,7 +139,7 @@ export default function PortalAluno() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/*<Toaster position="top-right" />*/}
 
-      <div className="portal-container">
+      <div className="max-w-7xl mx-auto p-4 ">
         {/* Header Principal */}
         <header className="portal-header">
           <div className="header-content">
