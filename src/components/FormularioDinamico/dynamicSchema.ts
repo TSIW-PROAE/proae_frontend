@@ -31,9 +31,7 @@ const cpfSchema = z.string()
   .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF deve estar no formato 000.000.000-00")
   .refine(validarCPF, "CPF inválido");
 
-const emailSchema = z.string()
-  .min(1, "Email é obrigatório")
-  .email("Email inválido");
+const emailSchema = z.email("Email inválido");
 
 const telefoneSchema = z.string()
   .min(1, "Telefone é obrigatório")
