@@ -2,7 +2,7 @@ import React from 'react';
 import { Controller } from 'react-hook-form';
 import { Input, Select, SelectItem, Radio, RadioGroup, Textarea, DatePicker } from '@heroui/react';
 import FileUpload from '../FileUpload/FileUpload';
-import { SelectOption, DynamicFieldProps } from '@/types/dynamicForm';
+import { SelectOption, DynamicFieldProps, FormatacaoInput } from '@/types/dynamicForm';
 import SelectGroup from '../SelectGroup/SelectGroup';
 import TextInputGroup from '../TextInputGroup/TextInputGroup';
 
@@ -18,8 +18,52 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     mimeType,
     titulo,
     subtitulo,
-    options = []
+    options = [],
+    formatacao
   } = input;
+
+  const applyMask = (value: string, formatacao?: FormatacaoInput): string => {
+    if (!value || !formatacao) return value;
+
+    switch (formatacao) {
+      case FormatacaoInput.CPF:
+        return value
+          .replace(/\D/g, '')
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+          .replace(/(-\d{2})\d+?$/, '$1');
+      case FormatacaoInput.PHONE:
+        return value
+          .replace(/\D/g, '')
+          .replace(/(\d{2})(\d)/, '($1) $2')
+          .replace(/(\d{4})(\d)/, '$1-$2')
+          .replace(/(\d{4})-(\d)(\d{4})/, '$1$2-$3')
+          .replace(/(-\d{4})\d+?$/, '$1');
+      case FormatacaoInput.CEP:
+        return value
+          .replace(/\D/g, '')
+          .replace(/(\d{5})(\d)/, '$1-$2')
+          .replace(/(-\d{3})\d+?$/, '$1');
+      case FormatacaoInput.CNPJ:
+        return value
+          .replace(/\D/g, '')
+          .replace(/(\d{2})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d)/, '$1/$2')
+          .replace(/(\d{4})(\d{1,2})/, '$1-$2')
+          .replace(/(-\d{2})\d+?$/, '$1');
+      case FormatacaoInput.RG:
+        return value
+          .replace(/\D/g, '')
+          .replace(/(\d{2})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d{1})/, '$1-$2')
+          .replace(/(-\d{1})\d+?$/, '$1');
+      default:
+        return value;
+    }
+  };
 
   return (
     <Controller
@@ -43,6 +87,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                   let value = e.target.value;
                   if (tipo === "number") {
                     value = value.replace(/\D/g, '');
+                  }
+
+                  if (formatacao) {
+                    value = applyMask(value, formatacao);
                   }
 
                   const finalValue = formatValue ? formatValue(value) : value;
