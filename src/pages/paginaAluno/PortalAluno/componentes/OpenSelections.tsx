@@ -106,7 +106,7 @@ const OpenSelectionCard: React.FC<Edital> = ({
       <div className="selection-card-footer">
         {isOpen ? (
           <button
-            onClick={() => redirectToInscricao(id)}
+            onClick={() => navigate(`/questionario/${id}`)}
             className="selection-action-button primary"
             title="Realizar Inscrição"
           >

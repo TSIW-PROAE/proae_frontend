@@ -1,7 +1,34 @@
 import { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
-export type TipoInput = 'text' | 'number' | 'password' | 'email' | 'textarea' | 'select' | 'radio' | 'date' | 'file' | 'selectGroup' | 'textInputGroup'
+export enum TipoInput {
+  TEXT = 'text',
+  NUMBER = 'number',
+  PASSWORD = 'password',
+  EMAIL = 'email',
+  TEXT_AREA = 'textarea',
+  SELECT = 'select',
+  RADIO = 'radio',
+  DATE = 'date',
+  FILE = 'file',
+  SELECT_GROUP = 'selectGroup',
+  TEXT_INPUT_GROUP = 'textInputGroup',
+}
+
+export enum FormatacaoInput {
+  PHONE = 'telefone',
+  DATA_MES = 'dataMes',
+  DATA_COMPLETA = 'dataCompleta',
+  CPF = 'cpf',
+  CEP = 'cep',
+  CNPJ = 'cnpj',
+  RG = 'rg',
+  MOEDA = 'moeda',
+  SINGLE_SELECT = 'single-select',
+  MULTI_SELECT = 'multi-select',
+  NONE = 'none',
+  EMAIL = 'email'
+}
 
 export interface SelectOption {
   value: string;
@@ -20,7 +47,7 @@ export interface InputConfig {
   subtitulo?: string;
   tipo: TipoInput;
   obrigatorio?: boolean;
-  formatacao?: 'cpf' | 'telefone' | 'email' | 'cep' | 'dataCompleta' | 'dataMes' | 'none';
+  formatacao?: FormatacaoInput;
   validacao?: string | (() => z.ZodType);
   mimeType?: string[];
   options?: SelectOption[];
@@ -45,12 +72,16 @@ export interface FormularioDinamicoProps {
   botaoFinal?: string;
   paginas: PaginaConfig[];
   onSubmit: (data: FormData) => Promise<void> | void;
+  onStepChange?: (stepIndex: number, totalSteps: number) => void;
   initialData?: FormData;
   showProgress?: boolean;
 }
 
 export interface UseFormBuilderProps {
-  config: FormularioDinamicoProps;
+  editalId: number; // Obrigatório - sempre vem do backend
+  onSubmit?: (data: FormData) => Promise<void> | void;
+  titulo?: string;
+  subtitulo?: string;
   initialData?: FormData;
 }
 
@@ -68,6 +99,9 @@ export interface UseFormBuilderReturn {
   isSubmitting: boolean;
   pageErrors: Record<number, string[]> | null;
   paginasVisiveis: PaginaConfig[];
+  // Propriedades específicas do modo backend
+  isLoadingFromBackend?: boolean;
+  backendError?: string | null;
 }
 
 export interface DynamicFieldProps {
