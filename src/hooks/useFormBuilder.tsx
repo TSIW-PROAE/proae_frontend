@@ -81,12 +81,12 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
             const respostas = Object.entries(data).map(([key, value]) => {
               const perguntaId = parseInt(key.replace('pergunta_', ''));
               return {
-                pergunta_id: perguntaId,
-                texto: Array.isArray(value) ? value.join(', ') : String(value || '')
+                perguntaId: perguntaId,
+                valorTexto: Array.isArray(value) ? value.join(', ') : String(value || '')
               };
             });
 
-            await backendOnSubmit({ editalId, respostas });
+            await backendOnSubmit({ respostas });
           }
         },
         showProgress: true
@@ -176,17 +176,15 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
       if (backendConfig?.onSubmit) {
         await backendConfig.onSubmit(formData);
       } else {
-        // Usar o service padrão de inscrição
         const respostas = Object.entries(formData).map(([fieldId, value]) => {
           const perguntaId = parseInt(fieldId.replace('pergunta_', ''));
           return {
-            pergunta_id: perguntaId,
-            texto: String(value || '')
+            perguntaId: perguntaId,
+            valorTexto: String(value || '')
           };
         });
 
         await InscricaoService.getInstance().submeterRespostas({
-          editalId: editalId,
           respostas
         });
       }

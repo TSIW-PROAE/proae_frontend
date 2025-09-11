@@ -78,7 +78,7 @@ export interface FormularioDinamicoProps {
 }
 
 export interface UseFormBuilderProps {
-  editalId: number; // Obrigatório - sempre vem do backend
+  editalId: string;
   onSubmit?: (data: FormData) => Promise<void> | void;
   titulo?: string;
   subtitulo?: string;

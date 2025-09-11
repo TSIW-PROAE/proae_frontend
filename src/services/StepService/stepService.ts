@@ -10,7 +10,7 @@ export class StepService {
     this.httpClient = new FetchAdapter();
   }
 
-  async listarStepsPorEdital(editalId: number): Promise<StepResponseDto[]> {
+  async listarStepsPorEdital(editalId: string): Promise<StepResponseDto[]> {
     return this.httpClient.get<StepResponseDto[]>(`${BASE_URL}/edital/${editalId}/with-perguntas`);
   }
 
