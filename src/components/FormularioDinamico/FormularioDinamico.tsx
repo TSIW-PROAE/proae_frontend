@@ -220,35 +220,34 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
 
     return (
       <div className={`
-        min-h-screen min-w-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
+        min-h-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
       `}>
         <Toaster position="top-right" />
 
-        {/* ✅ Barra de progresso na página inicial */}
-        <div className="w-full max-w-4xl">
-          <BarraProgresso
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            className="mt-4"
-          />
-        </div>
+        <div className="w-full mx-auto flex flex-col flex-1 justify-between" style={{ width: '75%', maxWidth: '1200px' }}>
+          <div className="w-full">
+            <BarraProgresso
+              currentStep={currentStep}
+              totalSteps={totalSteps}
+              className="mb-6"
+            />
+          </div>
 
-        <div className="formulario-conteudo text-center">
-          <h1>{props.titulo}</h1>
-          {props.subtitulo && <p className="mb-4">{props.subtitulo}</p>}
+          <div className="formulario-conteudo text-center px-8 flex-1 flex flex-col justify-center">
+            <h1 className="text-3xl font-bold mb-4">{props.titulo}</h1>
+            {props.subtitulo && <p className="text-lg text-gray-600 mb-6">{props.subtitulo}</p>}
 
-          {vagaAtual && (
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mt-6 rounded-r-lg">
-              <div className="flex">
-                <div className="ml-3">
-                  <p className="text-sm text-blue-700 font-medium">
+            {vagaAtual && (
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-6 mt-8 rounded-r-lg text-left max-w-2xl mx-auto">
+                <div className="flex flex-col">
+                  <p className="text-sm text-blue-700 font-medium mb-2">
                     Benefício Selecionado:
                   </p>
-                  <p className="text-lg font-bold text-blue-900">
-                    {vagaAtual.nome}
-                  </p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    {vagaAtual.descricao}
+                  <h2 className="text-xl font-bold text-blue-900 mb-3">
+                    {vagaAtual.beneficio}
+                  </h2>
+                  <p className="text-sm text-blue-600 mb-4 leading-relaxed">
+                    {vagaAtual.descricao_beneficio}
                   </p>
                   {vagas.length > 1 && (
                     <Button
@@ -256,24 +255,39 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
                       variant="light"
                       color="primary"
                       onPress={() => setVagaSelecionada(null)}
-                      className="mt-2"
+                      className="mt-2 self-start"
                     >
                       Alterar Benefício
                     </Button>
                   )}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
 
-        <div className="footer w-full flex justify-around">
-          <Button onPress={() => window.history.back()}>
-            Cancelar
-          </Button>
-          <Button color="primary" onPress={handleNextPage}>
-            Continuar
-          </Button>
+            <div className="bg-gray-50 p-4 rounded-lg mt-6 max-w-2xl mx-auto">
+              <p className="text-sm text-gray-600">
+                Você está prestes a iniciar o preenchimento do formulário para o benefício selecionado.
+                Certifique-se de ter todos os documentos necessários em mãos.
+              </p>
+            </div>
+          </div>
+
+          <div className="footer w-full flex justify-center gap-4 pt-6">
+            <Button
+              onPress={() => window.history.back()}
+              variant="ghost"
+              className="flex-1 max-w-32"
+            >
+              Cancelar
+            </Button>
+            <Button
+              color="primary"
+              onPress={handleNextPage}
+              className="flex-1 max-w-32"
+            >
+              Continuar
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -287,19 +301,19 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     <FormProvider {...form}>
       <Toaster position="top-right" />
       <div className={`
-        min-h-screen min-w-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
+        min-h-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
       `}>
 
-        {/* ✅ Barra de progresso nas páginas do formulário */}
-        <div className="w-full max-w-4xl">
-          <BarraProgresso
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            className="mb-4"
-          />
-        </div>
+        <div className="w-full mx-auto flex flex-col flex-1 justify-between" style={{ width: '75%', maxWidth: '1200px' }}>
+          <div className="w-full">
+            <BarraProgresso
+              currentStep={currentStep}
+              totalSteps={totalSteps}
+              className="mb-6"
+            />
+          </div>
 
-        <section className={`flex flex-col w-full gap-10 justify-between items-start pl-16 pr-16`}>
+          <section className={`flex flex-col w-full gap-8 justify-start items-start px-8 flex-1`}>
           <section className='formulario-conteudo'>
             <h1>{currentPageConfig.titulo}</h1>
           </section>
@@ -310,26 +324,37 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
               form={form}
             />
           ))}
-        </section>
+          </section>
 
-        <div className="footer w-full flex justify-around">
-          <Button onPress={prevPage} disabled={currentPage === 0}>
-            Voltar
-          </Button>
-
-          {isLastPage ? (
+          <div className="footer w-full flex justify-center gap-4 pt-6">
             <Button
-              color="success"
-              onPress={handleSubmit}
-              disabled={isSubmitting}
+              onPress={prevPage}
+              disabled={currentPage === 0}
+              variant="ghost"
+              className="flex-1 max-w-32"
             >
-              {isSubmitting ? 'Enviando...' : (props.botaoFinal || 'Finalizar')}
+              Voltar
             </Button>
-          ) : (
-            <Button color="primary" onPress={handleNextPage}>
-              Continuar
-            </Button>
-          )}
+
+            {isLastPage ? (
+              <Button
+                color="success"
+                onPress={handleSubmit}
+                disabled={isSubmitting}
+                className="flex-1 max-w-48"
+              >
+                {isSubmitting ? 'Enviando...' : (props.botaoFinal || 'Finalizar')}
+              </Button>
+            ) : (
+              <Button
+                color="primary"
+                onPress={handleNextPage}
+                className="flex-1 max-w-32"
+              >
+                Continuar
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </FormProvider>
