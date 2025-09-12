@@ -195,21 +195,15 @@ export default function PortalAluno() {
           <section className="benefits-selections-section">
             <div className="content-grid">
               <div className="benefits-container">
-                <div className="section-header">
-                  <Award className="w-5 h-5 text-emerald-600" />
-                  <h2 className="section-title">Meus Benefícios</h2>
-                </div>
+
                 <div className="card-container">
                   <BenefitsCard benefits={benefits} />
                 </div>
               </div>
 
               <div className="selections-container">
-                <div className="section-header">
-                  <BookOpen className="w-5 h-5 text-blue-600" />
-                  <h2 className="section-title">Seleções Abertas</h2>
-                </div>
                 <div className="card-container">
+
                   <OpenSelections editais={openSelections} />
                 </div>
               </div>
