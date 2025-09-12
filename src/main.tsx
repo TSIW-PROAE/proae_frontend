@@ -6,7 +6,6 @@ import "@/styles/globals.css";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
 
-//TODO: Criar um componente de loading para ser exibido durante o carregamento do keycloak
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <RouterProvider router={router} />
 );

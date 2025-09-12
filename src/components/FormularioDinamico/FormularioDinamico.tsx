@@ -97,11 +97,9 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     backendError
   } = useFormBuilder(builderProps);
 
-  // ✅ Calcular o progresso incluindo a página inicial
-  const totalSteps = paginasVisiveis ? paginasVisiveis.length + 1 : 1; // +1 para página inicial
-  const currentStep = currentPage + 1; // currentPage é 0-based
+  const totalSteps = paginasVisiveis ? paginasVisiveis.length + 1 : 1;
+  const currentStep = currentPage + 1;
 
-  // ✅ Callback para mudança de step (se necessário)
   useEffect(() => {
     props.onStepChange?.(currentStep, totalSteps);
   }, [currentStep, totalSteps, props]);
