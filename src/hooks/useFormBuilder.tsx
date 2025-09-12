@@ -79,13 +79,41 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
         onSubmit: async (data) => {
           if (backendOnSubmit) {
             const respostas = Object.entries(data).map(([key, value]) => {
-              const perguntaId = parseInt(key.replace('pergunta_', ''));
-              return {
-                perguntaId: perguntaId,
-                valorTexto: Array.isArray(value) ? value.join(', ') : String(value || '')
-              };
-            });
 
+
+              const perguntaId = parseInt(key.replace('pergunta_', ''));
+              const perguntaConfig = paginas
+              .flatMap(p => p.inputs)
+              .find(input => input.nome === key)
+
+              const isMultiplaEscolha = perguntaConfig?.tipo === 'select';
+
+              if(isMultiplaEscolha){
+                return {
+                  perguntaId: perguntaId,
+                  valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
+                  inscricaoId: Math.floor(Math.random() * 1000000),
+                  valorOpcoes: [String(value)]
+                };
+              } else if(perguntaConfig?.tipo === 'file'){
+                const fileName = typeof value === 'object' && value !== null && 'name' in value ? value.name : 'arquivo';
+                const urlArquivo = `https://exemplo.com/uploads/${fileName}.pdf`;
+                return {
+                perguntaId: perguntaId,
+                valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
+                inscricaoId: Math.floor(Math.random() * 1000000),
+                urlArquivo
+              };
+              }else{
+                return {
+                perguntaId: perguntaId,
+                valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
+                inscricaoId: Math.floor(Math.random() * 1000000)
+              };
+              }
+
+            });
+            console.log(respostas)
             await backendOnSubmit({ respostas });
           }
         },
@@ -172,7 +200,6 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
       if (!isValid) throw new Error("Formulário contém erros");
 
       const formData = form.getValues();
-
       if (backendConfig?.onSubmit) {
         await backendConfig.onSubmit(formData);
       } else {
@@ -180,7 +207,8 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
           const perguntaId = parseInt(fieldId.replace('pergunta_', ''));
           return {
             perguntaId: perguntaId,
-            valorTexto: String(value || '')
+            valorTexto: Array.isArray(value) ? value.join(", ") : String(value || ''),
+            inscricaoId: Math.floor(Math.random() * 1000000)
           };
         });
 
