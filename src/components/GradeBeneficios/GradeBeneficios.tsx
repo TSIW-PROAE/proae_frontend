@@ -4,7 +4,7 @@ import { VagaResponse } from '@/types/vaga';
 
 interface GradeBeneficiosProps {
   vagas: VagaResponse[];
-  onSelect: (vagaId: number) => void;
+  onSelect: (vaga_id: number) => void;
   onCancel: () => void;
 }
 
@@ -13,17 +13,10 @@ export const GradeBeneficios: React.FC<GradeBeneficiosProps> = ({
   onSelect,
   onCancel
 }) => {
-  const formatarValor = (valor?: number) => {
-    if (!valor) return 'Não informado';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(valor);
-  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
+    <div className="min-h-screen min-w-screen flex flex-col items-center justify-center p-4">
+      <div className="w-full flex flex-col items-center">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-4">
             Selecione o Benefício para Candidatura
@@ -33,19 +26,16 @@ export const GradeBeneficios: React.FC<GradeBeneficiosProps> = ({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="w-full flex flex-wrap gap-4 mb-8 justify-center">
           {vagas.map((vaga) => (
             <Card
               key={vaga.id}
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              isPressable
-              onPress={() => onSelect(vaga.id)}
+              className="h-60 w-full flex flex-col max-w-96"
             >
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 flex-shrink-0">
                 <div className="flex flex-col w-full">
-                  <h3 className="text-xl font-semibold">{vaga.beneficio}</h3>
-                  <div className="flex justify-between items-center mt-2">
-    
+                  <h3 className="text-xl font-semibold line-clamp-2 min-h-[3rem]">{vaga.beneficio}</h3>
+                  <div className="flex justify-center items-center mt-2">
                     <Chip
                       color="success"
                       variant="flat"
@@ -57,26 +47,27 @@ export const GradeBeneficios: React.FC<GradeBeneficiosProps> = ({
                 </div>
               </CardHeader>
 
-              <CardBody className="pt-2">
-                <p className="text-gray-600 mb-4 line-clamp-3">
-                  {vaga.descricao_beneficio}
-                </p>
+              <CardBody className="pt-2 flex-1 flex flex-col justify-between">
+                <div className="flex-1">
+                  <p className="text-gray-600 mb-4 line-clamp-3 text-sm">
+                    {vaga.descricao_beneficio}
+                  </p>
 
-
-                {vaga.requisitos && (
-                  <div className="mb-4">
-                    <span className="text-sm font-medium text-gray-700">
-                      Requisitos:
-                    </span>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {vaga.requisitos}
-                    </p>
-                  </div>
-                )}
+                  {vaga.requisitos && (
+                    <div className="mb-4">
+                      <span className="text-sm font-medium text-gray-700">
+                        Requisitos:
+                      </span>
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                        {vaga.requisitos}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 <Button
                   color="primary"
-                  className="w-full"
+                  className="w-full mt-auto cursor-pointer"
                   onPress={() => onSelect(vaga.id)}
                 >
                   Candidatar-se
@@ -86,7 +77,7 @@ export const GradeBeneficios: React.FC<GradeBeneficiosProps> = ({
           ))}
         </div>
 
-        <div className="text-center">
+        <div className="flex justify-center w-full">
           <Button
             variant="ghost"
             onPress={onCancel}
