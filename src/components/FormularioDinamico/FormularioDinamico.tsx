@@ -10,9 +10,9 @@ import { FetchAdapter } from '@/services/BaseRequestService/HttpClient';
 import { useParams } from 'react-router-dom';
 import { GradeBeneficios } from '@/components/GradeBeneficios/GradeBeneficios';
 import { VagaResponse as Vaga } from '@/types/vaga';
-import {InscricaoService} from "@/services/InscricaoService/inscricao.service.ts"
+import { InscricaoService } from "@/services/InscricaoService/inscricao.service.ts"
 import { useNavigate } from "react-router-dom"
-
+import BarraProgresso  from '@/components/BarraProgresso/BarraProgresso';
 interface FormularioDinamicoProps {
   editalId?: string | number;
   titulo?: string;
@@ -81,7 +81,9 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     if (editalId) {
       carregarVagas();
     }
-  }, [editalId]);  const {
+  }, [editalId]);
+
+  const {
     form,
     currentPage,
     isLastPage,
@@ -94,6 +96,15 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     isLoadingFromBackend,
     backendError
   } = useFormBuilder(builderProps);
+
+  // ✅ Calcular o progresso incluindo a página inicial
+  const totalSteps = paginasVisiveis ? paginasVisiveis.length + 1 : 1; // +1 para página inicial
+  const currentStep = currentPage + 1; // currentPage é 0-based
+
+  // ✅ Callback para mudança de step (se necessário)
+  useEffect(() => {
+    props.onStepChange?.(currentStep, totalSteps);
+  }, [currentStep, totalSteps, props]);
 
   const handleNextPage = async () => {
     const success = await nextPage();
@@ -108,7 +119,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     }
   }
 
-  const handleSubmit = async () =>{
+  const handleSubmit = async () => {
     try {
       await submitForm();
       toast.success("Formulário enviado com sucesso!");
@@ -172,7 +183,6 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     );
   }
 
-
   if (isLoadingFromBackend) {
     return props.loading || (
       <div className="flex justify-center items-center p-8">
@@ -181,7 +191,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
       </div>
     );
   }
-  console.log(backendError)
+
   if (backendError) {
     props.onError?.(backendError);
     return (
@@ -205,14 +215,24 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     );
   }
 
-  if(currentPage === 0){
+  if (currentPage === 0) {
     const vagaAtual = vagas.find(v => v.id === vagaSelecionada);
 
     return (
       <div className={`
-      min-h-screen min-w-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
+        min-h-screen min-w-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
       `}>
         <Toaster position="top-right" />
+
+        {/* ✅ Barra de progresso na página inicial */}
+        <div className="w-full max-w-4xl">
+          <BarraProgresso
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            className="mt-4"
+          />
+        </div>
+
         <div className="formulario-conteudo text-center">
           <h1>{props.titulo}</h1>
           {props.subtitulo && <p className="mb-4">{props.subtitulo}</p>}
@@ -259,30 +279,40 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     )
   }
 
-const currentPageConfig = paginasVisiveis[currentPage - 1];
-const formData = form.watch();
-const inputsVisiveis = filtrarInputsCondicionais(currentPageConfig.inputs, formData);
+  const currentPageConfig = paginasVisiveis[currentPage - 1];
+  const formData = form.watch();
+  const inputsVisiveis = filtrarInputsCondicionais(currentPageConfig.inputs, formData);
 
   return (
     <FormProvider {...form}>
       <Toaster position="top-right" />
-       <div className={`
-      min-h-screen min-w-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
+      <div className={`
+        min-h-screen min-w-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
       `}>
-      <section className={`flex flex-col w-full gap-10 justify-between items-start pl-16 pr-16`}>
-        <section className='formulario-conteudo'>
-          <h1>{currentPageConfig.titulo}</h1>
-        </section>
-        {inputsVisiveis.map((input) => (
-        <DynamicField
-        key={input.nome}
-        input={input}
-        form={form}
-        />
-      ))}
 
-      </section>
-<div className="footer w-full flex justify-around">
+        {/* ✅ Barra de progresso nas páginas do formulário */}
+        <div className="w-full max-w-4xl">
+          <BarraProgresso
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            className="mb-4"
+          />
+        </div>
+
+        <section className={`flex flex-col w-full gap-10 justify-between items-start pl-16 pr-16`}>
+          <section className='formulario-conteudo'>
+            <h1>{currentPageConfig.titulo}</h1>
+          </section>
+          {inputsVisiveis.map((input) => (
+            <DynamicField
+              key={input.nome}
+              input={input}
+              form={form}
+            />
+          ))}
+        </section>
+
+        <div className="footer w-full flex justify-around">
           <Button onPress={prevPage} disabled={currentPage === 0}>
             Voltar
           </Button>
@@ -301,7 +331,7 @@ const inputsVisiveis = filtrarInputsCondicionais(currentPageConfig.inputs, formD
             </Button>
           )}
         </div>
-        </div>
+      </div>
     </FormProvider>
   )
 }
