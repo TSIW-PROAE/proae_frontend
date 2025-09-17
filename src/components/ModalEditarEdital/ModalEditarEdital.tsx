@@ -13,6 +13,7 @@ import {
   Clock,
   AlertTriangle,
   FileText,
+  X,
 } from "lucide-react";
 import { Edital, DocumentoEdital, EtapaEdital, Vaga } from "../../types/edital";
 import { stepService } from "@/services/StepService/stepService";
@@ -112,6 +113,31 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
   // Celebração visual após sucesso
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Drawer lateral de Questionários
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activeQuestionarioIndex, setActiveQuestionarioIndex] = useState<
+    number | null
+  >(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [quizTitleEditing, setQuizTitleEditing] = useState(false);
+  interface PerguntaEditorItem {
+    texto: string;
+    tipo:
+      | "texto"
+      | "texto_curto"
+      | "numero"
+      | "data"
+      | "multipla_escolha"
+      | "multipla_selecao"
+      | "arquivo"
+      | "email";
+    obrigatoria: boolean;
+    opcoes: string[];
+  }
+  const [editorPerguntas, setEditorPerguntas] = useState<PerguntaEditorItem[]>(
+    []
+  );
+
   // Estado local de Questionários (somente UI por enquanto)
   interface QuestionarioItem {
     id?: number; // id do step
@@ -195,12 +221,23 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     if (!isOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // Prioridade: fecha drawer primeiro; depois modais de status; por último fecha o modal principal
+        if (drawerOpen) {
+          setDrawerOpen(false);
+          return;
+        }
         if (!showStatusConfirmModal && !showStatusErrorModal) onClose();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen, onClose, showStatusConfirmModal, showStatusErrorModal]);
+  }, [
+    isOpen,
+    onClose,
+    showStatusConfirmModal,
+    showStatusErrorModal,
+    drawerOpen,
+  ]);
 
   const loadVagasAndInitBaseline = async () => {
     if (!edital.id) return;
@@ -551,6 +588,10 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     <div
       className="modal-overlay"
       onClick={() => {
+        if (drawerOpen) {
+          setDrawerOpen(false);
+          return;
+        }
         if (!showStatusConfirmModal && !showStatusErrorModal) onClose();
       }}
       role="dialog"
@@ -634,7 +675,10 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
       )}
 
       {/* Modal Principal - Layout Horizontal */}
-      <div className="modal-horizontal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`modal-horizontal ${drawerOpen ? "drawer-open" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Camada de celebração (balões) */}
         {showCelebration && (
           <div className="celebration-container" aria-hidden="true">
@@ -1004,9 +1048,44 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
                     ) : (
                       <div
                         className="questionario-display"
-                        onClick={() => {
-                          // TODO: abrir editor de Steps/Perguntas deste questionário
-                          console.log("Abrir questionário", q.value);
+                        onClick={async () => {
+                          setActiveQuestionarioIndex(index);
+                          setDrawerOpen(true);
+                          setQuizTitleEditing(false);
+                          // Carrega perguntas reais para este step (se existir id)
+                          setDrawerLoading(true);
+                          try {
+                            const stepId = questionarios[index].value.id;
+                            if (stepId) {
+                              const perguntas =
+                                await perguntaService.listarPerguntasPorStep(
+                                  stepId
+                                );
+                              const mapped: PerguntaEditorItem[] = (
+                                perguntas || []
+                              ).map((p) => ({
+                                texto: p.texto_pergunta || p.pergunta || "",
+                                tipo:
+                                  (p.tipo_pergunta as PerguntaEditorItem["tipo"]) ||
+                                  (p.tipo_Pergunta as PerguntaEditorItem["tipo"]) ||
+                                  "texto",
+                                obrigatoria: Boolean(
+                                  p.obrigatoria ?? p.obrigatoriedade ?? false
+                                ),
+                                opcoes: (p.opcoes_resposta ||
+                                  p.opcoes ||
+                                  []) as string[],
+                              }));
+                              setEditorPerguntas(mapped);
+                            } else {
+                              // novo questionário ainda sem id
+                              setEditorPerguntas([]);
+                            }
+                          } catch (e) {
+                            setEditorPerguntas([]);
+                          } finally {
+                            setDrawerLoading(false);
+                          }
                         }}
                       >
                         <div className="questionario-preview">
@@ -1458,6 +1537,246 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Drawer Lateral para edição de Questionários */}
+        <aside className={`drawer-panel ${drawerOpen ? "open" : ""}`}>
+          <div className="drawer-header">
+            <div className="drawer-title">
+              {quizTitleEditing && activeQuestionarioIndex !== null ? (
+                <input
+                  type="text"
+                  className="drawer-title-input"
+                  value={questionarios[activeQuestionarioIndex].value.titulo}
+                  onChange={(e) => {
+                    const list = [...questionarios];
+                    list[activeQuestionarioIndex].value.titulo = e.target.value;
+                    setQuestionarios(list);
+                  }}
+                  autoFocus
+                  onBlur={() => setQuizTitleEditing(false)}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && setQuizTitleEditing(false)
+                  }
+                  placeholder="Título do questionário"
+                  title="Título do questionário"
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="drawer-title-display"
+                  onClick={() => setQuizTitleEditing(true)}
+                  title="Clique para editar o título do questionário"
+                >
+                  <span>
+                    {activeQuestionarioIndex !== null
+                      ? questionarios[activeQuestionarioIndex]?.value.titulo ||
+                        "Questionário"
+                      : "Questionário"}
+                  </span>
+                  <Edit size={16} className="edit-icon" />
+                </button>
+              )}
+            </div>
+            <button
+              className="drawer-close"
+              aria-label="Fechar editor de questionário"
+              onClick={() => setDrawerOpen(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="drawer-body">
+            {drawerLoading ? (
+              <div className="drawer-loading">Carregando perguntas…</div>
+            ) : (
+              <>
+                {/* Título do questionário agora é editado no header */}
+
+                {/* Lista de perguntas (UI-only) */}
+                <div className="perguntas-list">
+                  {editorPerguntas.length === 0 && (
+                    <div className="empty-state">
+                      Nenhuma pergunta adicionada.
+                    </div>
+                  )}
+                  {editorPerguntas.map((p, i) => (
+                    <div key={i} className="pergunta-item">
+                      <div className="field-row">
+                        <input
+                          type="text"
+                          placeholder={`Pergunta #${i + 1}`}
+                          value={p.texto}
+                          onChange={(e) => {
+                            const list = [...editorPerguntas];
+                            list[i].texto = e.target.value;
+                            setEditorPerguntas(list);
+                          }}
+                        />
+                      </div>
+                      <div className="field-row two">
+                        <select
+                          aria-label="Tipo da pergunta"
+                          title="Tipo da pergunta"
+                          value={p.tipo}
+                          onChange={(e) => {
+                            const list = [...editorPerguntas];
+                            list[i].tipo = e.target
+                              .value as PerguntaEditorItem["tipo"];
+                            // Se o tipo mudar para múltipla escolha/seleção, garante opcoes
+                            if (
+                              list[i].tipo === "multipla_escolha" ||
+                              list[i].tipo === "multipla_selecao"
+                            ) {
+                              list[i].opcoes = list[i].opcoes || [""];
+                            }
+                            setEditorPerguntas(list);
+                          }}
+                        >
+                          <option value="texto">Texto</option>
+                          <option value="texto_curto">Texto curto</option>
+                          <option value="numero">Número</option>
+                          <option value="data">Data</option>
+                          <option value="email">Email</option>
+                          <option value="arquivo">Arquivo</option>
+                          <option value="multipla_escolha">
+                            Múltipla escolha
+                          </option>
+                          <option value="multipla_selecao">
+                            Múltipla seleção
+                          </option>
+                        </select>
+                        <label className="checkbox-inline">
+                          <input
+                            type="checkbox"
+                            checked={p.obrigatoria}
+                            onChange={(e) => {
+                              const list = [...editorPerguntas];
+                              list[i].obrigatoria = e.target.checked;
+                              setEditorPerguntas(list);
+                            }}
+                          />
+                          Obrigatória
+                        </label>
+                      </div>
+
+                      {(p.tipo === "multipla_escolha" ||
+                        p.tipo === "multipla_selecao") && (
+                        <div className="opcoes-list">
+                          {(p.opcoes || []).map((opt, j) => (
+                            <div key={j} className="field-row">
+                              <input
+                                type="text"
+                                placeholder={`Opção ${j + 1}`}
+                                value={opt}
+                                onChange={(e) => {
+                                  const list = [...editorPerguntas];
+                                  const ops = [...(list[i].opcoes || [])];
+                                  ops[j] = e.target.value;
+                                  list[i].opcoes = ops;
+                                  setEditorPerguntas(list);
+                                }}
+                              />
+                              <button
+                                className="btn-small danger"
+                                onClick={() => {
+                                  const list = [...editorPerguntas];
+                                  const ops = [...(list[i].opcoes || [])];
+                                  ops.splice(j, 1);
+                                  list[i].opcoes = ops;
+                                  setEditorPerguntas(list);
+                                }}
+                                aria-label="Remover opção"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            className="btn-small"
+                            onClick={() => {
+                              const list = [...editorPerguntas];
+                              list[i].opcoes = [...(list[i].opcoes || []), ""];
+                              setEditorPerguntas(list);
+                            }}
+                          >
+                            <Plus size={14} /> Adicionar opção
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="pergunta-actions">
+                        <button
+                          className="btn-delete-timeline"
+                          title="Excluir pergunta"
+                          aria-label="Excluir pergunta"
+                          onClick={() => {
+                            setEditorPerguntas((prev) =>
+                              prev.filter((_, idx) => idx !== i)
+                            );
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="drawer-actions">
+                  <button
+                    className="btn-primary-outline"
+                    onClick={() =>
+                      setEditorPerguntas((prev) => [
+                        ...prev,
+                        {
+                          texto: "",
+                          tipo: "texto",
+                          obrigatoria: false,
+                          opcoes: [],
+                        },
+                      ])
+                    }
+                  >
+                    <Plus size={16} /> Adicionar pergunta
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          {/* Rodapé fixo do drawer */}
+          <div className="drawer-footer">
+            {/* <div className="spacer" /> */}
+            <button
+              className="btn-save-footer"
+              onClick={() => {
+                // UI-only: atualiza a prévia com base nas primeiras 3 perguntas
+                if (activeQuestionarioIndex !== null) {
+                  const preview = editorPerguntas
+                    .map((p) => p.texto.trim())
+                    .filter(Boolean)
+                    .slice(0, 3);
+                  setQuestionarios((prev) =>
+                    prev.map((qq, idx) =>
+                      idx === activeQuestionarioIndex
+                        ? {
+                            ...qq,
+                            value: {
+                              ...qq.value,
+                              previewPerguntas: preview,
+                            },
+                          }
+                        : qq
+                    )
+                  );
+                }
+                toast.success("Alterações do questionário aplicadas (UI)");
+                setDrawerOpen(false);
+              }}
+            >
+              <Save size={16} /> Aplicar alterações
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
   );

@@ -16,17 +16,337 @@
 }
 
 .modal-horizontal {
+  /* Variáveis para controlar largura base e do drawer */
+  --drawer-w: 400px;
+  --base-max-width: 1400px;
+
   background: white;
   border-radius: 24px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   width: 95%;
-  max-width: 1400px;
+  max-width: var(--base-max-width);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
   animation: modalSlideIn 0.3s ease-out;
+  transition: max-width 0.25s ease; /* expandir/recolher suavemente */
+}
+/* Quando o drawer abre, o modal EXPANDE como um todo e continua centralizado */
+.modal-horizontal.drawer-open {
+  max-width: calc(var(--base-max-width) + var(--drawer-w));
+}
+
+/* Quando o drawer abre, reservar espaço à direita para header, conteúdo e footer
+   Assim nada fica sob o drawer e a largura efetiva do conteúdo permanece a mesma */
+.modal-horizontal.drawer-open .modal-header-horizontal,
+.modal-horizontal.drawer-open .modal-content-horizontal,
+.modal-horizontal.drawer-open .modal-footer-horizontal {
+  margin-right: var(--drawer-w);
+  transition: margin-right 0.25s ease;
+}
+
+/* Drawer lateral para edição dos questionários */
+.drawer-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: var(--drawer-w);
+  background: #ffffff;
+  border-left: 1px solid #e5e7eb;
+  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.08);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  z-index: 8; /* acima do conteúdo, abaixo de overlays internos */
+}
+
+.drawer-panel.open {
+  transform: translateX(0%);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+}
+
+.drawer-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+/* Título editável no header do drawer */
+.drawer-title {
+  display: flex;
+  align-items: center;
+}
+.drawer-title-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 6px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.drawer-title-display:hover {
+  background: #f8fafc;
+}
+.drawer-title-input {
+  width: 100%;
+  border: 2px solid #3b82f6;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.drawer-close {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: #334155;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.drawer-close:hover {
+  background: #fff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
+}
+
+.drawer-body {
+  padding: 12px 16px 24px; /* espaço extra para não colar no footer */
+  overflow-y: auto;
+  overflow-x: hidden; /* remove barra horizontal */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1; /* ocupa o espaço restante para empurrar o footer ao fundo */
+}
+
+.drawer-loading {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.field-group {
+  display: grid;
+  gap: 6px;
+}
+.field-group label {
+  font-size: 0.85rem;
+  color: #4b5563;
+  font-weight: 600;
+}
+.field-group input,
+.field-row input,
+.field-row select {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  background: #fff;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.field-row select {
+  height: 40px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #64748b 50%),
+    linear-gradient(135deg, #64748b 50%, transparent 50%),
+    linear-gradient(to right, #e2e8f0, #e2e8f0);
+  background-position:
+    calc(100% - 18px) calc(50% + 1px),
+    calc(100% - 12px) calc(50% + 1px),
+    calc(100% - 36px) 50%;
+  background-size:
+    6px 6px,
+    6px 6px,
+    1px 60%;
+  background-repeat: no-repeat;
+  padding-right: 40px; /* espaço para o ícone */
+}
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.field-row.two {
+  display: grid;
+  grid-template-columns: 1fr max-content; /* checkbox ocupa só o necessário */
+  gap: 8px;
+}
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* reduzir espaço entre caixa e label */
+  color: #374151;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.checkbox-inline input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+/* Evita overflow no hover do título dentro do drawer */
+.drawer-body .titulo-display:hover {
+  background: #f8fafc;
+  padding: 16px 0;
+  margin: 0; /* remove margens negativas herdadas */
+}
+
+/* Lista de perguntas segue padrão de lista/cards do sistema */
+.perguntas-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.pergunta-item {
+  background: #ffffff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 14px;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s,
+    background 0.2s;
+}
+
+.pergunta-item:hover {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
+
+/* espaçamento vertical interno padronizado */
+.pergunta-item .field-row + .field-row,
+.pergunta-item .field-row + .opcoes-list,
+.pergunta-item .opcoes-list + .pergunta-actions,
+.pergunta-item .field-group + .pergunta-actions {
+  margin-top: 10px;
+}
+
+.opcoes-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-small {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s;
+}
+.btn-small:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
+}
+.btn-small.danger {
+  border-color: #ef4444;
+  color: #b91c1c;
+  background: #fee2e2;
+}
+.btn-small.danger:hover {
+  background: #fecaca;
+}
+
+.pergunta-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.drawer-actions .spacer {
+  flex: 1;
+}
+.btn-primary {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background: #2563eb;
+}
+.btn-primary-outline {
+  background: #fff;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.btn-primary-outline:hover {
+  background: #eff6ff;
+}
+
+/* Rodapé fixo do drawer (preso ao fundo do painel via flexbox) */
+.drawer-footer {
+  background: #f8fafc; /* similar ao footer do modal */
+  border-top: 1px solid #f1f5f9;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0; /* não encolher */
+  margin-top: auto; /* garante ficar ao final do drawer */
+}
+
+.drawer-footer .btn-save-footer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  line-height: 1; /* evita quebra vertical por métricas de linha */
 }
 
 @keyframes modalSlideIn {
