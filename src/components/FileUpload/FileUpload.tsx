@@ -135,7 +135,7 @@ export default function FileUpload({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {selectedFile.name}
+                  {selectedFile.name.slice(0, 40)}{selectedFile.name.length > 40 ? '...' : '' }
                 </p>
                 <p className="text-xs text-gray-500">
                   {formatFileSize(selectedFile.size)}
