@@ -47,7 +47,7 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
 
   const addQuestionario = () => {
     const newQuestionario: EditableQuestionario = {
-      value: { titulo: "", previewPerguntas: [] },
+      value: { titulo: "", nome: "", previewPerguntas: [] },
       isEditing: true,
     };
     onQuestionariosChange([...questionarios, newQuestionario]);

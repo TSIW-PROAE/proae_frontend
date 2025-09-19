@@ -1,31 +1,37 @@
 import React from "react";
-import { X, Edit, Save, Plus, Trash2 } from "lucide-react";
-import { PerguntaEditorItem } from "../types";
+import { ArrowLeft, Edit, Save, Plus, Trash2, FileText } from "lucide-react";
+import { PerguntaEditorItem, EditableQuestionario } from "../types";
 
 interface QuestionarioDrawerProps {
   isOpen: boolean;
   loading: boolean;
-  questionarioTitle: string;
+  questionarios: EditableQuestionario[];
+  activeQuestionarioIndex: number | null;
   titleEditing: boolean;
   perguntas: PerguntaEditorItem[];
   onClose: () => void;
+  onQuestionarioSelect: (index: number) => void;
   onTitleChange: (title: string) => void;
   onTitleEditToggle: (editing: boolean) => void;
   onPerguntasChange: (perguntas: PerguntaEditorItem[]) => void;
   onSave: () => void;
+  adicionarQuestionario: () => void;
 }
 
 const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   isOpen,
   loading,
-  questionarioTitle,
+  questionarios,
+  activeQuestionarioIndex,
   titleEditing,
   perguntas,
   onClose,
+  onQuestionarioSelect,
   onTitleChange,
   onTitleEditToggle,
   onPerguntasChange,
   onSave,
+  adicionarQuestionario,
 }) => {
   const updatePergunta = (
     index: number,
@@ -87,153 +93,234 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
     onPerguntasChange([...perguntas, newPergunta]);
   };
 
+  if (!isOpen) return null;
+
+  const activeQuestionario =
+    activeQuestionarioIndex !== null
+      ? questionarios[activeQuestionarioIndex]
+      : null;
+
   return (
-    <aside className={`drawer-panel ${isOpen ? "open" : ""}`}>
-      <div className="drawer-header">
-        <div className="drawer-title">
-          {titleEditing ? (
-            <input
-              type="text"
-              className="drawer-title-input"
-              value={questionarioTitle}
-              onChange={(e) => onTitleChange(e.target.value)}
-              autoFocus
-              onBlur={() => onTitleEditToggle(false)}
-              onKeyPress={(e) => e.key === "Enter" && onTitleEditToggle(false)}
-              placeholder="Título do questionário"
-              title="Título do questionário"
-            />
-          ) : (
-            <button
-              type="button"
-              className="drawer-title-display"
-              onClick={() => onTitleEditToggle(true)}
-              title="Clique para editar o título do questionário"
-            >
-              <span>{questionarioTitle || "Questionário"}</span>
-              <Edit size={16} className="edit-icon" />
-            </button>
-          )}
-        </div>
-        <button
-          className="drawer-close"
-          aria-label="Fechar editor de questionário"
-          onClick={onClose}
-        >
-          <X size={18} />
+    <div className="questionario-expanded-sidebar">
+      {/* Header com botão voltar */}
+      <div className="questionario-expanded-header">
+        <button onClick={onClose} className="questionario-back-button">
+          <ArrowLeft size={20} />
+          Voltar
         </button>
+        <h2>Editor de Questionários</h2>
       </div>
 
-      <div className="drawer-body">
-        {loading ? (
-          <div className="drawer-loading">Carregando perguntas…</div>
-        ) : (
-          <>
-            <div className="perguntas-list">
-              {perguntas.length === 0 && (
-                <div className="empty-state">Nenhuma pergunta adicionada.</div>
-              )}
-              {perguntas.map((p, i) => (
-                <div key={i} className="pergunta-item">
-                  <div className="field-row">
+      <div className="questionario-expanded-content">
+        {/* Lista de questionários na lateral esquerda */}
+        <div className="questionario-list-sidebar">
+          <div className="questionario-list-header">
+            <h3>Questionários</h3>
+            <button
+              onClick={adicionarQuestionario}
+              className="add-questionario-button"
+            >
+              <Plus size={16} />
+              Novo
+            </button>
+          </div>
+
+          <div className="questionario-list">
+            {questionarios.map((questionario, index) => (
+              <div
+                key={index}
+                className={`questionario-list-item ${
+                  activeQuestionarioIndex === index ? "active" : ""
+                }`}
+                onClick={() => onQuestionarioSelect(index)}
+              >
+                <FileText size={16} />
+                <span>
+                  {questionario.value.nome || `Questionário ${index + 1}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Área principal de edição */}
+        <div className="questionario-editor-area">
+          {activeQuestionario ? (
+            <>
+              {/* Header do questionário */}
+              <div className="questionario-editor-header">
+                <div className="questionario-title-section">
+                  {titleEditing ? (
                     <input
                       type="text"
-                      placeholder={`Pergunta #${i + 1}`}
-                      value={p.texto}
-                      onChange={(e) =>
-                        updatePergunta(i, "texto", e.target.value)
-                      }
+                      value={activeQuestionario.value.nome || ""}
+                      onChange={(e) => onTitleChange(e.target.value)}
+                      onBlur={() => onTitleEditToggle(false)}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") onTitleEditToggle(false);
+                      }}
+                      placeholder="Nome do questionário"
+                      autoFocus
+                      className="questionario-title-input"
                     />
-                  </div>
-                  <div className="field-row two">
-                    <select
-                      aria-label="Tipo da pergunta"
-                      title="Tipo da pergunta"
-                      value={p.tipo}
-                      onChange={(e) =>
-                        updatePergunta(
-                          i,
-                          "tipo",
-                          e.target.value as PerguntaEditorItem["tipo"]
-                        )
-                      }
+                  ) : (
+                    <h3
+                      onClick={() => onTitleEditToggle(true)}
+                      className="questionario-title"
                     >
-                      <option value="texto">Texto</option>
-                      <option value="texto_curto">Texto curto</option>
-                      <option value="numero">Número</option>
-                      <option value="data">Data</option>
-                      <option value="email">Email</option>
-                      <option value="arquivo">Arquivo</option>
-                      <option value="multipla_escolha">Múltipla escolha</option>
-                      <option value="multipla_selecao">Múltipla seleção</option>
-                    </select>
-                    <label className="checkbox-inline">
-                      <input
-                        type="checkbox"
-                        checked={p.obrigatoria}
-                        onChange={(e) =>
-                          updatePergunta(i, "obrigatoria", e.target.checked)
-                        }
-                      />
-                      Obrigatória
-                    </label>
-                  </div>
+                      {activeQuestionario.value.nome || "Questionário sem nome"}
+                      <Edit size={16} className="edit-icon" />
+                    </h3>
+                  )}
+                </div>
 
-                  {(p.tipo === "multipla_escolha" ||
-                    p.tipo === "multipla_selecao") && (
-                    <div className="opcoes-list">
-                      {(p.opcoes || []).map((opt, j) => (
-                        <div key={j} className="field-row">
-                          <input
-                            type="text"
-                            placeholder={`Opção ${j + 1}`}
-                            value={opt}
-                            onChange={(e) => updateOpcao(i, j, e.target.value)}
-                          />
-                          <button
-                            className="btn-small danger"
-                            onClick={() => removeOpcao(i, j)}
-                            aria-label="Remover opção"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
-                      <button className="btn-small" onClick={() => addOpcao(i)}>
-                        <Plus size={14} /> Adicionar opção
+                <div className="questionario-actions">
+                  <button onClick={addPergunta} className="add-question-button">
+                    <Plus size={16} />
+                    Nova Pergunta
+                  </button>
+                  <button
+                    onClick={onSave}
+                    className="save-button"
+                    disabled={loading}
+                  >
+                    <Save size={16} />
+                    {loading ? "Salvando..." : "Salvar"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de perguntas */}
+              <div className="perguntas-list">
+                {perguntas.map((pergunta, index) => (
+                  <div key={index} className="pergunta-item">
+                    <div className="pergunta-header">
+                      <span className="pergunta-numero">
+                        Pergunta {index + 1}
+                      </span>
+                      <button
+                        onClick={() => deletePergunta(index)}
+                        className="delete-pergunta-button"
+                        title="Excluir pergunta"
+                        aria-label="Excluir pergunta"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
-                  )}
 
-                  <div className="pergunta-actions">
+                    <div className="pergunta-content">
+                      <div className="pergunta-field">
+                        <label>Texto da pergunta:</label>
+                        <textarea
+                          value={pergunta.texto}
+                          onChange={(e) =>
+                            updatePergunta(index, "texto", e.target.value)
+                          }
+                          placeholder="Digite a pergunta..."
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="pergunta-field">
+                        <label>Tipo de resposta:</label>
+                        <select
+                          value={pergunta.tipo}
+                          onChange={(e) =>
+                            updatePergunta(index, "tipo", e.target.value)
+                          }
+                          aria-label="Tipo de resposta"
+                        >
+                          <option value="texto">Texto</option>
+                          <option value="numero">Número</option>
+                          <option value="multipla_escolha">
+                            Múltipla Escolha
+                          </option>
+                          <option value="multipla_selecao">
+                            Múltipla Seleção
+                          </option>
+                          <option value="data">Data</option>
+                          <option value="arquivo">Arquivo</option>
+                        </select>
+                      </div>
+
+                      <div className="pergunta-field">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={pergunta.obrigatoria}
+                            onChange={(e) =>
+                              updatePergunta(
+                                index,
+                                "obrigatoria",
+                                e.target.checked
+                              )
+                            }
+                          />
+                          Pergunta obrigatória
+                        </label>
+                      </div>
+
+                      {/* Opções para múltipla escolha/seleção */}
+                      {(pergunta.tipo === "multipla_escolha" ||
+                        pergunta.tipo === "multipla_selecao") && (
+                        <div className="pergunta-opcoes">
+                          <label>Opções:</label>
+                          {pergunta.opcoes?.map((opcao, opcaoIndex) => (
+                            <div key={opcaoIndex} className="opcao-item">
+                              <input
+                                type="text"
+                                value={opcao}
+                                onChange={(e) =>
+                                  updateOpcao(index, opcaoIndex, e.target.value)
+                                }
+                                placeholder={`Opção ${opcaoIndex + 1}`}
+                              />
+                              <button
+                                onClick={() => removeOpcao(index, opcaoIndex)}
+                                className="remove-opcao-button"
+                                title="Remover opção"
+                                aria-label="Remover opção"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => addOpcao(index)}
+                            className="add-opcao-button"
+                          >
+                            <Plus size={14} />
+                            Adicionar opção
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {perguntas.length === 0 && (
+                  <div className="empty-perguntas">
+                    <p>Nenhuma pergunta adicionada ainda.</p>
                     <button
-                      className="btn-delete-timeline"
-                      title="Excluir pergunta"
-                      aria-label="Excluir pergunta"
-                      onClick={() => deletePergunta(i)}
+                      onClick={addPergunta}
+                      className="add-first-question"
                     >
-                      <Trash2 size={16} />
+                      <Plus size={16} />
+                      Adicionar primeira pergunta
                     </button>
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="no-questionario-selected">
+              <FileText size={48} />
+              <p>Selecione um questionário para começar a editar</p>
             </div>
-
-            <div className="drawer-actions">
-              <button className="btn-primary-outline" onClick={addPergunta}>
-                <Plus size={16} /> Adicionar pergunta
-              </button>
-            </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
-
-      <div className="drawer-footer">
-        <button className="btn-save-footer" onClick={onSave}>
-          <Save size={16} /> Aplicar alterações
-        </button>
-      </div>
-    </aside>
+    </div>
   );
 };
 

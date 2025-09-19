@@ -181,6 +181,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
           value: {
             id: s.id,
             titulo: s.titulo || s.texto || "",
+            nome: s.titulo || s.texto || "",
             previewPerguntas: [],
           },
           isEditing: false,
@@ -610,18 +611,31 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
         <QuestionarioDrawer
           isOpen={drawerOpen}
           loading={drawerLoading}
-          questionarioTitle={
-            activeQuestionarioIndex !== null
-              ? questionarios[activeQuestionarioIndex]?.value.titulo || ""
-              : ""
-          }
+          questionarios={questionarios}
+          activeQuestionarioIndex={activeQuestionarioIndex}
           titleEditing={quizTitleEditing}
           perguntas={editorPerguntas}
           onClose={() => setDrawerOpen(false)}
+          onQuestionarioSelect={(index) => {
+            // Carrega as perguntas do questionário selecionado
+            setActiveQuestionarioIndex(index);
+            const questions =
+              questionarios[index]?.value.previewPerguntas || [];
+            const convertedQuestions: PerguntaEditorItem[] = questions.map(
+              (texto) => ({
+                texto,
+                tipo: "texto",
+                obrigatoria: false,
+                opcoes: [],
+              })
+            );
+            setEditorPerguntas(convertedQuestions);
+          }}
           onTitleChange={(title) => {
             if (activeQuestionarioIndex !== null) {
               const list = [...questionarios];
               list[activeQuestionarioIndex].value.titulo = title;
+              list[activeQuestionarioIndex].value.nome = title;
               setQuestionarios(list);
             }
           }}
@@ -650,6 +664,17 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
             }
             toast.success("Alterações do questionário aplicadas (UI)");
             setDrawerOpen(false);
+          }}
+          adicionarQuestionario={() => {
+            const novoQuestionario: EditableQuestionario = {
+              value: {
+                titulo: `Questionário ${questionarios.length + 1}`,
+                nome: `Questionário ${questionarios.length + 1}`,
+                previewPerguntas: [],
+              },
+              isEditing: false,
+            };
+            setQuestionarios([...questionarios, novoQuestionario]);
           }}
         />
       </div>

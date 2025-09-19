@@ -20,6 +20,7 @@ export type StatusEdital = "RASCUNHO" | "ABERTO" | "EM_ANDAMENTO" | "ENCERRADO";
 export interface QuestionarioItem {
   id?: number;
   titulo: string;
+  nome: string;
   previewPerguntas: string[];
 }
 
