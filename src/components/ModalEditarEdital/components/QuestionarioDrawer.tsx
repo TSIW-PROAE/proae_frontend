@@ -16,6 +16,7 @@ interface QuestionarioDrawerProps {
   onPerguntasChange: (perguntas: PerguntaEditorItem[]) => void;
   onSave: () => void;
   adicionarQuestionario: () => void;
+  removerQuestionario: (index: number) => void;
 }
 
 const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
@@ -32,6 +33,7 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   onPerguntasChange,
   onSave,
   adicionarQuestionario,
+  removerQuestionario,
 }) => {
   const updatePergunta = (
     index: number,
@@ -89,8 +91,23 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
       tipo: "texto",
       obrigatoria: false,
       opcoes: [],
+      isEditing: true,
     };
     onPerguntasChange([...perguntas, newPergunta]);
+  };
+
+  const togglePerguntaEditing = (index: number) => {
+    const list = [...perguntas];
+    list[index].isEditing = !list[index].isEditing;
+    onPerguntasChange(list);
+  };
+
+  const savePergunta = (index: number) => {
+    const list = [...perguntas];
+    if (list[index].texto.trim()) {
+      list[index].isEditing = false;
+      onPerguntasChange(list);
+    }
   };
 
   if (!isOpen) return null;
@@ -132,12 +149,27 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                 className={`questionario-list-item ${
                   activeQuestionarioIndex === index ? "active" : ""
                 }`}
-                onClick={() => onQuestionarioSelect(index)}
               >
-                <FileText size={16} />
-                <span>
-                  {questionario.value.nome || `Questionário ${index + 1}`}
-                </span>
+                <div
+                  className="questionario-item-content"
+                  onClick={() => onQuestionarioSelect(index)}
+                >
+                  <FileText size={16} />
+                  <span>
+                    {questionario.value.nome || `Questionário ${index + 1}`}
+                  </span>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removerQuestionario(index);
+                  }}
+                  className="remove-questionario-button"
+                  title="Remover questionário"
+                  aria-label="Remover questionário"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))}
           </div>
@@ -193,108 +225,204 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
               {/* Lista de perguntas */}
               <div className="perguntas-list">
                 {perguntas.map((pergunta, index) => (
-                  <div key={index} className="pergunta-item">
-                    <div className="pergunta-header">
-                      <span className="pergunta-numero">
-                        Pergunta {index + 1}
-                      </span>
-                      <button
-                        onClick={() => deletePergunta(index)}
-                        className="delete-pergunta-button"
-                        title="Excluir pergunta"
-                        aria-label="Excluir pergunta"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                  <div
+                    key={index}
+                    className={`pergunta-item ${pergunta.isEditing ? "editing" : "saved"}`}
+                  >
+                    {pergunta.isEditing ? (
+                      // Estado de edição
+                      <>
+                        <div className="pergunta-header">
+                          <span className="pergunta-numero">
+                            Pergunta {index + 1}
+                          </span>
+                          <div className="pergunta-actions">
+                            <button
+                              onClick={() => savePergunta(index)}
+                              className="save-pergunta-button"
+                              title="Salvar pergunta"
+                              aria-label="Salvar pergunta"
+                            >
+                              <Save size={16} />
+                            </button>
+                            <button
+                              onClick={() => deletePergunta(index)}
+                              className="delete-pergunta-button"
+                              title="Excluir pergunta"
+                              aria-label="Excluir pergunta"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
 
-                    <div className="pergunta-content">
-                      <div className="pergunta-field">
-                        <label>Texto da pergunta:</label>
-                        <textarea
-                          value={pergunta.texto}
-                          onChange={(e) =>
-                            updatePergunta(index, "texto", e.target.value)
-                          }
-                          placeholder="Digite a pergunta..."
-                          rows={2}
-                        />
-                      </div>
+                        <div className="pergunta-content">
+                          <div className="pergunta-field">
+                            <label>Texto da pergunta:</label>
+                            <textarea
+                              value={pergunta.texto}
+                              onChange={(e) =>
+                                updatePergunta(index, "texto", e.target.value)
+                              }
+                              placeholder="Digite a pergunta..."
+                              rows={2}
+                            />
+                          </div>
 
-                      <div className="pergunta-field">
-                        <label>Tipo de resposta:</label>
-                        <select
-                          value={pergunta.tipo}
-                          onChange={(e) =>
-                            updatePergunta(index, "tipo", e.target.value)
-                          }
-                          aria-label="Tipo de resposta"
-                        >
-                          <option value="texto">Texto</option>
-                          <option value="numero">Número</option>
-                          <option value="multipla_escolha">
-                            Múltipla Escolha
-                          </option>
-                          <option value="multipla_selecao">
-                            Múltipla Seleção
-                          </option>
-                          <option value="data">Data</option>
-                          <option value="arquivo">Arquivo</option>
-                        </select>
-                      </div>
+                          <div className="pergunta-field">
+                            <label>Tipo de resposta:</label>
+                            <select
+                              value={pergunta.tipo}
+                              onChange={(e) =>
+                                updatePergunta(index, "tipo", e.target.value)
+                              }
+                              aria-label="Tipo de resposta"
+                            >
+                              <option value="texto">Texto</option>
+                              <option value="numero">Número</option>
+                              <option value="multipla_escolha">
+                                Múltipla Escolha
+                              </option>
+                              <option value="multipla_selecao">
+                                Múltipla Seleção
+                              </option>
+                              <option value="data">Data</option>
+                              <option value="arquivo">Arquivo</option>
+                            </select>
+                          </div>
 
-                      <div className="pergunta-field">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={pergunta.obrigatoria}
-                            onChange={(e) =>
-                              updatePergunta(
-                                index,
-                                "obrigatoria",
-                                e.target.checked
-                              )
-                            }
-                          />
-                          Pergunta obrigatória
-                        </label>
-                      </div>
-
-                      {/* Opções para múltipla escolha/seleção */}
-                      {(pergunta.tipo === "multipla_escolha" ||
-                        pergunta.tipo === "multipla_selecao") && (
-                        <div className="pergunta-opcoes">
-                          <label>Opções:</label>
-                          {pergunta.opcoes?.map((opcao, opcaoIndex) => (
-                            <div key={opcaoIndex} className="opcao-item">
+                          <div className="pergunta-field">
+                            <label className="checkbox-label">
                               <input
-                                type="text"
-                                value={opcao}
+                                type="checkbox"
+                                checked={pergunta.obrigatoria}
                                 onChange={(e) =>
-                                  updateOpcao(index, opcaoIndex, e.target.value)
+                                  updatePergunta(
+                                    index,
+                                    "obrigatoria",
+                                    e.target.checked
+                                  )
                                 }
-                                placeholder={`Opção ${opcaoIndex + 1}`}
                               />
+                              Pergunta obrigatória
+                            </label>
+                          </div>
+
+                          {/* Opções para múltipla escolha/seleção */}
+                          {(pergunta.tipo === "multipla_escolha" ||
+                            pergunta.tipo === "multipla_selecao") && (
+                            <div className="pergunta-opcoes">
+                              <label>Opções:</label>
+                              {pergunta.opcoes?.map((opcao, opcaoIndex) => (
+                                <div key={opcaoIndex} className="opcao-item">
+                                  <input
+                                    type="text"
+                                    value={opcao}
+                                    onChange={(e) =>
+                                      updateOpcao(
+                                        index,
+                                        opcaoIndex,
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder={`Opção ${opcaoIndex + 1}`}
+                                  />
+                                  <button
+                                    onClick={() =>
+                                      removeOpcao(index, opcaoIndex)
+                                    }
+                                    className="remove-opcao-button"
+                                    title="Remover opção"
+                                    aria-label="Remover opção"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              ))}
                               <button
-                                onClick={() => removeOpcao(index, opcaoIndex)}
-                                className="remove-opcao-button"
-                                title="Remover opção"
-                                aria-label="Remover opção"
+                                onClick={() => addOpcao(index)}
+                                className="add-opcao-button"
                               >
-                                <Trash2 size={14} />
+                                <Plus size={14} />
+                                Adicionar opção
                               </button>
                             </div>
-                          ))}
-                          <button
-                            onClick={() => addOpcao(index)}
-                            className="add-opcao-button"
-                          >
-                            <Plus size={14} />
-                            Adicionar opção
-                          </button>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </>
+                    ) : (
+                      // Estado salvo
+                      <>
+                        <div className="pergunta-header">
+                          <div className="pergunta-info">
+                            <span className="pergunta-numero">
+                              Pergunta {index + 1}
+                            </span>
+                            <span className="pergunta-tipo-badge">
+                              {pergunta.tipo === "multipla_escolha"
+                                ? "Múltipla Escolha"
+                                : pergunta.tipo === "multipla_selecao"
+                                  ? "Múltipla Seleção"
+                                  : pergunta.tipo === "texto"
+                                    ? "Texto"
+                                    : pergunta.tipo === "numero"
+                                      ? "Número"
+                                      : pergunta.tipo === "data"
+                                        ? "Data"
+                                        : pergunta.tipo === "arquivo"
+                                          ? "Arquivo"
+                                          : "Email"}
+                            </span>
+                            {pergunta.obrigatoria && (
+                              <span className="obrigatoria-badge">
+                                Obrigatória
+                              </span>
+                            )}
+                          </div>
+                          <div className="pergunta-actions">
+                            <button
+                              onClick={() => togglePerguntaEditing(index)}
+                              className="edit-pergunta-button"
+                              title="Editar pergunta"
+                              aria-label="Editar pergunta"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => deletePergunta(index)}
+                              className="delete-pergunta-button"
+                              title="Excluir pergunta"
+                              aria-label="Excluir pergunta"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="pergunta-preview">
+                          <p className="pergunta-texto">
+                            {pergunta.texto || "Pergunta sem texto"}
+                          </p>
+                          {(pergunta.tipo === "multipla_escolha" ||
+                            pergunta.tipo === "multipla_selecao") &&
+                            pergunta.opcoes &&
+                            pergunta.opcoes.length > 0 && (
+                              <div className="opcoes-preview">
+                                {pergunta.opcoes
+                                  .filter((opcao) => opcao.trim())
+                                  .map((opcao, opcaoIndex) => (
+                                    <span
+                                      key={opcaoIndex}
+                                      className="opcao-preview"
+                                    >
+                                      {opcao}
+                                    </span>
+                                  ))}
+                              </div>
+                            )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
 

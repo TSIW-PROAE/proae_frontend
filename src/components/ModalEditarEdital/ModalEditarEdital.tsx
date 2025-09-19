@@ -627,6 +627,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
                 tipo: "texto",
                 obrigatoria: false,
                 opcoes: [],
+                isEditing: false,
               })
             );
             setEditorPerguntas(convertedQuestions);
@@ -675,6 +676,24 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
               isEditing: false,
             };
             setQuestionarios([...questionarios, novoQuestionario]);
+          }}
+          removerQuestionario={(index) => {
+            const newQuestionarios = questionarios.filter(
+              (_, i) => i !== index
+            );
+            setQuestionarios(newQuestionarios);
+
+            // Se o questionário ativo foi removido, limpar a seleção
+            if (activeQuestionarioIndex === index) {
+              setActiveQuestionarioIndex(null);
+              setEditorPerguntas([]);
+            } else if (
+              activeQuestionarioIndex !== null &&
+              activeQuestionarioIndex > index
+            ) {
+              // Se um questionário antes do ativo foi removido, ajustar o índice
+              setActiveQuestionarioIndex(activeQuestionarioIndex - 1);
+            }
           }}
         />
       </div>

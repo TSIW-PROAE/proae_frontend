@@ -42,6 +42,7 @@ export interface PerguntaEditorItem {
     | "email";
   obrigatoria: boolean;
   opcoes: string[];
+  isEditing?: boolean;
 }
 
 export const statusLabelMap: Record<StatusEdital, string> = {
