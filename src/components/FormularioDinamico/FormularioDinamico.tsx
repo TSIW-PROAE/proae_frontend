@@ -45,9 +45,9 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     subtitulo: props.subtitulo,
     onSubmit: async (data: Record<string, any>) => {
       try {
-        const dataWithVaga = { ...data, vaga_id: vagaSelecionada }
-        await inscricaoService.submeterRespostas(dataWithVaga);
-        props.onSuccess?.(dataWithVaga);
+        
+        await inscricaoService.submeterRespostas(data);
+        props.onSuccess?.(data);
         navigate("/portal-aluno");
       } catch (err: any) {
         props.onError?.(err.message);
@@ -103,6 +103,12 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
   useEffect(() => {
     props.onStepChange?.(currentStep, totalSteps);
   }, [currentStep, totalSteps, props]);
+
+  useEffect(() => {
+    if (form && vagaSelecionada !== null) {
+      form.setValue('vaga_id', vagaSelecionada);
+    }
+  }, [form, vagaSelecionada]);
 
   const handleNextPage = async () => {
     const success = await nextPage();
