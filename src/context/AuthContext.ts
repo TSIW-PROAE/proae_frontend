@@ -9,8 +9,5 @@ export const AuthContext = createContext<AuthContextType>({
   },
   logout: () => {},
   register: (data: UserSignup) => {return Promise.reject(new Error("Not implemented " + data));},
-  Oauth_login: () => {},
-  Oauth_logout: () => {},
-  Oauth_register: () => {},
   loading: true,
 })

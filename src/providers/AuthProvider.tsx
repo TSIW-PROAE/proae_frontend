@@ -73,9 +73,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
   }, []);
 
 
-  const Oauth_login = useCallback(() => {}, [])
-  const Oauth_logout = useCallback(() => {}, [])
-  const Oauth_register = useCallback(() => {}, [])
+
 
 
   return (
@@ -86,9 +84,6 @@ function AuthProvider({children}: {children: React.ReactNode}){
       logout,
       register,
       loading,
-      Oauth_login,
-      Oauth_logout,
-      Oauth_register
     }}>
       {children}
     </AuthContext.Provider>

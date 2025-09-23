@@ -11,9 +11,6 @@ export interface AuthContextType{
   login: (data: UserLogin) => Promise <UserLoginResponse>;
   logout: () => void;
   register: (data: UserSignup) => Promise<any>;
-  Oauth_login: () => void;
-  Oauth_logout: () => void;
-  Oauth_register: () => void;
   loading: boolean;
 }
 
