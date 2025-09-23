@@ -222,3 +222,10 @@ export function obterMensagemErro(formatacao: TipoFormatacao): string {
 };
 
 
+export function verificarEmailInstitucional(email: string, pattern: string){
+    let valido = false;
+    if(email.includes(pattern)){
+        valido =  true;
+    }
+    return valido;
+}
