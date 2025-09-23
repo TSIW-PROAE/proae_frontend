@@ -2,7 +2,7 @@ import { CadastroGeralContext } from "@/context/CadastroGeralContext";
 import { AuthContext } from "@/context/AuthContext";
 import { useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import toast, {Toaster} from "react-hot-toast";
+import toast from "react-hot-toast";
 
 
 export default function CadastroGeralProvider({ children }:{children: React.ReactNode}) {

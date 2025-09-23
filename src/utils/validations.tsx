@@ -1,5 +1,6 @@
 import { DateValue } from "@internationalized/date";
-import { TipoFormatacao } from "../components/FormularioDinamico/FormularioDinamico";
+
+export type TipoFormatacao = "cpf" | "phone" | "cep" | "dataCompleta" | "dataMes" | "cnpj" | "rg" | "moeda" | "personalizado";
 
 export function formatPhone(value:string){
     if (!value) return ""
