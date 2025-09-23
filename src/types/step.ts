@@ -1,4 +1,4 @@
-import { TipoInput, FormatacaoInput } from './dynamicForm';
+import { TipoInput, FormatacaoInput } from "./dynamicForm";
 
 export interface Step {
   id: number;
@@ -7,6 +7,8 @@ export interface Step {
 }
 
 export interface Pergunta {
+  obrigatoria: any;
+  tipo_pergunta: any;
   id: number;
   pergunta: string;
   tipo_Pergunta: TipoInput;
@@ -17,6 +19,7 @@ export interface Pergunta {
 }
 
 export interface StepResponseDto {
+  titulo: string;
   id: number;
   texto: string;
   perguntas: PerguntaResponseDto[];

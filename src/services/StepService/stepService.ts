@@ -10,6 +10,10 @@ export class StepService {
     this.httpClient = new FetchAdapter();
   }
 
+  async criarStep(editalId: number, texto: string): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
+  
   async listarStepsPorEdital(editalId: string): Promise<StepResponseDto[]> {
     return this.httpClient.get<StepResponseDto[]>(`${BASE_URL}/edital/${editalId}/with-perguntas`);
   }
