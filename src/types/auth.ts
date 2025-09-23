@@ -1,3 +1,5 @@
+import z from "zod"
+import {verificarEmailInstitucional, validarCPFReal} from "@/utils/validations"
 export interface UserInfo{
   id: number;
   nome: string;
@@ -56,5 +58,20 @@ export interface IResetPassword{
   confirmPassword: string;
 }
 
-// ideia de criar um interface para validar o signup do usuário
-//interface ValidateUserSignup{}
+export type UserRole = "admin" | "aluno";
+
+// Schemas com zod
+
+export const SignUpAdmin = z.object({
+  cargo: z.string(),
+  email: z.email().refine((value) => {
+    return verificarEmailInstitucional(value, "@ufba.br")
+  }, { message: "Email deve ser institucional (@ufba.br)"}),
+  senha: z.string(),
+  nome: z.string(),
+  dataNascimento: z.string(),
+  cpf: z.string().refine((value) => {
+    return validarCPFReal(value)
+  }),
+  celular: z.string()
+})
