@@ -54,7 +54,7 @@ const OpenSelectionCard: React.FC<Edital> = ({
     return <Clock className="w-3 h-3 text-blue-600" />;
   };
 
-  const redirectToInscricao = (editalId: number): void => {
+  /*const redirectToInscricao = (editalId: number): void => {
     navigate("/portal-aluno/candidatura", {
       state: {
         editalId: editalId,
@@ -62,7 +62,7 @@ const OpenSelectionCard: React.FC<Edital> = ({
         descricaoEdital: descricao,
       },
     });
-  };
+  };*/
 
   return (
     <div className="selection-card">
