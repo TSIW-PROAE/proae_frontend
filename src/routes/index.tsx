@@ -18,8 +18,7 @@ import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
 import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
-import ProtectedRouteAluno from "@/Auth/ProtectedRouteAluno";
-import ProtectedRouteProae from "@/Auth/ProtectedRouteProae";
+import ProtectedRouteHandler from "@/Auth/ProtectedRoute";
 import LoginAluno from "@/pages/paginaAluno/LoginAluno/LoginAluno";
 import LoginProae from "@/pages/paginaProae/LoginProae/LoginProae";
 import ForgotPassword from "@/pages/paginaAluno/forgotPassword/ForgotPassword";
@@ -40,7 +39,7 @@ const routes = [
       {path: "forgot-password", element: <ForgotPassword />},
       {path: "reset-password", element: <ResetPassword />},
       {
-        element: <ProtectedRouteAluno />,
+        element: <ProtectedRouteHandler />,
         children: [
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
@@ -52,7 +51,7 @@ const routes = [
       },
       {path: "login-proae", element: <LoginProae />},
       {
-        element: <ProtectedRouteProae />,
+        element: <ProtectedRouteHandler />,
         children: [
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
