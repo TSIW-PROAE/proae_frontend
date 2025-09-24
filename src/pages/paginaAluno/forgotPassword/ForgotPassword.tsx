@@ -1,8 +1,7 @@
 import { Input } from "@heroui/input";
 import { useState } from "react";
 import {useForm, Controller, SubmitHandler} from "react-hook-form"
-import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
-import CadastroAlunoService from "@/services/CadastroAluno.service/cadastroAluno.service";
+import AuthService from "@/services/AuthService/auth.service"
 import {toast, Toaster} from "react-hot-toast";
 import "./ForgotPassword.css"
 
@@ -18,8 +17,7 @@ export default function ForgotPassword() {
     }
   });
 
-  const client = new FetchAdapter();
-  const cadastroAlunoService = new CadastroAlunoService(client);
+  const authService = new AuthService();
 
   const handleOnSubmit: SubmitHandler<IForgotPassword> = async (data) => {
     if(!data.email.includes("@ufba.br")) {
@@ -28,7 +26,7 @@ export default function ForgotPassword() {
     }
     setIsLoading(true);
     try {
-      await cadastroAlunoService.forgotPassword(data.email)
+      await authService.forgotPassword(data.email)
         setIsLoading(false);
         toast.success("Instruções de recuperação de senha enviadas para " + data.email);
     } catch (error) {

@@ -1,7 +1,6 @@
 import {  useSearchParams } from "react-router-dom"
 import { useForm, Controller, SubmitHandler } from "react-hook-form"
-import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
-import CadastroAlunoService from "@/services/CadastroAluno.service/cadastroAluno.service";
+import AuthService from "@/services/AuthService/auth.service";
 import { toast, Toaster } from "react-hot-toast";
 import {Input} from "@heroui/input"
 import "./ResetPassword.css"
@@ -27,8 +26,7 @@ export default function ResetPassword() {
     setIsLoading(true);
     let hasErrors = false;
 
-    const client = new FetchAdapter();
-    const cadastroAlunoService = new CadastroAlunoService(client);
+    const authService = new AuthService();
 
     try {
       if(data.newPassword.length < 8) {
@@ -58,7 +56,7 @@ export default function ResetPassword() {
         return;
       }
 
-      await cadastroAlunoService.resetPassword({...data, token});
+      await authService.resetPassword({...data, token});
       toast.success("Senha alterada com sucesso!");
       navigate("/login-aluno")
     } catch (error) {
