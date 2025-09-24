@@ -5,24 +5,26 @@ import z from "zod"
 import { Input } from '@heroui/input';
 import { DatePicker } from '@heroui/react';
 import {Button} from '@heroui/react';
-import AuthService from '@/services/AuthService/auth.service';
 import { toast, Toaster } from "react-hot-toast";
 import { DefaultResponse } from '@/types/auth';
 import {  useNavigate } from 'react-router-dom';
+import { Spinner } from '@heroui/react';
+import { AuthContext } from '@/context/AuthContext';
+import { useContext, useEffect, useState } from 'react';
 
 export const cadastroProaeFormSchema = z.object({
-    cargo: z.string({error: 'Nome não pode estar vazio'}).min(5, "O campo cargo é obrigatório"),
+    cargo: z.string({error: 'Cargo não pode estar vazio'}).min(5, "O campo cargo é obrigatório"),
     email: z.email({error: "Email inválido"}).refine((val) => {
         return verificarEmailInstitucional(val, "@ufba.br");
     }, {error: "O email deve ser do domínio @ufba.br"}),
     senha: z.string({error: "Senha inválida"}).min(6, "A senha deve ter no mínimo 6 caracteres"),
     confirmarSenha: z.string({error: "Confirmação de senha inválida"}).min(6, "A confirmação de senha deve ter no mínimo 6 caracteres"),
-    nome: z.string().min(5, "O campo nome é obrigatório"),
-    data_nascimento: z.string().min(1, "Data de nascimento é obrigatória"),
-    cpf: z.string().refine((val) => {
+    nome: z.string({error: "O campo nome é obrigatório"}).min(2, "Nome deve ter no mínimo 2 caracteres"),
+    data_nascimento: z.string({error: "Data de nascimento é obrigatória"}).min(1, "Data de nascimento é obrigatória"),
+    cpf: z.string({error: "O campo CPF é obrigatório"}).refine((val) => {
         return validarCPFReal(val);
     }, {error: "CPF inválido"}),
-    celular: z.string().min(10, "O campo celular é obrigatório"),
+    celular: z.string({error: "O campo celular é obrigatório"}).min(10, "O campo celular é obrigatório"),
 }).refine((data) => data.senha === data.confirmarSenha, {
     message: "As senhas não coincidem"
 })
@@ -30,26 +32,38 @@ export const cadastroProaeFormSchema = z.object({
 export type CadastroFormData = z.infer<typeof cadastroProaeFormSchema>;
 
 export default function CadastroProae() {
-    const {control, handleSubmit, formState: { errors } } = useForm<CadastroFormData>({
+    const {control, handleSubmit, formState: { errors,  isSubmitting } } = useForm<CadastroFormData>({
         resolver: zodResolver(cadastroProaeFormSchema),
         mode: "onBlur",
     }); 
+    const [isLoading, setIsLoading] = useState(false);
+    const { isAuthenticated, registerAdmin} = useContext(AuthContext);
 
     const navigate = useNavigate();
 
-    const authService = new AuthService();
+    useEffect(() => {
+        if(isAuthenticated){
+            navigate("portal-proae/inscricoes");
+        }
+    }, [isAuthenticated]);
+
 
 
     const onSubmit = async (data: CadastroFormData) => {
         try {
-            const {confirmarSenha, ...dataSemConfirmarSenha} = data
-            const response = await authService.signupAdmin(dataSemConfirmarSenha)
+            setIsLoading(true);
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+
+            const response = await registerAdmin(data)
             if (response.success) {
                 toast.success(response.mensagem);
                 navigate("/login-proae");
             }
+            
         } catch (error) {
                 toast.error((error as DefaultResponse).mensagem || "Erro ao realizar cadastro. Tente novamente.");
+        }finally{
+            setIsLoading(false);
         }
     }
 
@@ -68,10 +82,11 @@ export default function CadastroProae() {
                             placeholder='Digite seu Nome'
                             label='Nome'
                             variant='bordered'
+                            isInvalid={!!errors.nome}
+                            errorMessage={errors.nome?.message}
                             />
                     }
                     />
-                    {errors.nome && <p className='text-red-500 text-sm mt-2'>{errors.nome.message}</p>}
                 </div>
 
                 <div>
@@ -83,10 +98,12 @@ export default function CadastroProae() {
                             placeholder='exemplo@ufba.br'
                             label='Email'
                             variant='bordered'
+                            isInvalid={!!errors.email}
+                            errorMessage={errors.email?.message}
                             />
                     }
                     />
-                    {errors.email && <p className='text-red-500 text-sm mt-2'>{errors.email.message}</p>}
+                  
                 </div>
                  <div>
                     <Controller
@@ -97,10 +114,11 @@ export default function CadastroProae() {
                             placeholder='Digite seu Cargo'
                             label='Cargo'
                             variant='bordered'
+                            isInvalid={!!errors.cargo}
+                            errorMessage={errors.cargo?.message}
                             />
                     }
                     />
-                    {errors.cargo && <p className='text-red-500 text-sm mt-2'>{errors.cargo.message}</p>}
                 </div>
                 <div>
                     <Controller
@@ -112,10 +130,11 @@ export default function CadastroProae() {
                             label='CPF'
                             variant='bordered'
                             onChange = {(val) => field.onChange(formatCPF(val.target.value))}
+                            isInvalid={!!errors.cpf}
+                            errorMessage={errors.cpf?.message}
                             />
                     }
                     />
-                    {errors.cpf && <p className='text-red-500 text-sm mt-2'>{errors.cpf.message}</p>}
                 </div>
                 <div>
                     <Controller
@@ -127,10 +146,11 @@ export default function CadastroProae() {
                             label='Celular'
                             variant='bordered'
                             onChange = {(val) => field.onChange(formatPhone(val.target.value))}
+                            isInvalid={!!errors.celular}
+                            errorMessage={errors.celular?.message}
                             />
                     }
                     />
-                    {errors.celular && <p className='text-red-500 text-sm mt-2'>{errors.celular.message}</p>}
                 </div>
                 <div>
                     <Controller
@@ -142,10 +162,11 @@ export default function CadastroProae() {
                             variant='bordered'
                             value={field.value ? undefined : null}
                             onChange={(val) => field.onChange(formatarData(val))}
+                            isInvalid={!!errors.data_nascimento}
+                            errorMessage={errors.data_nascimento?.message}
                             />
                     }
                     />
-                    {errors.data_nascimento && <p className='text-red-500 text-sm mt-2'>{errors.data_nascimento.message}</p>}
                 </div>
 
                 <div>
@@ -158,10 +179,11 @@ export default function CadastroProae() {
                             label='Senha'
                             type='password'
                             variant='bordered'
+                            isInvalid={!!errors.senha}
+                            errorMessage={errors.senha?.message}
                         />
                     }
                     />
-                    {errors.senha && <p className='text-red-500 text-sm mt-2'>{errors.senha.message}</p>}
                 </div>
 
 
@@ -175,10 +197,11 @@ export default function CadastroProae() {
                             label='Confirmar Senha'
                             type='password'
                             variant='bordered'
+                            isInvalid={!!errors.confirmarSenha}
+                            errorMessage={errors.confirmarSenha?.message}
                         />
                     }
                     />
-                    {errors.confirmarSenha && <p className='text-red-500 text-sm mt-2'>{errors.confirmarSenha.message}</p>}
                 </div>
                 
                 <Button 
@@ -186,8 +209,9 @@ export default function CadastroProae() {
                     variant='solid'
                     fullWidth
                     className='bg-[#183b4e] hover:bg-[#14526d] text-white p-6 rounded-xl font-[600] text-base'
+                    disabled={isLoading || isSubmitting}
                     >
-                    Cadastrar
+                    {isLoading || isSubmitting ? <Spinner size="md" className="text-white" /> : 'Cadastrar'}
                 </Button>
                 <a href="/login-proae" className='text-[#183b4e] underline text-center md:text-base text-sm'>Já possui uma conta? Faça login</a>
                 

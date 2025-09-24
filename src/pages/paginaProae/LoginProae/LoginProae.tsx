@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from 'react-hook-form';
 import { verificarEmailInstitucional } from "@/utils/validations";
 import "./LoginProae.css";
+import { Spinner } from "@heroui/react";
 
 const loginProaeSchema = z.object({
   email: z
@@ -42,7 +43,7 @@ export default function LoginProae() {
     control, 
     handleSubmit, 
     setValue, 
-    formState: { errors } 
+    formState: { errors, isSubmitting } 
   } = useForm<LoginProaeFormData>({
     resolver: zodResolver(loginProaeSchema),
     defaultValues: {
@@ -205,10 +206,10 @@ export default function LoginProae() {
                 fullWidth
                 className="login-button"
                 color="primary"
-                isLoading={isLoading}
-                disabled={isLoading}
+                isLoading={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting}
               >
-                {isLoading ? "Entrando..." : "Entrar"}
+                {isLoading || isSubmitting ? <Spinner size="md" className="text-white" /> : "Entrar"}
               </Button>
 
               <div className="register-link-container">
