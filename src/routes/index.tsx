@@ -21,8 +21,8 @@ import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno
 import ProtectedRouteHandler from "@/Auth/ProtectedRoute";
 import LoginAluno from "@/pages/paginaAluno/LoginAluno/LoginAluno";
 import LoginProae from "@/pages/paginaProae/LoginProae/LoginProae";
-import ForgotPassword from "@/pages/paginaAluno/forgotPassword/ForgotPassword";
-import ResetPassword from "@/pages/paginaAluno/resetPassword/ResetPassoword";
+import ForgotPassword from "@/pages/forgotPassword/ForgotPassword";
+import ResetPassword from "@/pages/resetPassword/ResetPassoword";
 import Questionario from "@/pages/questionarios/questionario";
 
 const routes = [
