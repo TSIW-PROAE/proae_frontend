@@ -4,6 +4,7 @@ export interface UserInfo{
   id: number;
   nome: string;
   email: string;
+  roles: UserRole[];
   [key: string]: any;
 }
 
@@ -37,10 +38,10 @@ export type UserLogin = {
 export interface UserLoginResponse {
   success: string;
   user: {
-    aluno_id: number
-    nome: string;
+    usuario_id: number
     email: string;
-    matricula: string;
+    nome: string;
+    roles: UserRole[];
   };
   [key: string]: any;
 }
@@ -56,6 +57,14 @@ export interface IResetPassword{
   token: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+export interface IValidateTokenResponse{
+  valid: boolean;
+  user: UserInfo;
+  roles: UserRole[];
+    payload: any;
+    error?: undefined;
 }
 
 export type UserRole = "admin" | "aluno";
