@@ -1,20 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AuthContext } from '@/context/AuthContext'
 import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
-import  {FetchAdapter} from '@/services/BaseRequestService/HttpClient'
-import CadastroAlunoService from '@/services/CadastroAluno.service/cadastroAluno.service'
+import AuthService from '@/services/AuthService/auth.service'
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
-  const client = new FetchAdapter();
-  const cadastroAlunoService = new CadastroAlunoService(client);
+  const authService = new AuthService();
 
   const login = useCallback(async (data: UserLogin) => {
     try {
-      const response = await cadastroAlunoService.LoginAluno(data);
+      const response = await authService.login(data);
       const fillUserInfo: UserInfo = {
         email: response.user.email,
         id: response.user.usuario_id,
@@ -31,14 +29,24 @@ function AuthProvider({children}: {children: React.ReactNode}){
   }, [])
 
   const logout = useCallback(() => {
-    cadastroAlunoService.LogoutAluno();
+    authService.logout();
     setIsAuthenticated(false);
     setUserInfo(null);
   }, []);
 
-  const register = useCallback(async (data: UserSignup) => {
+  const registerAdmin = useCallback(async (data: UserSignup) => {
     try {
-      const response = await cadastroAlunoService.createAlunoUser(data);
+      const response = await authService.signupAdmin(data);
+      return response;
+    } catch (error) {
+      console.error("Register failed:", error);
+      throw error;
+    }
+  }, [])
+
+  const registerAluno = useCallback(async (data: UserSignup) => {
+    try {
+      const response = await authService.signupAluno(data);
       return response;
     } catch (error) {
       console.error("Register failed:", error);
@@ -51,7 +59,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
       const checkAuth = async () => {
 
         try {
-            const response: any = await cadastroAlunoService.validateToken();
+            const response: any = await authService.validateToken();
             if (!response.valid) {
               throw new Error("Token inválido");
             }
@@ -67,7 +75,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
         } catch (error) {
           setIsAuthenticated(false);
           setUserInfo(null);
-          cadastroAlunoService.LogoutAluno();
+          authService.logout();
         } finally {
           setLoading(false);
         }
@@ -86,7 +94,8 @@ function AuthProvider({children}: {children: React.ReactNode}){
       userInfo,
       login,
       logout,
-      register,
+      registerAdmin,
+      registerAluno,
       loading,
     }}>
       {children}

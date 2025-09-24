@@ -1,6 +1,9 @@
-import z from "zod"
-import {verificarEmailInstitucional, validarCPFReal} from "@/utils/validations"
-export interface UserInfo{
+import z from "zod";
+import {
+  verificarEmailInstitucional,
+  validarCPFReal,
+} from "@/utils/validations";
+export interface UserInfo {
   id: number;
   nome: string;
   email: string;
@@ -8,12 +11,13 @@ export interface UserInfo{
   [key: string]: any;
 }
 
-export interface AuthContextType{
+export interface AuthContextType {
   isAuthenticated: boolean;
   userInfo: UserInfo | null;
-  login: (data: UserLogin) => Promise <UserLoginResponse>;
+  login: (data: UserLogin) => Promise<UserLoginResponse>;
   logout: () => void;
-  register: (data: UserSignup) => Promise<any>;
+  registerAluno: (data: UserSignup) => Promise<DefaultResponse>;
+  registerAdmin: (data: UserSignup) => Promise<DefaultResponse>;
   loading: boolean;
 }
 
@@ -28,17 +32,17 @@ export type UserSignup = {
   cpf: string;
   data_ingresso: string;
   celular: string;
-}
+};
 
 export type UserLogin = {
   email: string;
   senha: string;
-}
+};
 
 export interface UserLoginResponse {
   success: string;
   user: {
-    usuario_id: number
+    usuario_id: number;
     email: string;
     nome: string;
     roles: UserRole[];
@@ -47,24 +51,24 @@ export interface UserLoginResponse {
 }
 
 // TODO: Remover declaração any ao finalizar a implementação
-export interface UserSignupResponse {
+export interface DefaultResponse {
   success: string;
   mensagem: string;
-  [key:string]: any;
+  [key: string]: any;
 }
 
-export interface IResetPassword{
+export interface IResetPassword {
   token: string;
   newPassword: string;
   confirmPassword: string;
 }
 
-export interface IValidateTokenResponse{
+export interface IValidateTokenResponse {
   valid: boolean;
   user: UserInfo;
   roles: UserRole[];
-    payload: any;
-    error?: undefined;
+  payload: any;
+  error?: undefined;
 }
 
 export type UserRole = "admin" | "aluno";
@@ -73,14 +77,17 @@ export type UserRole = "admin" | "aluno";
 
 export const SignUpAdmin = z.object({
   cargo: z.string(),
-  email: z.email().refine((value) => {
-    return verificarEmailInstitucional(value, "@ufba.br")
-  }, { message: "Email deve ser institucional (@ufba.br)"}),
+  email: z.email().refine(
+    (value) => {
+      return verificarEmailInstitucional(value, "@ufba.br");
+    },
+    { message: "Email deve ser institucional (@ufba.br)" }
+  ),
   senha: z.string(),
   nome: z.string(),
   dataNascimento: z.string(),
   cpf: z.string().refine((value) => {
-    return validarCPFReal(value)
+    return validarCPFReal(value);
   }),
-  celular: z.string()
-})
+  celular: z.string(),
+});

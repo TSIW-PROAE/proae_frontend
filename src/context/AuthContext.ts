@@ -8,6 +8,7 @@ export const AuthContext = createContext<AuthContextType>({
     return Promise.reject(new Error("Not implemented " + data));
   },
   logout: () => {},
-  register: (data: UserSignup) => {return Promise.reject(new Error("Not implemented " + data));},
+  registerAluno: (data: UserSignup) => {return Promise.reject(new Error("Not implemented " + data));},
+  registerAdmin: (data: UserSignup) => {return Promise.reject(new Error("Not implemented " + data));},
   loading: true,
 })

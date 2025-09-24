@@ -7,8 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { DateValue } from "@internationalized/date";
 import { toast, Toaster } from "react-hot-toast";
 import "./CadastroAluno.css";
-import CadastroAlunoService from "../../../services/CadastroAluno.service/cadastroAluno.service";
-import { FetchAdapter } from "../../../services/BaseRequestService/HttpClient";
+import AuthService from "../../../services/AuthService/auth.service";
 import useFormValidation, { FormData } from "@/hooks/useFormValidation";
 import { formatarData, formatarCelular, formatCPF } from "../../../utils/validations";
 import {campus} from "../../../utils/cadastroop";
@@ -73,12 +72,10 @@ export default function Cadastro() {
         celular: formatarCelular(formData.celular),
       };
 
-      const client = new FetchAdapter();
-      const cadastroAlunoService = new CadastroAlunoService(client);
+      const authService = new AuthService();
 
       try {
-        const response =
-          await cadastroAlunoService.createAlunoUser(dadosFormatados);
+        const response = await authService.signupAluno(dadosFormatados);
         console.log(response);
         toast.success("Cadastro realizado com sucesso!");
         navigate("/login-aluno");
