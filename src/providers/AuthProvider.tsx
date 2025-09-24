@@ -17,8 +17,9 @@ function AuthProvider({children}: {children: React.ReactNode}){
       const response = await cadastroAlunoService.LoginAluno(data);
       const fillUserInfo: UserInfo = {
         email: response.user.email,
-        id: response.user.aluno_id,
-        nome: response.user.nome
+        id: response.user.usuario_id,
+        nome: response.user.nome,
+        roles: response.user.roles
       }
       setUserInfo(fillUserInfo);
       setIsAuthenticated(true);
@@ -46,17 +47,20 @@ function AuthProvider({children}: {children: React.ReactNode}){
   }, [])
 
   useEffect(() => {
-    // TODO: Melhorar lógica de verificação de rotas públicas e privadas
 
       const checkAuth = async () => {
 
         try {
             const response: any = await cadastroAlunoService.validateToken();
-            const fillUserInfo: UserInfo = {
-              email: response.user?.email || response.email,
-              id: response.user?.id || response.user?.aluno_id || response.id,
-              nome: response.user?.nome || response.nome,
+            if (!response.valid) {
+              throw new Error("Token inválido");
             }
+             const fillUserInfo: UserInfo = {
+                email: response.user.email,
+                id: response.user.usuario_id,
+                nome: response.user.nome,
+                roles: response.user.roles
+              }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);
 
