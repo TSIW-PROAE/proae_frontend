@@ -1,8 +1,5 @@
-import z from "zod";
-import {
-  verificarEmailInstitucional,
-  validarCPFReal,
-} from "@/utils/validations";
+
+import { CadastroFormData } from "@/pages/paginaProae/CadastroProae/CadastroProae";
 export interface UserInfo {
   id: number;
   nome: string;
@@ -17,7 +14,7 @@ export interface AuthContextType {
   login: (data: UserLogin) => Promise<UserLoginResponse>;
   logout: () => void;
   registerAluno: (data: UserSignup) => Promise<DefaultResponse>;
-  registerAdmin: (data: UserSignup) => Promise<DefaultResponse>;
+  registerAdmin: (data: CadastroFormData) => Promise<DefaultResponse>;
   loading: boolean;
 }
 
@@ -50,7 +47,6 @@ export interface UserLoginResponse {
   [key: string]: any;
 }
 
-// TODO: Remover declaração any ao finalizar a implementação
 export interface DefaultResponse {
   success: string;
   mensagem: string;
@@ -72,22 +68,3 @@ export interface IValidateTokenResponse {
 }
 
 export type UserRole = "admin" | "aluno";
-
-// Schemas com zod
-
-export const SignUpAdmin = z.object({
-  cargo: z.string(),
-  email: z.email().refine(
-    (value) => {
-      return verificarEmailInstitucional(value, "@ufba.br");
-    },
-    { message: "Email deve ser institucional (@ufba.br)" }
-  ),
-  senha: z.string(),
-  nome: z.string(),
-  dataNascimento: z.string(),
-  cpf: z.string().refine((value) => {
-    return validarCPFReal(value);
-  }),
-  celular: z.string(),
-});

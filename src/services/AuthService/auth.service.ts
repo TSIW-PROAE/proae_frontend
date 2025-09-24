@@ -7,6 +7,7 @@ import {
   IResetPassword,
   UserLogin,
 } from "@/types/auth";
+import { CadastroFormData } from "@/pages/paginaProae/CadastroProae/CadastroProae";
 
 const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/auth";
 
@@ -38,7 +39,7 @@ export default class AuthService {
     return response.data;
   }
 
-  async signupAdmin(data: UserSignup): Promise<DefaultResponse> {
+  async signupAdmin(data: Omit<CadastroFormData, "confirmarSenha">): Promise<DefaultResponse> {
     const response = await this.httpClient.post<DefaultResponse>(
       `${BASE_URL}/signup-admin`,
       data

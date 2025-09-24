@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { AuthContext } from '@/context/AuthContext'
 import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
 import AuthService from '@/services/AuthService/auth.service'
+import { CadastroFormData } from '@/pages/paginaProae/CadastroProae/CadastroProae';
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -34,7 +35,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
     setUserInfo(null);
   }, []);
 
-  const registerAdmin = useCallback(async (data: UserSignup) => {
+  const registerAdmin = useCallback(async (data: CadastroFormData) => {
     try {
       const response = await authService.signupAdmin(data);
       return response;
@@ -83,10 +84,6 @@ function AuthProvider({children}: {children: React.ReactNode}){
       }
       checkAuth();
   }, []);
-
-
-
-
 
   return (
     <AuthContext.Provider value={{
