@@ -14,6 +14,8 @@ import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.ts
 import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
 import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
 import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
+import CadastroProae from "@/pages/paginaProae/CadastroProae/CadastroProae.tsx";
+import TelaDeEspera from "@/pages/paginaProae/TelaDeEspera/TelaDeEspera";
 
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
@@ -50,6 +52,8 @@ const routes = [
         ],
       },
       {path: "login-proae", element: <LoginProae />},
+      {path: "cadastro-proae", element: <CadastroProae />},
+      {path: "tela-de-espera", element: <TelaDeEspera />},
       {
         element: <ProtectedRouteHandler />,
         children: [
