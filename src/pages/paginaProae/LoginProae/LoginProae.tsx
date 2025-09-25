@@ -89,20 +89,13 @@ export default function LoginProae() {
   return (
     <div id="login" className="w-full min-h-screen flex items-center justify-center bg-login-background bg-cover bg-center bg-[#183b4e]">
       <Toaster position="top-right" />
-      <div className="w-[90%] max-w-screen-md flex flex-col items-center">
+      <div className="w-full max-w-screen-sm flex flex-col items-center">
         <div className="w-full bg-[#ffff] rounded-[24px] shadow-lg flex flex-col md:flex-row overflow-hidden justify-center">
-          <a
-            href="/"
-            className="voltar-link-login"
-            style={{ color: "var(--cor-creme)" }}
-          >
-            <span style={{ marginRight: "5px" }}>←</span>
-            Página inicial
-          </a>
+         
 
           
 
-          <div className="md:w-8/12 h-full md:p-10 p-4 w-full">
+          <div className="h-full md:p-12 p-6 w-full">
             <div className="mb-6 text-center">
               <h2 className="login-title">Faça Login</h2>
               <p className="login-subtitle">
