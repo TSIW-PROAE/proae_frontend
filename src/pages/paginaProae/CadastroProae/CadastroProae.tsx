@@ -55,7 +55,7 @@ export default function CadastroProae() {
             const response = await registerAdmin(data)
             if (response.sucesso) {
                 toast.success(response.mensagem);
-                navigate("/login-proae");
+                navigate("/login");
             }
             
         } catch (error) {
@@ -211,7 +211,7 @@ export default function CadastroProae() {
                     >
                     {isLoading ? <Spinner size="md" className="text-white" /> : 'Cadastrar'}
                 </Button>
-                <a href="/login-proae" className='text-[#183b4e] underline text-center md:text-base text-sm'>Já possui uma conta? Faça login</a>
+                <a href="/login" className='text-[#183b4e] underline text-center md:text-base text-sm'>Já possui uma conta? Faça login</a>
                 
             </form>
         </div>

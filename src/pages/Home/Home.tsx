@@ -58,7 +58,7 @@ export default function Home() {
         navigate('/portal-aluno')
       }
     } else {
-      navigate("/login-aluno") ;
+      navigate("/login") ;
     }
   };
 
@@ -68,11 +68,11 @@ export default function Home() {
         <div className="logo">
           <h1>PROAE</h1>
         </div>
-        <div className="header-actions">
+        <div className="header-actions ">
             <Button
               radius="full"
               onPress={handleAccessPortal}
-              className="login-button-dash"
+              className="n-button-dash bg-[#183b4e] text-white"
             >
               {isAuthenticated ? "Acessar Portal" : "Entrar"}
             </Button>
