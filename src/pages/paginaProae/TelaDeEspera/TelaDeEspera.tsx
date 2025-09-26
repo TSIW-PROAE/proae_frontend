@@ -1,9 +1,44 @@
 import { Spinner } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@heroui/button";
+import { AuthContext } from "@/context/AuthContext";
+import { useContext, useEffect, useState } from "react";
 
 export default function TelaDeEspera() {
     const navigate = useNavigate();
+    const { userInfo, checkAuth } = useContext(AuthContext);
+    const [_, setLastCheck] = useState<Date | null>(null);
+    const [isChecking, setIsChecking] = useState(false);
+
+    useEffect(() => {
+        async function handleCheckAuth(){
+            await checkAuth();
+        }
+        handleCheckAuth();       
+    }, []);
+
+    useEffect(() => {
+        const intervalId = setInterval(async () => {
+            if (!isChecking) {
+                setIsChecking(true);
+                try{
+                    await checkAuth();
+                    setLastCheck(new Date());
+                } finally{
+                    setIsChecking(false);
+                }
+            }
+        }, 10000)
+
+        return () => clearInterval(intervalId);
+    }, [isChecking])
+
+    useEffect(() => {
+        if(userInfo?.aprovado){
+            navigate("/portal-proae/inscricoes");
+        }
+    }, [userInfo])
+
 
     const handleVoltar = () => {
         navigate("/login-proae");
