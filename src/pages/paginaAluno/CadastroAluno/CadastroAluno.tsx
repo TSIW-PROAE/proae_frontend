@@ -78,7 +78,7 @@ export default function Cadastro() {
         const response = await authService.signupAluno(dadosFormatados);
         console.log(response);
         toast.success("Cadastro realizado com sucesso!");
-        navigate("/login-aluno");
+        navigate("/login");
       } catch (error: any) {
         console.log(error);
 

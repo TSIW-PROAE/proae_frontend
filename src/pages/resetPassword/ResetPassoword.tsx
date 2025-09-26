@@ -58,7 +58,7 @@ export default function ResetPassword() {
 
       await authService.resetPassword({...data, token});
       toast.success("Senha alterada com sucesso!");
-      navigate("/login-aluno")
+      navigate("/login")
     } catch (error) {
       if((error as any)?.statusCode == 401){
         toast.error("Erro ao alterar a senha. Por favor, tente novamente mais tarde.");

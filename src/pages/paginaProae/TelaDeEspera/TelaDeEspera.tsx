@@ -41,7 +41,7 @@ export default function TelaDeEspera() {
 
 
     const handleVoltar = () => {
-        navigate("/login-proae");
+        navigate("/login");
     };
 
     return (

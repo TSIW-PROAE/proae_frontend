@@ -76,7 +76,7 @@ export default function ForgotPassword() {
         </button>
         </div>
           <div className="forgot-links">
-            <a href="/login-aluno" className="forgot-link">Voltar para Login</a>
+            <a href="/login" className="forgot-link">Voltar para Login</a>
             <a href="/cadastro-aluno" className="forgot-link">Cadastrar-se no sistema</a>
           </div>
       </form>

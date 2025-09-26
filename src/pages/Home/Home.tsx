@@ -130,7 +130,7 @@ export default function Home() {
                             }))
                           : []
                       }
-                      onInscrever={() => navigate("/login-aluno")}
+                      onInscrever={() => navigate("/login")}
                     />
                   ))
                 )}
