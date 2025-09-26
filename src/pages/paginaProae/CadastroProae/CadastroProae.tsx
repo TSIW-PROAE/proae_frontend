@@ -32,7 +32,7 @@ export const cadastroProaeFormSchema = z.object({
 export type CadastroFormData = z.infer<typeof cadastroProaeFormSchema>;
 
 export default function CadastroProae() {
-    const {control, handleSubmit, formState: { errors,  isSubmitting } } = useForm<CadastroFormData>({
+    const {control, handleSubmit, formState: { errors } } = useForm<CadastroFormData>({
         resolver: zodResolver(cadastroProaeFormSchema),
         mode: "onBlur",
     }); 
@@ -52,10 +52,8 @@ export default function CadastroProae() {
     const onSubmit = async (data: CadastroFormData) => {
         try {
             setIsLoading(true);
-                        await new Promise(resolve => setTimeout(resolve, 3000));
-
             const response = await registerAdmin(data)
-            if (response.success) {
+            if (response.sucesso) {
                 toast.success(response.mensagem);
                 navigate("/login-proae");
             }
@@ -209,9 +207,9 @@ export default function CadastroProae() {
                     variant='solid'
                     fullWidth
                     className='bg-[#183b4e] hover:bg-[#14526d] text-white p-6 rounded-xl font-[600] text-base'
-                    disabled={isLoading || isSubmitting}
+                    disabled={isLoading}
                     >
-                    {isLoading || isSubmitting ? <Spinner size="md" className="text-white" /> : 'Cadastrar'}
+                    {isLoading ? <Spinner size="md" className="text-white" /> : 'Cadastrar'}
                 </Button>
                 <a href="/login-proae" className='text-[#183b4e] underline text-center md:text-base text-sm'>Já possui uma conta? Faça login</a>
                 
