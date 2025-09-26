@@ -23,7 +23,6 @@ if (loading) {
 if (!isAuthenticated) {
     return <Navigate to="/" replace />;
 }
-console.log(userInfo);
 
 if(userInfo?.roles.includes('admin') && userInfo?.aprovado){
     return <ProtectedProae />;
