@@ -11,7 +11,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from 'react-hook-form';
 import { verificarEmailInstitucional } from "@/utils/validations";
-import "./LoginProae.css";
+import "./Login.css";
 import { Spinner } from "@heroui/react";
 
 const loginProaeSchema = z.object({
@@ -87,10 +87,18 @@ export default function LoginProae() {
   };
 
   return (
-    <div id="login" className="w-full min-h-screen flex items-center justify-center bg-login-background bg-cover bg-center bg-[#183b4e]">
+    <div id="login" className="w-full min-h-screen flex items-center justify-center bg-login-background bg-cover bg-center bg-[#183b4e] p-4">
       <Toaster position="top-right" />
-      <div className="w-full max-w-screen-sm flex flex-col items-center">
+      
+      <div className="w-full max-w-screen-md flex flex-col items-center">
+        
         <div className="w-full bg-[#ffff] rounded-[24px] shadow-lg flex flex-col md:flex-row overflow-hidden justify-center">
+          <div className="logo-container flex items-end justify-end">
+            <a href="/" className="z-10 text-white font-medium text-sm">
+            <span style={{ marginRight: "5px" }}>←</span>
+            Página inicial
+            </a>
+          </div>
          
 
           
@@ -205,14 +213,32 @@ export default function LoginProae() {
                 {isLoading || isSubmitting ? <Spinner size="md" className="text-white" /> : "Entrar"}
               </Button>
 
-              <div className="register-link-container">
-                <Link
-                  href="./cadastro-proae"
-                  className="register-link"
-                  color="primary"
-                >
-                  Cadastrar-se no sistema
-                </Link>
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <p className="text-center text-gray-600 mb-4">
+                  Novo no sistema? Cadastre-se como:
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link
+                    href="./cadastro-aluno"
+                    className="flex items-center justify-center py-2 px-4 border border-[#183b4e] text-[#183b4e] hover:bg-[#183b4e10] rounded-lg transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Aluno
+                  </Link>
+                  
+                  <Link
+                    href="./cadastro-proae"
+                    className="flex items-center justify-center py-2 px-4 border border-[#183b4e] text-[#183b4e] hover:bg-[#183b4e10] rounded-lg transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Administrador PROAE
+                  </Link>
+                </div>
               </div>
 
             </form>

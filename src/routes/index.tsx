@@ -21,8 +21,7 @@ import TelaDeEspera from "@/pages/paginaProae/TelaDeEspera/TelaDeEspera";
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
 import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
 import ProtectedRouteHandler from "@/Auth/ProtectedRoute";
-import LoginAluno from "@/pages/paginaAluno/LoginAluno/LoginAluno";
-import LoginProae from "@/pages/paginaProae/LoginProae/LoginProae";
+import Login from "@/pages/Login/Login";
 import ForgotPassword from "@/pages/forgotPassword/ForgotPassword";
 import ResetPassword from "@/pages/resetPassword/ResetPassoword";
 import Questionario from "@/pages/questionarios/questionario";
@@ -36,8 +35,8 @@ const routes = [
         path: "",
         element: <Home />,
       },
+      {path: "login", element: <Login />},
       { path: "cadastro-aluno", element: <CadastroAluno /> },
-      {path: "login-aluno", element: <LoginAluno />},
       {path: "forgot-password", element: <ForgotPassword />},
       {path: "reset-password", element: <ResetPassword />},
       {
@@ -51,7 +50,6 @@ const routes = [
 
         ],
       },
-      {path: "login-proae", element: <LoginProae />},
       {path: "cadastro-proae", element: <CadastroProae />},
       {path: "tela-de-espera", element: <TelaDeEspera />},
       {
