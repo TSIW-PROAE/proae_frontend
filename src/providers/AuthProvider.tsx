@@ -37,8 +37,8 @@ function AuthProvider({children}: {children: React.ReactNode}){
 
   const registerAdmin = useCallback(async (data: CadastroFormData) => {
     try {
-      const {confirmarSenha, ...dataWihtoutConfirmPass} = data;
-      const response = await authService.signupAdmin(dataWihtoutConfirmPass);
+      const {confirmarSenha, ...dataWithoutConfirmPass} = data;
+      const response = await authService.signupAdmin(dataWithoutConfirmPass);
       return response;
     } catch (error) {
       console.error("Register failed:", error);
