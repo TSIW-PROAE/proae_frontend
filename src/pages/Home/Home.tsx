@@ -38,7 +38,13 @@ export default function Home() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-        navigate("/portal-aluno");
+        if(userInfo?.roles.includes('admin') && userInfo?.aprovado){
+            navigate("/portal-proae/inscricoes");
+        } else if(userInfo?.aprovado == false){
+            navigate("/tela-de-espera");
+        } else{
+            navigate("/portal-aluno");
+        }
       } else {
         navigate("/")
       }
@@ -46,9 +52,13 @@ export default function Home() {
 
   const handleAccessPortal = () => {
     if (isAuthenticated) {
-        navigate("/portal-aluno");
-      } else {
-        navigate("/login-aluno") ;
+      if(userInfo?.roles.includes('admin') && userInfo?.aprovado){
+            navigate("/portal-proae/inscricoes");
+      } else{
+        navigate('/portal-aluno')
+      }
+    } else {
+      navigate("/login-aluno") ;
     }
   };
 
