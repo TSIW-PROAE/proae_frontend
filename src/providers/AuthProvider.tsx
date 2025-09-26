@@ -37,7 +37,8 @@ function AuthProvider({children}: {children: React.ReactNode}){
 
   const registerAdmin = useCallback(async (data: CadastroFormData) => {
     try {
-      const response = await authService.signupAdmin(data);
+      const {confirmarSenha, ...dataWihtoutConfirmPass} = data;
+      const response = await authService.signupAdmin(dataWihtoutConfirmPass);
       return response;
     } catch (error) {
       console.error("Register failed:", error);
@@ -55,11 +56,8 @@ function AuthProvider({children}: {children: React.ReactNode}){
     }
   }, [])
 
-  useEffect(() => {
-
-      const checkAuth = async () => {
-
-        try {
+  const checkAuth = useCallback(async () => {
+    try {
             const response: any = await authService.validateToken();
             if (!response.valid) {
               throw new Error("Token inválido");
@@ -68,7 +66,8 @@ function AuthProvider({children}: {children: React.ReactNode}){
                 email: response.user.email,
                 id: response.user.usuario_id,
                 nome: response.user.nome,
-                roles: response.user.roles
+                roles: response.user.roles,
+                aprovado: response.user.admin.aprovado
               }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);
@@ -82,7 +81,10 @@ function AuthProvider({children}: {children: React.ReactNode}){
         }
         return;
       }
-      checkAuth();
+  , [])
+
+  useEffect(() => {
+    checkAuth();
   }, []);
 
   return (
@@ -93,6 +95,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
       logout,
       registerAdmin,
       registerAluno,
+      checkAuth,
       loading,
     }}>
       {children}

@@ -15,6 +15,7 @@ export interface AuthContextType {
   logout: () => void;
   registerAluno: (data: UserSignup) => Promise<DefaultResponse>;
   registerAdmin: (data: CadastroFormData) => Promise<DefaultResponse>;
+  checkAuth: () => Promise<void>;
   loading: boolean;
 }
 

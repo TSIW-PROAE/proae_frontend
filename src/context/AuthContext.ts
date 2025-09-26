@@ -11,5 +11,6 @@ export const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   registerAluno: (data: UserSignup) => {return Promise.reject(new Error("Not implemented " + data));},
   registerAdmin: (data: CadastroFormData) => {return Promise.reject(new Error("Not implemented " + data));},
+  checkAuth: async  () => {return Promise.resolve()},
   loading: true,
 })
