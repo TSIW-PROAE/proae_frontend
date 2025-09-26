@@ -7,7 +7,6 @@ export default function ProtectedRouteProae() {
   const location = useLocation();
   const { logout } = useContext(AuthContext);
 
-
   const routesToNotRenderSideBar = ["/portal-proae/cadastro-edital"];
   const shouldShowSideBar = !routesToNotRenderSideBar.includes(
     location.pathname
@@ -20,6 +19,8 @@ export default function ProtectedRouteProae() {
           homeIconRedirect={"/portal-proae/inscricoes"}
           processIconRedirect={"/portal-proae/processos"}
           docsIconRedirect={""}
+          studentsIconRedirect={"/portal-proae/gerenciamento-alunos"}
+          studentsIconLabel="Alunos"
           configIconRedirect={"/portal-proae/configuracao"}
           logoutIconRedirect={"/"}
           logoutOnClick={logout}

@@ -14,6 +14,7 @@ import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.ts
 import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
 import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
 import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
+import GerenciamentoAlunos from "../pages/paginaProae/GerenciamentoAlunos/GerenciamentoAlunos";
 
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
@@ -35,24 +36,31 @@ const routes = [
         element: <Home />,
       },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
-      {path: "login-aluno", element: <LoginAluno />},
-      {path: "forgot-password", element: <ForgotPassword />},
-      {path: "reset-password", element: <ResetPassword />},
+      { path: "login-aluno", element: <LoginAluno /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password", element: <ResetPassword /> },
       {
         element: <ProtectedRouteAluno />,
         children: [
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
-          { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
+          {
+            path: "portal-aluno/pendencias/:inscricaoId",
+            element: <PendenciasAluno />,
+          },
         ],
       },
-      {path: "login-proae", element: <LoginProae />},
+      { path: "login-proae", element: <LoginProae /> },
       {
         element: <ProtectedRouteProae />,
         children: [
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
+          {
+            path: "portal-proae/gerenciamento-alunos",
+            element: <GerenciamentoAlunos />,
+          },
           { path: "portal-proae/configuracao", element: <ConfiguracaoProae /> },
           { path: "portal-proae/cadastro-edital", element: <CadastroEdital /> },
         ],

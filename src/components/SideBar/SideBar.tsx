@@ -6,6 +6,7 @@ import {
   Settings,
   BookOpen,
   LogOut,
+  Users,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
@@ -16,6 +17,8 @@ export interface ISideBarProps {
   docsIconRedirect: string;
   logoutIconRedirect: string;
   logoutOnClick: () => void;
+  studentsIconRedirect?: string;
+  studentsIconLabel?: string;
 }
 
 export interface ISideBarIconsConfig {
@@ -34,6 +37,8 @@ const SideBar: React.FC<ISideBarProps> = ({
   logoutIconRedirect,
   logoutOnClick,
   docsIconRedirect = "",
+  studentsIconRedirect = "",
+  studentsIconLabel = "Alunos",
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -64,6 +69,13 @@ const SideBar: React.FC<ISideBarProps> = ({
       label: "Processos",
       redirect: processIconRedirect,
       shouldShowIcon: processIconRedirect !== "",
+    },
+    {
+      icon: Users,
+      alt: studentsIconLabel,
+      label: studentsIconLabel,
+      redirect: studentsIconRedirect,
+      shouldShowIcon: studentsIconRedirect !== "",
     },
     {
       icon: BookOpen,
