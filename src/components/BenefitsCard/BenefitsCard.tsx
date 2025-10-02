@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, CardHeader, CardBody, CardFooter, Chip } from "@heroui/react";
+import { Award } from "lucide-react";
 
 interface Benefit {
   titulo_beneficio: string;
@@ -40,10 +41,10 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
         border: "1px solid rgba(229, 231, 235, 0.8)",
       }}
     >
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-4 flex gap-2">
+        <Award className="w-5 h-5 text-emerald-600" />
         <h3
-          className="text-xl font-semibold mb-0"
-          style={{ color, fontSize: "1.25rem" }}
+          className="text-2xl font-semibold text-gray-900 m-0"
         >
           Meus Benefícios
         </h3>

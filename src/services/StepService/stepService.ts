@@ -1,0 +1,31 @@
+import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import { StepResponseDto } from "@/types/step";
+
+const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/steps";
+
+export class StepService {
+  private httpClient: FetchAdapter;
+
+  constructor() {
+    this.httpClient = new FetchAdapter();
+  }
+
+  async criarStep(_editalId: number, _texto: string): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
+  
+  async listarStepsPorEdital(editalId: string): Promise<StepResponseDto[]> {
+    return this.httpClient.get<StepResponseDto[]>(`${BASE_URL}/edital/${editalId}/with-perguntas`);
+  }
+
+  async deletarStep(_stepId: number): Promise<any> {
+     throw new Error("Method not implemented.");
+  }
+
+  async atualizarStep(_stepId: number, _texto: string): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
+
+}
+
+export const stepService = new StepService();

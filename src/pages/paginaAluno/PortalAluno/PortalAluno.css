@@ -2,7 +2,7 @@
 
 .portal-container {
   max-width: 1400px;
-  margin: 0 auto;
+  margin: auto;
   padding: 1rem;
 }
 
@@ -278,6 +278,12 @@
   margin-bottom: 1rem;
 }
 
+/* Forçar alinhamento à esquerda dos headers somente nesta página
+   evitando conflito com outros .section-header globais */
+.portal-container .section-header {
+  justify-content: flex-start;
+}
+
 .section-title {
   font-size: 1.5rem;
   font-weight: 600;
@@ -346,6 +352,12 @@
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(229, 231, 235, 0.8);
+  /* Centralizar conteúdo com o ícone */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .empty-icon {
@@ -425,7 +437,7 @@
   color: #6b7280;
   margin: 0;
 }
-
+url(PortalAluno.css)
 /* Estilos para OpenSelections - Cards Quadráticos */
 .open-selections-container {
   background: white;
@@ -433,9 +445,8 @@
   padding: 1.25rem;
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(229, 231, 235, 0.8);
-  height: fit-content;
+  height: 100%;
   min-height: 380px;
-  max-height: 580px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -482,6 +493,9 @@
   margin-bottom: 1.25rem;
   flex: 1;
   align-content: start;
+  /* Garantir que todos os cards ocupem a mesma largura e se estiquem igualmente */
+  align-items: stretch;
+  justify-items: stretch;
 }
 
 .selection-card {
@@ -561,6 +575,7 @@
   line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-wrap: break-word;
@@ -573,6 +588,7 @@
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
@@ -638,6 +654,12 @@
 .empty-selections {
   text-align: center;
   padding: 2rem 1rem;
+  /* Centralizar vertical e horizontalmente o estado vazio dentro do container */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
 }
 
 .empty-selections .empty-icon {
@@ -1051,12 +1073,14 @@
     font-size: 0.9375rem;
     line-height: 1.3;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .selection-card-description {
     font-size: 0.8125rem;
     line-height: 1.3;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .selections-grid {

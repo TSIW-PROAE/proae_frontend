@@ -4,9 +4,9 @@ import { Input } from "@heroui/input";
 import { Switch } from "@heroui/switch";
 import { Link } from "@heroui/link";
 import { useLocation, useNavigate } from "react-router-dom"; import { toast, Toaster } from "react-hot-toast";
-import "./LoginAluno.css";
 import { AuthContext } from "@/context/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
+import "./LoginAluno.css";
 
 export default function LoginAluno() {
   const [email, setEmail] = useState("");
@@ -98,7 +98,7 @@ export default function LoginAluno() {
             {/* A imagem agora está como background no CSS */}
           </div>
 
-          <div className="form-container">
+          <div className="md:w-8/12 h-full md:p-10 p-4 w-full">
             <div className="login-header">
               <h2 className="login-title">Faça Login</h2>
               <p className="login-subtitle">
@@ -107,7 +107,7 @@ export default function LoginAluno() {
             </div>
 
             <form className="login-form-container" onSubmit={handleSubmit}>
-              <div className="input-container">
+              <div>
                 <Input
                   id="email"
                   value={email}
@@ -127,7 +127,7 @@ export default function LoginAluno() {
                 />
               </div>
 
-              <div className="input-container">
+              <div>
                 <Input
                   id="senha"
                   label="Senha"
