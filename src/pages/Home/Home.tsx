@@ -38,7 +38,13 @@ export default function Home() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-        navigate("/portal-aluno");
+        if(userInfo?.roles.includes('admin') && userInfo?.aprovado){
+            navigate("/portal-proae/inscricoes");
+        } else if(userInfo?.aprovado == false){
+            navigate("/tela-de-espera");
+        } else{
+            navigate("/portal-aluno");
+        }
       } else {
         navigate("/")
       }
@@ -46,9 +52,13 @@ export default function Home() {
 
   const handleAccessPortal = () => {
     if (isAuthenticated) {
-        navigate("/portal-aluno");
-      } else {
-        navigate("/login-aluno") ;
+      if(userInfo?.roles.includes('admin') && userInfo?.aprovado){
+            navigate("/portal-proae/inscricoes");
+      } else{
+        navigate('/portal-aluno')
+      }
+    } else {
+      navigate("/login") ;
     }
   };
 
@@ -58,11 +68,11 @@ export default function Home() {
         <div className="logo">
           <h1>PROAE</h1>
         </div>
-        <div className="header-actions">
+        <div className="header-actions ">
             <Button
               radius="full"
               onPress={handleAccessPortal}
-              className="login-button-dash"
+              className="n-button-dash bg-[#183b4e] text-white"
             >
               {isAuthenticated ? "Acessar Portal" : "Entrar"}
             </Button>
@@ -120,7 +130,7 @@ export default function Home() {
                             }))
                           : []
                       }
-                      onInscrever={() => navigate("/login-aluno")}
+                      onInscrever={() => navigate("/login")}
                     />
                   ))
                 )}

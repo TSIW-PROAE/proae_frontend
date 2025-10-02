@@ -1,3 +1,4 @@
+import { CadastroFormData } from "@/pages/paginaProae/CadastroProae/CadastroProae";
 import { AuthContextType, UserLogin, UserSignup } from "@/types/auth";
 import { createContext } from "react";
 
@@ -8,9 +9,8 @@ export const AuthContext = createContext<AuthContextType>({
     return Promise.reject(new Error("Not implemented " + data));
   },
   logout: () => {},
-  register: (data: UserSignup) => {return Promise.reject(new Error("Not implemented " + data));},
-  Oauth_login: () => {},
-  Oauth_logout: () => {},
-  Oauth_register: () => {},
+  registerAluno: (data: UserSignup) => {return Promise.reject(new Error("Not implemented " + data));},
+  registerAdmin: (data: CadastroFormData) => {return Promise.reject(new Error("Not implemented " + data));},
+  checkAuth: async  () => {return Promise.resolve()},
   loading: true,
 })
