@@ -15,6 +15,8 @@ interface QuestionariosSectionProps {
   onQuestionariosChange: (questionarios: EditableQuestionario[]) => void;
   onToggleOpen: () => void;
   onOpenQuestionario: (index: number) => void;
+  onAddQuestionario: () => void;
+  onSaveQuestionario: (index: number) => void;
 }
 
 const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
@@ -23,6 +25,8 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
   onQuestionariosChange,
   onToggleOpen,
   onOpenQuestionario,
+  onAddQuestionario,
+  onSaveQuestionario,
 }) => {
   const updateQuestionario = (
     index: number,
@@ -31,33 +35,16 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
   ) => {
     const list = [...questionarios];
     list[index].value = { ...list[index].value, [field]: value };
-    onQuestionariosChange(list);
-  };
-
-  const toggleQuestionarioEditing = (index: number, editing: boolean) => {
-    const list = [...questionarios];
-    list[index].isEditing = editing;
+    // Atualiza também o campo 'nome' quando 'titulo' for alterado
+    if (field === "titulo") {
+      list[index].value.nome = value;
+    }
     onQuestionariosChange(list);
   };
 
   const deleteQuestionario = (index: number) => {
     const newList = questionarios.filter((_, i) => i !== index);
     onQuestionariosChange(newList);
-  };
-
-  const addQuestionario = () => {
-    const newQuestionario: EditableQuestionario = {
-      value: { titulo: "", nome: "", previewPerguntas: [] },
-      isEditing: true,
-    };
-    onQuestionariosChange([...questionarios, newQuestionario]);
-  };
-
-  const saveQuestionario = (index: number) => {
-    const questionario = questionarios[index];
-    if (questionario.value.titulo.trim().length > 0) {
-      toggleQuestionarioEditing(index, false);
-    }
   };
 
   return (
@@ -98,7 +85,7 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
                     <button
                       aria-label="Salvar questionário"
                       title="Salvar questionário"
-                      onClick={() => saveQuestionario(index)}
+                      onClick={() => onSaveQuestionario(index)}
                       className="btn-save-questionario"
                     >
                       <Save size={16} />
@@ -162,7 +149,7 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
           {questionarios.length === 0 && (
             <div className="empty-state">Nenhum questionário adicionado.</div>
           )}
-          <button onClick={addQuestionario} className="btn-add-questionario">
+          <button onClick={onAddQuestionario} className="btn-add-questionario">
             <Plus size={16} />
             Adicionar Questionário
           </button>

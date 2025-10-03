@@ -26,6 +26,8 @@ interface QuestionarioDrawerProps {
   onTitleEditToggle: (editing: boolean) => void;
   onPerguntasChange: (perguntas: PerguntaEditorItem[]) => void;
   onSave: () => void;
+  onSavePergunta: (index: number) => void;
+  onDeletePergunta: (index: number) => void;
   adicionarQuestionario: () => void;
   removerQuestionario: (index: number) => void;
 }
@@ -41,6 +43,8 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   onTitleChange,
   onTitleEditToggle,
   onPerguntasChange,
+  onSavePergunta,
+  onDeletePergunta,
   adicionarQuestionario,
   removerQuestionario,
 }) => {
@@ -159,11 +163,6 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
     onPerguntasChange(list);
   };
 
-  const deletePergunta = (index: number) => {
-    const list = perguntas.filter((_, i) => i !== index);
-    onPerguntasChange(list);
-  };
-
   const addPergunta = () => {
     const newPergunta: PerguntaEditorItem = {
       texto: "",
@@ -179,14 +178,6 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
     const list = [...perguntas];
     list[index].isEditing = !list[index].isEditing;
     onPerguntasChange(list);
-  };
-
-  const savePergunta = (index: number) => {
-    const list = [...perguntas];
-    if (list[index].texto.trim()) {
-      list[index].isEditing = false;
-      onPerguntasChange(list);
-    }
   };
 
   if (!isOpen) return null;
@@ -442,9 +433,9 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                       onRemoveOpcao={(opcaoIndex) =>
                         removeOpcao(realIndex, opcaoIndex)
                       }
-                      onDelete={() => deletePergunta(realIndex)}
+                      onDelete={() => onDeletePergunta(realIndex)}
                       onToggleEditing={() => togglePerguntaEditing(realIndex)}
-                      onSave={() => savePergunta(realIndex)}
+                      onSave={() => onSavePergunta(realIndex)}
                     />
                   );
                 })}

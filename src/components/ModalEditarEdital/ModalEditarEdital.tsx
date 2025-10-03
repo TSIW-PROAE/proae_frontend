@@ -462,6 +462,64 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     setDescricaoEditando(false);
   };
 
+  const handleAddQuestionario = () => {
+    // Adiciona um questionário temporário em modo de edição (sem ID ainda)
+    const novoQuestionario: EditableQuestionario = {
+      value: {
+        titulo: "",
+        nome: "",
+        previewPerguntas: [],
+      },
+      isEditing: true, // Modo de edição ativado para permitir nomeação
+    };
+    setQuestionarios([...questionarios, novoQuestionario]);
+  };
+
+  const handleSaveQuestionario = async (index: number) => {
+    const questionario = questionarios[index];
+    const tituloTrimmed = questionario.value.titulo.trim();
+
+    if (!tituloTrimmed) {
+      toast.error("O título do questionário não pode estar vazio");
+      return;
+    }
+
+    if (!edital.id) {
+      toast.error("Erro: ID do edital não encontrado");
+      return;
+    }
+
+    try {
+      // Cria o Step no backend com o nome fornecido
+      const created = await stepService.criarStep({
+        texto: tituloTrimmed,
+        edital_id: edital.id,
+      });
+
+      if (!created.id) {
+        toast.error("Erro ao criar questionário");
+        return;
+      }
+
+      // Atualiza o questionário na UI com o ID retornado e sai do modo de edição
+      const updatedQuestionarios = [...questionarios];
+      updatedQuestionarios[index] = {
+        value: {
+          id: created.id,
+          titulo: tituloTrimmed,
+          nome: tituloTrimmed,
+          previewPerguntas: [],
+        },
+        isEditing: false,
+      };
+      setQuestionarios(updatedQuestionarios);
+      toast.success("Questionário criado com sucesso");
+    } catch (error) {
+      console.error("Erro ao criar questionário:", error);
+      toast.error("Erro ao criar questionário. Tente novamente.");
+    }
+  };
+
   const handleSave = async () => {
     if (!edital.id) return;
     const ok = await persistChanges();
@@ -482,6 +540,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
       if (stepId) {
         const perguntas = await perguntaService.listarPerguntasPorStep(stepId);
         const mapped: PerguntaEditorItem[] = (perguntas || []).map((p) => ({
+          id: p.id, // Adiciona o ID da pergunta
           texto: p.texto_pergunta || p.pergunta || "",
           tipo:
             (p.tipo_pergunta as PerguntaEditorItem["tipo"]) ||
@@ -499,6 +558,187 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
       setEditorPerguntas([]);
     } finally {
       setDrawerLoading(false);
+    }
+  };
+
+  const handleSavePergunta = async (perguntaIndex: number) => {
+    if (activeQuestionarioIndex === null) {
+      toast.error("Nenhum questionário ativo");
+      return;
+    }
+
+    const questionario = questionarios[activeQuestionarioIndex];
+    const stepId = questionario.value.id;
+
+    if (!stepId) {
+      toast.error("Salve o questionário antes de adicionar perguntas");
+      return;
+    }
+
+    const pergunta = editorPerguntas[perguntaIndex];
+    const textoTrimmed = pergunta.texto.trim();
+
+    if (!textoTrimmed) {
+      toast.error("O texto da pergunta não pode estar vazio");
+      return;
+    }
+
+    if (textoTrimmed.length > 255) {
+      toast.error("O texto da pergunta deve ter no máximo 255 caracteres");
+      return;
+    }
+
+    // Mapear o tipo da pergunta para o formato do backend (EnumTipoInput)
+    const tipoBackend =
+      pergunta.tipo === "texto"
+        ? "text"
+        : pergunta.tipo === "numero"
+          ? "number"
+          : pergunta.tipo === "data"
+            ? "date"
+            : pergunta.tipo === "multipla_escolha"
+              ? "select"
+              : pergunta.tipo === "multipla_selecao"
+                ? "selectGroup"
+                : pergunta.tipo === "arquivo"
+                  ? "file"
+                  : pergunta.tipo === "email"
+                    ? "email"
+                    : "text";
+
+    // Validar opções para tipos de seleção
+    if (
+      (tipoBackend === "select" || tipoBackend === "selectGroup") &&
+      (!pergunta.opcoes ||
+        pergunta.opcoes.length === 0 ||
+        pergunta.opcoes.every((o) => !o.trim()))
+    ) {
+      toast.error("Perguntas de seleção precisam ter pelo menos uma opção");
+      return;
+    }
+
+    // Preparar opções filtradas (remover vazias)
+    const opcoesValidas = pergunta.opcoes?.filter((o) => o.trim()) || [];
+
+    try {
+      if (pergunta.id) {
+        // Atualizar pergunta existente
+        const payload: any = {
+          pergunta: textoTrimmed,
+          obrigatoriedade: pergunta.obrigatoria,
+        };
+
+        // Adicionar opções apenas se for tipo de seleção
+        if (tipoBackend === "select" || tipoBackend === "selectGroup") {
+          payload.opcoes = opcoesValidas;
+        }
+
+        const updated = await perguntaService.atualizarPergunta(
+          pergunta.id,
+          payload
+        );
+
+        // Atualizar na UI
+        const updatedPerguntas = [...editorPerguntas];
+        updatedPerguntas[perguntaIndex] = {
+          ...pergunta,
+          id: updated.id,
+          isEditing: false,
+        };
+        setEditorPerguntas(updatedPerguntas);
+        toast.success("Pergunta atualizada com sucesso");
+      } else {
+        // Criar nova pergunta
+        const payload: any = {
+          step_id: stepId,
+          pergunta: textoTrimmed,
+          tipo_Pergunta: tipoBackend,
+          obrigatoriedade: pergunta.obrigatoria,
+        };
+
+        // Adicionar opções apenas se for tipo de seleção
+        if (tipoBackend === "select" || tipoBackend === "selectGroup") {
+          payload.opcoes = opcoesValidas;
+        }
+
+        // Adicionar tipo_formatacao se necessário (opcional)
+        // payload.tipo_formatacao = "none";
+
+        const created = await perguntaService.criarPergunta(payload);
+
+        // Atualizar na UI com o ID retornado
+        const updatedPerguntas = [...editorPerguntas];
+        updatedPerguntas[perguntaIndex] = {
+          ...pergunta,
+          id: created.id,
+          isEditing: false,
+        };
+        setEditorPerguntas(updatedPerguntas);
+        toast.success("Pergunta criada com sucesso");
+      }
+
+      // Atualizar o preview do questionário
+      const preview = editorPerguntas
+        .map((p) => p.texto.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+      setQuestionarios((prev) =>
+        prev.map((qq, idx) =>
+          idx === activeQuestionarioIndex
+            ? {
+                ...qq,
+                value: {
+                  ...qq.value,
+                  previewPerguntas: preview,
+                },
+              }
+            : qq
+        )
+      );
+    } catch (error) {
+      console.error("Erro ao salvar pergunta:", error);
+      toast.error("Erro ao salvar pergunta. Tente novamente.");
+    }
+  };
+
+  const handleDeletePergunta = async (perguntaIndex: number) => {
+    const pergunta = editorPerguntas[perguntaIndex];
+
+    // Se tem ID, deleta do backend
+    if (pergunta.id) {
+      try {
+        await perguntaService.deletarPergunta(pergunta.id);
+        toast.success("Pergunta removida com sucesso");
+      } catch (error) {
+        console.error("Erro ao deletar pergunta:", error);
+        toast.error("Erro ao remover pergunta. Tente novamente.");
+        return; // Não remove da UI se falhar no backend
+      }
+    }
+
+    // Remove da UI
+    const newPerguntas = editorPerguntas.filter((_, i) => i !== perguntaIndex);
+    setEditorPerguntas(newPerguntas);
+
+    // Atualizar o preview do questionário
+    if (activeQuestionarioIndex !== null) {
+      const preview = newPerguntas
+        .map((p) => p.texto.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+      setQuestionarios((prev) =>
+        prev.map((qq, idx) =>
+          idx === activeQuestionarioIndex
+            ? {
+                ...qq,
+                value: {
+                  ...qq.value,
+                  previewPerguntas: preview,
+                },
+              }
+            : qq
+        )
+      );
     }
   };
 
@@ -580,6 +820,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
             onQuestionariosChange={setQuestionarios}
             onToggleOpen={() => setOpenQuestionarios(!openQuestionarios)}
             onOpenQuestionario={handleOpenQuestionario}
+            onAddQuestionario={handleAddQuestionario}
+            onSaveQuestionario={handleSaveQuestionario}
           />
 
           <div className="two-col-row">
@@ -618,19 +860,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
           onClose={() => setDrawerOpen(false)}
           onQuestionarioSelect={(index) => {
             // Carrega as perguntas do questionário selecionado
-            setActiveQuestionarioIndex(index);
-            const questions =
-              questionarios[index]?.value.previewPerguntas || [];
-            const convertedQuestions: PerguntaEditorItem[] = questions.map(
-              (texto) => ({
-                texto,
-                tipo: "texto",
-                obrigatoria: false,
-                opcoes: [],
-                isEditing: false,
-              })
-            );
-            setEditorPerguntas(convertedQuestions);
+            handleOpenQuestionario(index);
           }}
           onTitleChange={(title) => {
             if (activeQuestionarioIndex !== null) {
@@ -666,18 +896,24 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
             toast.success("Alterações do questionário aplicadas (UI)");
             setDrawerOpen(false);
           }}
-          adicionarQuestionario={() => {
-            const novoQuestionario: EditableQuestionario = {
-              value: {
-                titulo: `Questionário ${questionarios.length + 1}`,
-                nome: `Questionário ${questionarios.length + 1}`,
-                previewPerguntas: [],
-              },
-              isEditing: false,
-            };
-            setQuestionarios([...questionarios, novoQuestionario]);
-          }}
-          removerQuestionario={(index) => {
+          onSavePergunta={handleSavePergunta}
+          onDeletePergunta={handleDeletePergunta}
+          adicionarQuestionario={handleAddQuestionario}
+          removerQuestionario={async (index) => {
+            const questionarioToRemove = questionarios[index];
+
+            // Se tem ID, deleta do backend
+            if (questionarioToRemove.value.id) {
+              try {
+                await stepService.deletarStep(questionarioToRemove.value.id);
+                toast.success("Questionário removido com sucesso");
+              } catch (error) {
+                console.error("Erro ao deletar questionário:", error);
+                toast.error("Erro ao remover questionário. Tente novamente.");
+                return; // Não remove da UI se falhar no backend
+              }
+            }
+
             const newQuestionarios = questionarios.filter(
               (_, i) => i !== index
             );

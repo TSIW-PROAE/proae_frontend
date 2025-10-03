@@ -37,6 +37,7 @@ export interface DadoAluno {
 }
 
 export interface PerguntaEditorItem {
+  id?: number; // ID da pergunta no backend
   texto: string;
   tipo:
     | "texto"
