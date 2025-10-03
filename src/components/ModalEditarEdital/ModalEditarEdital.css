@@ -3013,3 +3013,588 @@ select:focus {
     margin-bottom: 0;
   }
 }
+
+/* ==============================================
+   TOGGLES COMPACTOS - OBRIGATÓRIA E VINCULAR
+   ============================================== */
+
+.pergunta-toggle-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  padding: 7px 14px;
+  border-radius: 9px;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pergunta-toggle-compact:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.pergunta-toggle-compact:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pergunta-toggle-compact input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Estado ativo (checked) - Badge estilo pill */
+.pergunta-toggle-compact:has(input[type="checkbox"]:checked) {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: #1d4ed8;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(59, 130, 246, 0.4);
+}
+
+.pergunta-toggle-compact:has(input[type="checkbox"]:checked):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+.pergunta-toggle-compact:has(input[type="checkbox"]:checked) .toggle-icon,
+.pergunta-toggle-compact:has(input[type="checkbox"]:checked) .toggle-text {
+  color: #ffffff;
+}
+
+.toggle-icon {
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  stroke-width: 2.5;
+}
+
+.pergunta-toggle-compact:hover .toggle-icon {
+  transform: scale(1.1);
+}
+
+.toggle-text {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Badge para indicar que a pergunta está vinculada (estado salvo) */
+.vinculada-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #bfdbfe;
+}
+
+/* Ajuste no header da pergunta para acomodar os toggles */
+.pergunta-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.pergunta-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Rodapé da pergunta com botão de salvar */
+.pergunta-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.save-pergunta-footer-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+}
+
+.save-pergunta-footer-button:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.save-pergunta-footer-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+}
+
+/* ==============================================
+   SELECT DE DADOS DO ALUNO E PREVIEW
+   ============================================== */
+
+.select-dado-aluno {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: monospace;
+  background-color: #ffffff;
+  color: #374151;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.select-dado-aluno option {
+  padding: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.select-dado-aluno:hover {
+  border-color: #94a3b8;
+}
+
+.select-dado-aluno:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Placeholder quando nenhum dado está selecionado */
+.select-dado-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background-color: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color: #64748b;
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.select-dado-placeholder svg {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+/* ==============================================
+   PREVIEW DO DADO VINCULADO - Design Integrado
+   ============================================== */
+
+.dado-vinculado-preview {
+  margin-top: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #3b82f6;
+  border-radius: 8px;
+  padding: 12px 14px;
+  animation: slideInPreview 0.25s ease-out;
+}
+
+@keyframes slideInPreview {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.preview-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.preview-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.preview-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.preview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preview-dado-nome {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.preview-tipo-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  height: fit-content;
+  align-self: flex-start;
+}
+
+.preview-tipo {
+  display: inline-flex;
+  padding: 2px 8px;
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.preview-obrigatorio {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.preview-obrigatorio.obrig-sim {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.preview-obrigatorio.obrig-nao {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.preview-opcoes-count {
+  display: inline-flex;
+  padding: 3px 8px;
+  background-color: #f1f5f9;
+  color: #475569;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Alternativas no preview - estilo aprimorado */
+.preview-alternativas {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preview-alternativa-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #334155;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.preview-alternativa-item::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background-color: #94a3b8;
+  border-radius: 50%;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.preview-alternativa-item:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
+}
+
+.preview-alternativa-item:hover::before {
+  background-color: #3b82f6;
+  transform: scale(1.2);
+}
+
+/* Estado desabilitado do toggle obrigatória quando vincular está ativo */
+.pergunta-toggle-compact.toggle-disabled {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.pergunta-toggle-compact.toggle-disabled:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+  transform: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pergunta-toggle-compact.toggle-disabled .toggle-icon,
+.pergunta-toggle-compact.toggle-disabled .toggle-text {
+  color: #1e40af;
+}
+
+.pergunta-toggle-compact.toggle-disabled input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+
+/* Debug info */
+.debug-info {
+  font-size: 11px;
+  color: #666;
+  margin-top: 8px;
+  padding: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+/* Preview do dado vinculado */
+.dado-vinculado-preview {
+  margin-top: 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1.5px solid #93c5fd;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #bfdbfe;
+}
+
+.preview-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-row-opcoes {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.preview-key {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1e40af;
+  min-width: 90px;
+}
+
+.preview-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.preview-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.preview-badge-type {
+  background-color: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.preview-badge-required {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.preview-badge-optional {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.preview-opcoes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.preview-opcao-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background-color: #ffffff;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.05);
+}
+
+/* ==============================================
+   CARD DE AVISO - PERGUNTA VINCULADA
+   ============================================== */
+
+.pergunta-aviso-card {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1.5px solid #fbbf24;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+  animation: slideInAviso 0.3s ease-out;
+}
+
+@keyframes slideInAviso {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.aviso-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #fef3c7;
+  border: 2px solid #fbbf24;
+  border-radius: 50%;
+  color: #d97706;
+}
+
+.aviso-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aviso-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aviso-text {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #78350f;
+}
+
+.aviso-text strong {
+  font-weight: 700;
+  color: #92400e;
+}

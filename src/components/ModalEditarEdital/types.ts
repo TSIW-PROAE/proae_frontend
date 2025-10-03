@@ -29,6 +29,13 @@ export interface EditableQuestionario {
   isEditing: boolean;
 }
 
+export interface DadoAluno {
+  nome: string;
+  tipo: "text" | "number" | "date" | "select" | "file";
+  obrigatorio: boolean;
+  opcoes?: string[];
+}
+
 export interface PerguntaEditorItem {
   texto: string;
   tipo:
@@ -42,6 +49,8 @@ export interface PerguntaEditorItem {
     | "email";
   obrigatoria: boolean;
   opcoes: string[];
+  vincularDadosAluno?: boolean;
+  dadoVinculado?: string; // nome do dado do aluno vinculado
   isEditing?: boolean;
 }
 
