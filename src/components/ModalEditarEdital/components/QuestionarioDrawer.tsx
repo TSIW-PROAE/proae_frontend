@@ -1,5 +1,15 @@
-import React from "react";
-import { ArrowLeft, Edit, Plus, Trash2, FileText } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import {
+  ArrowLeft,
+  Edit,
+  Plus,
+  Trash2,
+  FileText,
+  Search,
+  ArrowUpDown,
+  Filter,
+  X,
+} from "lucide-react";
 import { PerguntaEditorItem, EditableQuestionario } from "../types";
 import PerguntaItem from "./PerguntaItem";
 
@@ -34,6 +44,64 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   adicionarQuestionario,
   removerQuestionario,
 }) => {
+  // Estados para filtros e ordenação
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterVinculadas, setFilterVinculadas] = useState(false);
+  const [filterObrigatorias, setFilterObrigatorias] = useState(false);
+  const [filterTipo, setFilterTipo] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none");
+
+  // Perguntas filtradas e ordenadas
+  const perguntasFiltradas = useMemo(() => {
+    let filtered = [...perguntas];
+
+    // Filtro de busca por texto
+    if (searchTerm.trim()) {
+      filtered = filtered.filter((p) =>
+        p.texto.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtro: apenas vinculadas
+    if (filterVinculadas) {
+      filtered = filtered.filter((p) => p.vincularDadosAluno === true);
+    }
+
+    // Filtro: apenas obrigatórias
+    if (filterObrigatorias) {
+      filtered = filtered.filter((p) => p.obrigatoria === true);
+    }
+
+    // Filtro por tipo
+    if (filterTipo) {
+      filtered = filtered.filter((p) => p.tipo === filterTipo);
+    }
+
+    // Ordenação
+    if (sortOrder === "asc") {
+      filtered.sort((a, b) => a.texto.localeCompare(b.texto));
+    } else if (sortOrder === "desc") {
+      filtered.sort((a, b) => b.texto.localeCompare(a.texto));
+    }
+
+    return filtered;
+  }, [
+    perguntas,
+    searchTerm,
+    filterVinculadas,
+    filterObrigatorias,
+    filterTipo,
+    sortOrder,
+  ]);
+
+  // Verifica se há filtros ativos
+  const hasActiveFilters =
+    searchTerm ||
+    filterVinculadas ||
+    filterObrigatorias ||
+    filterTipo ||
+    sortOrder !== "none";
+
   const updatePergunta = (
     index: number,
     field: keyof PerguntaEditorItem | Record<string, any>,
@@ -144,13 +212,6 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
         <div className="questionario-list-sidebar">
           <div className="questionario-list-header">
             <h3>Questionários</h3>
-            <button
-              onClick={adicionarQuestionario}
-              className="add-questionario-button"
-            >
-              <Plus size={16} />
-              Novo
-            </button>
           </div>
 
           <div className="questionario-list">
@@ -200,6 +261,17 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
               );
             })}
           </div>
+
+          {/* Botão de adicionar novo questionário fixo no bottom */}
+          <div className="questionario-list-footer">
+            <button
+              onClick={adicionarQuestionario}
+              className="add-questionario-button"
+            >
+              <Plus size={16} />
+              Novo
+            </button>
+          </div>
         </div>
 
         {/* Área principal de edição */}
@@ -241,28 +313,159 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                 </div>
               </div>
 
+              {/* Barra de pesquisa e filtros */}
+              <div className="perguntas-filters-bar">
+                <div className="search-box">
+                  <Search size={18} />
+                  <input
+                    type="text"
+                    placeholder="Buscar perguntas..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="search-input"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="clear-search-button"
+                      title="Limpar busca"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="filters-container">
+                  <button
+                    onClick={() =>
+                      setSortOrder(
+                        sortOrder === "none"
+                          ? "asc"
+                          : sortOrder === "asc"
+                            ? "desc"
+                            : "none"
+                      )
+                    }
+                    className={`filter-button ${sortOrder !== "none" ? "active" : ""}`}
+                    title="Ordenar alfabeticamente"
+                  >
+                    <ArrowUpDown size={16} />
+                    {sortOrder === "asc"
+                      ? "A-Z"
+                      : sortOrder === "desc"
+                        ? "Z-A"
+                        : "Ordenar"}
+                  </button>
+
+                  <button
+                    onClick={() => setFilterVinculadas(!filterVinculadas)}
+                    className={`filter-button ${filterVinculadas ? "active" : ""}`}
+                    title="Filtrar perguntas vinculadas a dados"
+                  >
+                    <Filter size={16} />
+                    Vinculadas
+                  </button>
+
+                  <button
+                    onClick={() => setFilterObrigatorias(!filterObrigatorias)}
+                    className={`filter-button ${filterObrigatorias ? "active" : ""}`}
+                    title="Filtrar perguntas obrigatórias"
+                  >
+                    <Filter size={16} />
+                    Obrigatórias
+                  </button>
+
+                  <select
+                    value={filterTipo}
+                    onChange={(e) => setFilterTipo(e.target.value)}
+                    className={`filter-select ${filterTipo ? "active" : ""}`}
+                    title="Filtrar por tipo de pergunta"
+                    aria-label="Filtrar por tipo de pergunta"
+                  >
+                    <option value="">Todos os tipos</option>
+                    <option value="texto">Texto</option>
+                    <option value="numero">Número</option>
+                    <option value="data">Data</option>
+                    <option value="multipla_escolha">Múltipla Escolha</option>
+                    <option value="multipla_selecao">Múltipla Seleção</option>
+                    <option value="arquivo">Arquivo</option>
+                    <option value="email">Email</option>
+                  </select>
+
+                  {hasActiveFilters && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setFilterVinculadas(false);
+                        setFilterObrigatorias(false);
+                        setFilterTipo("");
+                        setSortOrder("none");
+                      }}
+                      className="clear-filters-button"
+                      title="Limpar todos os filtros"
+                    >
+                      <X size={16} />
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Indicador de resultados */}
+              {hasActiveFilters && (
+                <div className="filter-results-info">
+                  <span>
+                    {perguntasFiltradas.length} de {perguntas.length} pergunta
+                    {perguntas.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+
               {/* Lista de perguntas */}
               <div className="perguntas-list">
-                {perguntas.map((pergunta, index) => (
-                  <PerguntaItem
-                    key={index}
-                    pergunta={pergunta}
-                    index={index}
-                    onUpdate={(field, value) =>
-                      updatePergunta(index, field, value)
-                    }
-                    onUpdateOpcao={(opcaoIndex, value) =>
-                      updateOpcao(index, opcaoIndex, value)
-                    }
-                    onAddOpcao={() => addOpcao(index)}
-                    onRemoveOpcao={(opcaoIndex) =>
-                      removeOpcao(index, opcaoIndex)
-                    }
-                    onDelete={() => deletePergunta(index)}
-                    onToggleEditing={() => togglePerguntaEditing(index)}
-                    onSave={() => savePergunta(index)}
-                  />
-                ))}
+                {perguntasFiltradas.map((pergunta) => {
+                  // Encontra o índice real da pergunta no array original
+                  const realIndex = perguntas.findIndex((p) => p === pergunta);
+
+                  return (
+                    <PerguntaItem
+                      key={realIndex}
+                      pergunta={pergunta}
+                      index={realIndex}
+                      onUpdate={(field, value) =>
+                        updatePergunta(realIndex, field, value)
+                      }
+                      onUpdateOpcao={(opcaoIndex, value) =>
+                        updateOpcao(realIndex, opcaoIndex, value)
+                      }
+                      onAddOpcao={() => addOpcao(realIndex)}
+                      onRemoveOpcao={(opcaoIndex) =>
+                        removeOpcao(realIndex, opcaoIndex)
+                      }
+                      onDelete={() => deletePergunta(realIndex)}
+                      onToggleEditing={() => togglePerguntaEditing(realIndex)}
+                      onSave={() => savePergunta(realIndex)}
+                    />
+                  );
+                })}
+
+                {perguntasFiltradas.length === 0 && perguntas.length > 0 && (
+                  <div className="empty-perguntas">
+                    <p>Nenhuma pergunta encontrada com os filtros aplicados.</p>
+                    <button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setFilterVinculadas(false);
+                        setFilterObrigatorias(false);
+                        setFilterTipo("");
+                        setSortOrder("none");
+                      }}
+                      className="clear-filters-link"
+                    >
+                      Limpar filtros
+                    </button>
+                  </div>
+                )}
 
                 {perguntas.length === 0 && (
                   <div className="empty-perguntas">
