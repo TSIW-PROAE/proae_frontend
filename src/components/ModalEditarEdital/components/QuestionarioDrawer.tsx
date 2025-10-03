@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowLeft, Edit, Save, Plus, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, Edit, Plus, Trash2, FileText } from "lucide-react";
 import { PerguntaEditorItem, EditableQuestionario } from "../types";
 import PerguntaItem from "./PerguntaItem";
 
@@ -22,7 +22,6 @@ interface QuestionarioDrawerProps {
 
 const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   isOpen,
-  loading,
   questionarios,
   activeQuestionarioIndex,
   titleEditing,
@@ -32,7 +31,6 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   onTitleChange,
   onTitleEditToggle,
   onPerguntasChange,
-  onSave,
   adicionarQuestionario,
   removerQuestionario,
 }) => {
@@ -223,14 +221,6 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                   <button onClick={addPergunta} className="add-question-button">
                     <Plus size={16} />
                     Nova Pergunta
-                  </button>
-                  <button
-                    onClick={onSave}
-                    className="save-button"
-                    disabled={loading}
-                  >
-                    <Save size={16} />
-                    {loading ? "Salvando..." : "Salvar"}
                   </button>
                 </div>
               </div>

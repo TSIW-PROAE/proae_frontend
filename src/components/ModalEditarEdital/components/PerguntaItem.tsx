@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Save,
   Trash2,
@@ -15,11 +15,12 @@ import {
   CheckCircle,
   XCircle,
   FileUp,
+  X,
 } from "lucide-react";
 import { PerguntaEditorItem, DadoAluno } from "../types";
 
 // Mock de dados do aluno - futuramente virá de uma API
-const DADOS_ALUNO_MOCK: DadoAluno[] = [
+let DADOS_ALUNO_MOCK: DadoAluno[] = [
   {
     nome: "CPF",
     tipo: "text",
@@ -41,7 +42,7 @@ const DADOS_ALUNO_MOCK: DadoAluno[] = [
   {
     nome: "Estado Civil",
     tipo: "select",
-    obrigatorio: false,
+    obrigatorio: true,
     opcoes: ["Solteiro(a)", "Casado(a)", "Divorciado(a)", "Viúvo(a)"],
   },
   {
@@ -105,6 +106,63 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
   onToggleEditing,
   onSave,
 }) => {
+  const [showModalNovoDado, setShowModalNovoDado] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [novoDado, setNovoDado] = useState<DadoAluno>({
+    nome: "",
+    tipo: "text",
+    obrigatorio: false,
+    opcoes: [],
+  });
+  const [opcoesTemp, setOpcoesTemp] = useState<string[]>([]);
+
+  const handleSolicitarCriacaoDado = () => {
+    if (!novoDado.nome.trim()) {
+      alert("Por favor, informe o nome do dado.");
+      return;
+    }
+
+    // Verifica duplicidade
+    const dadoDuplicado = DADOS_ALUNO_MOCK.find(
+      (d) => d.nome.toLowerCase().trim() === novoDado.nome.toLowerCase().trim()
+    );
+
+    if (dadoDuplicado) {
+      alert(
+        `Já existe um dado com o nome "${novoDado.nome}". Por favor, escolha outro nome.`
+      );
+      return;
+    }
+
+    // Mostra modal de confirmação
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmarCriacaoDado = () => {
+    // Adiciona o novo dado ao mock
+    const dadoParaAdicionar: DadoAluno = {
+      ...novoDado,
+      opcoes:
+        novoDado.tipo === "select" ? opcoesTemp.filter((o) => o.trim()) : [],
+    };
+
+    DADOS_ALUNO_MOCK.push(dadoParaAdicionar);
+
+    // Limpa o formulário
+    setNovoDado({
+      nome: "",
+      tipo: "text",
+      obrigatorio: false,
+      opcoes: [],
+    });
+    setOpcoesTemp([]);
+    setShowModalNovoDado(false);
+    setShowConfirmModal(false);
+
+    // Seleciona automaticamente o dado recém-criado
+    onUpdate("dadoVinculado", dadoParaAdicionar.nome);
+  };
+
   return (
     <div
       className={`pergunta-item ${pergunta.isEditing ? "editing" : "saved"}`}
@@ -173,82 +231,96 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
               <>
                 <div className="pergunta-field">
                   <label>Selecione o dado a ser vinculado:</label>
-                  <select
-                    value={pergunta.dadoVinculado || ""}
-                    onChange={(e) => {
-                      const nomeDado = e.target.value;
-                      const dado = DADOS_ALUNO_MOCK.find(
-                        (d) => d.nome === nomeDado
-                      );
 
-                      console.log("Dado selecionado:", nomeDado, dado);
-                      console.log("Estado atual da pergunta:", pergunta);
-
-                      if (dado) {
-                        // Mapeia o tipo do dado para o tipo da pergunta
-                        const tipoMap: Record<
-                          string,
-                          PerguntaEditorItem["tipo"]
-                        > = {
-                          text: "texto",
-                          number: "numero",
-                          date: "data",
-                          select: "multipla_escolha",
-                          file: "arquivo",
-                        };
-
-                        const novoTipo = tipoMap[dado.tipo] || "texto";
-                        console.log("Atualizando tipo para:", novoTipo);
-                        console.log(
-                          "Atualizando obrigatoria para:",
-                          dado.obrigatorio
+                  <div className="select-with-button">
+                    <select
+                      value={pergunta.dadoVinculado || ""}
+                      onChange={(e) => {
+                        const nomeDado = e.target.value;
+                        const dado = DADOS_ALUNO_MOCK.find(
+                          (d) => d.nome === nomeDado
                         );
 
-                        // Atualiza todos os campos de uma vez usando objeto
-                        const updates: any = {
-                          dadoVinculado: nomeDado,
-                          tipo: novoTipo,
-                          obrigatoria: dado.obrigatorio,
-                        };
+                        console.log("Dado selecionado:", nomeDado, dado);
+                        console.log("Estado atual da pergunta:", pergunta);
 
-                        if (dado.opcoes && dado.opcoes.length > 0) {
-                          console.log("Atualizando opções para:", dado.opcoes);
-                          updates.opcoes = dado.opcoes;
+                        if (dado) {
+                          // Mapeia o tipo do dado para o tipo da pergunta
+                          const tipoMap: Record<
+                            string,
+                            PerguntaEditorItem["tipo"]
+                          > = {
+                            text: "texto",
+                            number: "numero",
+                            date: "data",
+                            select: "multipla_escolha",
+                            file: "arquivo",
+                          };
+
+                          const novoTipo = tipoMap[dado.tipo] || "texto";
+                          console.log("Atualizando tipo para:", novoTipo);
+                          console.log(
+                            "Atualizando obrigatoria para:",
+                            dado.obrigatorio
+                          );
+
+                          // Atualiza todos os campos de uma vez usando objeto
+                          const updates: any = {
+                            dadoVinculado: nomeDado,
+                            tipo: novoTipo,
+                            obrigatoria: dado.obrigatorio,
+                          };
+
+                          if (dado.opcoes && dado.opcoes.length > 0) {
+                            console.log(
+                              "Atualizando opções para:",
+                              dado.opcoes
+                            );
+                            updates.opcoes = dado.opcoes;
+                          } else {
+                            updates.opcoes = [];
+                          }
+
+                          console.log("Atualizando com:", updates);
+                          onUpdate(updates as any, undefined);
                         } else {
-                          updates.opcoes = [];
+                          // Se não houver dado, apenas limpa dadoVinculado
+                          onUpdate("dadoVinculado", nomeDado);
                         }
+                      }}
+                      aria-label="Dado do aluno"
+                      className="select-dado-aluno"
+                    >
+                      <option value="">-- Selecione um dado --</option>
+                      {DADOS_ALUNO_MOCK.map((dado) => {
+                        const tipoLabel = {
+                          text: "Texto",
+                          number: "Número",
+                          date: "Data",
+                          select: "Seleção",
+                          file: "Arquivo",
+                        }[dado.tipo];
 
-                        console.log("Atualizando com:", updates);
-                        onUpdate(updates as any, undefined);
-                      } else {
-                        // Se não houver dado, apenas limpa dadoVinculado
-                        onUpdate("dadoVinculado", nomeDado);
-                      }
-                    }}
-                    aria-label="Dado do aluno"
-                    className="select-dado-aluno"
-                  >
-                    <option value="">-- Selecione um dado --</option>
-                    {DADOS_ALUNO_MOCK.map((dado) => {
-                      const tipoLabel = {
-                        text: "Texto",
-                        number: "Número",
-                        date: "Data",
-                        select: "Seleção",
-                        file: "Arquivo",
-                      }[dado.tipo];
+                        const obrigLabel = dado.obrigatorio
+                          ? "Obrigatório"
+                          : "Opcional";
 
-                      const obrigLabel = dado.obrigatorio
-                        ? "Obrigatório"
-                        : "Opcional";
-
-                      return (
-                        <option key={dado.nome} value={dado.nome}>
-                          {dado.nome} • {tipoLabel} • {obrigLabel}
-                        </option>
-                      );
-                    })}
-                  </select>
+                        return (
+                          <option key={dado.nome} value={dado.nome}>
+                            {dado.nome} • {tipoLabel} • {obrigLabel}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowModalNovoDado(true)}
+                      className="btn-adicionar-dado"
+                      title="Adicionar novo dado do aluno"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Aviso quando nenhum dado está selecionado */}
@@ -454,12 +526,59 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
           </div>
         </>
       ) : (
-        // Estado salvo
+        // Estado salvo (não editável)
         <>
-          <div className="pergunta-header">
-            <div className="pergunta-info">
-              <span className="pergunta-numero">Pergunta {index + 1}</span>
-              <span className="pergunta-tipo-badge">
+          <div className="pergunta-header-saved">
+            <span className="pergunta-numero-saved">Pergunta {index + 1}</span>
+            <div className="pergunta-actions-saved">
+              <button
+                onClick={onToggleEditing}
+                className="edit-pergunta-button-saved"
+                title="Editar pergunta"
+                aria-label="Editar pergunta"
+              >
+                <Edit size={16} />
+              </button>
+              <button
+                onClick={onDelete}
+                className="delete-pergunta-button-saved"
+                title="Excluir pergunta"
+                aria-label="Excluir pergunta"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="pergunta-content-saved">
+            <div className="pergunta-texto-saved">
+              {pergunta.texto || "Pergunta sem texto"}
+            </div>
+
+            {/* Opções para múltipla escolha/seleção */}
+            {(pergunta.tipo === "multipla_escolha" ||
+              pergunta.tipo === "multipla_selecao") &&
+              pergunta.opcoes &&
+              pergunta.opcoes.length > 0 && (
+                <div className="opcoes-preview-saved">
+                  <span className="opcoes-label">Alternativas:</span>
+                  <div className="opcoes-list-saved">
+                    {pergunta.opcoes
+                      .filter((opcao) => opcao.trim())
+                      .map((opcao, opcaoIndex) => (
+                        <span key={opcaoIndex} className="opcao-item-saved">
+                          {opcao}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
+          </div>
+
+          {/* Footer com badges */}
+          <div className="pergunta-footer-saved">
+            <div className="pergunta-badges-footer">
+              <span className="tipo-badge-saved">
                 {pergunta.tipo === "multipla_escolha"
                   ? "Múltipla Escolha"
                   : pergunta.tipo === "multipla_selecao"
@@ -475,57 +594,214 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                             : "Email"}
               </span>
               {pergunta.obrigatoria && (
-                <span className="obrigatoria-badge">Obrigatória</span>
+                <span className="obrigatoria-badge-saved">
+                  <CheckCircle size={12} />
+                  Obrigatória
+                </span>
               )}
               {pergunta.vincularDadosAluno && (
                 <span
-                  className="vinculada-badge"
-                  title="Vinculada a dados do aluno"
+                  className="vinculada-badge-saved"
+                  title={`Vinculada ao dado: ${pergunta.dadoVinculado || "N/A"}`}
                 >
-                  Vinculada a dados
+                  <Link2 size={12} />
+                  {pergunta.dadoVinculado
+                    ? `Vinculada a: ${pergunta.dadoVinculado}`
+                    : "Vinculada"}
                 </span>
               )}
             </div>
-            <div className="pergunta-actions">
+          </div>
+        </>
+      )}
+
+      {/* Mini Modal para adicionar novo dado */}
+      {showModalNovoDado && (
+        <div
+          className="mini-modal-overlay"
+          onClick={() => setShowModalNovoDado(false)}
+        >
+          <div
+            className="mini-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mini-modal-header">
+              <h3>Adicionar Novo Dado do Aluno</h3>
               <button
-                onClick={onToggleEditing}
-                className="edit-pergunta-button"
-                title="Editar pergunta"
-                aria-label="Editar pergunta"
+                onClick={() => setShowModalNovoDado(false)}
+                className="mini-modal-close"
+                title="Fechar"
               >
-                <Edit size={16} />
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Alerta de duplicidade */}
+            <div className="alerta-duplicidade-modal">
+              <AlertCircle size={18} />
+              <span>
+                Certifique-se de que esse tipo de dado já não existe para evitar
+                duplicidade.
+              </span>
+            </div>
+
+            <div className="mini-modal-body">
+              <div className="mini-modal-field">
+                <label>Nome do Dado *</label>
+                <input
+                  type="text"
+                  value={novoDado.nome}
+                  onChange={(e) =>
+                    setNovoDado({ ...novoDado, nome: e.target.value })
+                  }
+                  placeholder="Ex: CPF, RG, Comprovante..."
+                />
+              </div>
+
+              <div className="mini-modal-field">
+                <label>Tipo *</label>
+                <select
+                  value={novoDado.tipo}
+                  onChange={(e) => {
+                    const novoTipo = e.target.value as DadoAluno["tipo"];
+                    setNovoDado({ ...novoDado, tipo: novoTipo });
+                    if (novoTipo !== "select") {
+                      setOpcoesTemp([]);
+                    }
+                  }}
+                  aria-label="Tipo do dado"
+                >
+                  <option value="text">Texto</option>
+                  <option value="number">Número</option>
+                  <option value="date">Data</option>
+                  <option value="select">Seleção (Múltipla Escolha)</option>
+                  <option value="file">Documento/Arquivo</option>
+                </select>
+              </div>
+
+              <div className="mini-modal-field">
+                <label className="mini-modal-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={novoDado.obrigatorio}
+                    onChange={(e) =>
+                      setNovoDado({
+                        ...novoDado,
+                        obrigatorio: e.target.checked,
+                      })
+                    }
+                  />
+                  <span>Campo obrigatório</span>
+                </label>
+              </div>
+
+              {/* Opções para tipo select */}
+              {novoDado.tipo === "select" && (
+                <div className="mini-modal-field">
+                  <label>Alternativas</label>
+                  <div className="mini-modal-opcoes">
+                    {opcoesTemp.map((opcao, idx) => (
+                      <div key={idx} className="mini-modal-opcao-item">
+                        <input
+                          type="text"
+                          value={opcao}
+                          onChange={(e) => {
+                            const novasOpcoes = [...opcoesTemp];
+                            novasOpcoes[idx] = e.target.value;
+                            setOpcoesTemp(novasOpcoes);
+                          }}
+                          placeholder={`Alternativa ${idx + 1}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const novasOpcoes = opcoesTemp.filter(
+                              (_, i) => i !== idx
+                            );
+                            setOpcoesTemp(novasOpcoes);
+                          }}
+                          className="mini-modal-remove-opcao"
+                          title="Remover alternativa"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setOpcoesTemp([...opcoesTemp, ""])}
+                      className="mini-modal-add-opcao"
+                    >
+                      <Plus size={14} />
+                      Adicionar Alternativa
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mini-modal-footer">
+              <button
+                onClick={() => setShowModalNovoDado(false)}
+                className="mini-modal-btn-cancel"
+              >
+                Cancelar
               </button>
               <button
-                onClick={onDelete}
-                className="delete-pergunta-button"
-                title="Excluir pergunta"
-                aria-label="Excluir pergunta"
+                onClick={handleSolicitarCriacaoDado}
+                className="mini-modal-btn-save"
               >
-                <Trash2 size={16} />
+                <Plus size={16} />
+                Adicionar Dado
               </button>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="pergunta-preview">
-            <p className="pergunta-texto">
-              {pergunta.texto || "Pergunta sem texto"}
+      {/* Modal de Confirmação */}
+      {showConfirmModal && (
+        <div
+          className="mini-modal-overlay"
+          onClick={() => setShowConfirmModal(false)}
+        >
+          <div
+            className="confirm-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="confirm-modal-icon">
+              <AlertCircle size={48} />
+            </div>
+            <h3 className="confirm-modal-title">Confirmar Criação de Dado</h3>
+            <p className="confirm-modal-text">
+              Você está prestes a criar um novo tipo de dado{" "}
+              <strong>"{novoDado.nome}"</strong>.
             </p>
-            {(pergunta.tipo === "multipla_escolha" ||
-              pergunta.tipo === "multipla_selecao") &&
-              pergunta.opcoes &&
-              pergunta.opcoes.length > 0 && (
-                <div className="opcoes-preview">
-                  {pergunta.opcoes
-                    .filter((opcao) => opcao.trim())
-                    .map((opcao, opcaoIndex) => (
-                      <span key={opcaoIndex} className="opcao-preview">
-                        {opcao}
-                      </span>
-                    ))}
-                </div>
-              )}
+            <p className="confirm-modal-warning">
+              ⚠️ Este dado <strong>não poderá ser excluído facilmente</strong>{" "}
+              após a criação. Para remover, será necessário acessar o{" "}
+              <strong>Gerenciamento de Dados</strong>.
+            </p>
+            <p className="confirm-modal-question">
+              Deseja realmente continuar?
+            </p>
+            <div className="confirm-modal-footer">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="confirm-modal-btn-cancel"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmarCriacaoDado}
+                className="confirm-modal-btn-confirm"
+              >
+                <CheckCircle size={16} />
+                Sim, Criar Dado
+              </button>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
