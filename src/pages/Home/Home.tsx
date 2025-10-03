@@ -167,51 +167,45 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <InfoCard
-              icon={<img src={restauranteIcon} alt="Restaurante Universitário" className="w-12 h-12" />}
+              icon={<img src={restauranteIcon} alt="Restaurante Universitário" className="w-8 h-8 object-contain" />}
               title="Restaurantes Universitários"
               description="Receba refeições subsidiadas nos Restaurantes Universitários (RU) dos campi, garantindo sua permanência na UFBA."
-              backgroundColor="var(--cor-dourado)"
-              color="var(--cor-azul-escuro)"
+              variant="dourado"
             />
 
             <InfoCard
-              icon={<img src={bolsaIcon} alt="Bolsa Permanência" className="w-12 h-12" />}
+              icon={<img src={bolsaIcon} alt="Bolsa Permanência" className="w-8 h-8 object-contain" />}
               title="Programa de Bolsa Permanência - PBP"
               description="Bolsa mensal do MEC para estudantes indígenas, quilombolas e em vulnerabilidade socioeconômica."
-              backgroundColor="var(--cor-azul-medio)"
-              color="var(--cor-creme)"
+              variant="azul"
             />
 
             <InfoCard
-              icon={<img src={crecheIcon} alt="Creche" className="w-12 h-12" />}
+              icon={<img src={crecheIcon} alt="Creche" className="w-8 h-8 object-contain" />}
               title="Creche"
               description="Atendimento em Educação Infantil para filhos de estudantes e servidores da UFBA (crianças de 3 anos a 11 meses)."
-              backgroundColor="var(--cor-dourado)"
-              color="var(--cor-azul-escuro)"
+              variant="dourado"
             />
 
             <InfoCard
-              icon={<img src={buzufbaIcon} alt="BUZUFBA" className="w-12 h-12" />}
+              icon={<img src={buzufbaIcon} alt="BUZUFBA" className="w-8 h-8 object-contain" />}
               title="BUZUFBA"
               description="Transporte gratuito em roteiros específicos para estudantes da UFBA em Salvador."
-              backgroundColor="var(--cor-azul-medio)"
-              color="var(--cor-creme)"
+              variant="azul"
             />
 
             <InfoCard
-              icon={<img src={residenciaIcon} alt="Residência Universitária" className="w-12 h-12" />}
+              icon={<img src={residenciaIcon} alt="Residência Universitária" className="w-8 h-8 object-contain" />}
               title="Residências Universitárias"
               description="Moradia para estudantes de graduação da UFBA em Salvador, prioritariamente de baixa renda e de fora de Salvador."
-              backgroundColor="var(--cor-dourado)"
-              color="var(--cor-azul-escuro)"
+              variant="dourado"
             />
 
             <InfoCard
-              icon={<img src={renovacaoIcon} alt="Renovação de Benefícios" className="w-12 h-12" />}
+              icon={<img src={renovacaoIcon} alt="Renovação de Benefícios" className="w-8 h-8 object-contain" />}
               title="Renovação de Benefícios"
               description="Processo semestral de renovação de auxílios PROAE."
-              backgroundColor="var(--cor-azul-medio)"
-              color="var(--cor-creme)"
+              variant="azul"
             />
           </div>
         </div>
