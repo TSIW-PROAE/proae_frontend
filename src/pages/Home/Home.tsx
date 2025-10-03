@@ -55,8 +55,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#183b4e] via-[#1e4a5d] to-[#183b4e]">
       <header className="bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 px-8">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-[#183b4e] tracking-wide">PROAE</h1>
               <span className="ml-2 text-sm text-gray-600 hidden sm:block">Portal de Benefícios</span>
@@ -212,8 +212,8 @@ export default function Home() {
       </div>
 
       <footer className="bg-[#183b4e] text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center px-8">
             <div className="space-y-4">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Pró-Reitoria de Ações Afirmativas e Assistência Estudantil
@@ -241,7 +241,7 @@ export default function Home() {
               </Button>
               <Button
                 radius="lg"
-                className="border-2 border-white text-white hover:bg-white hover:text-[#183b4e] font-medium px-6 py-2 transition-all duration-200"
+                className="border-2 border-white hover:bg-white text-[#183b4e] font-medium px-6 py-2 transition-all duration-200 bg-white"
                 as={Link}
                 to="/login-funcionario"
               >
