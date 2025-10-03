@@ -165,7 +165,14 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
 
   return (
     <div
-      className={`pergunta-item ${pergunta.isEditing ? "editing" : "saved"}`}
+      className={`pergunta-item ${pergunta.isEditing ? "editing" : "saved"} ${
+        pergunta.vincularDadosAluno && !pergunta.isEditing ? "vinculada" : ""
+      }`}
+      onClick={() => {
+        if (!pergunta.isEditing) {
+          onToggleEditing();
+        }
+      }}
     >
       {pergunta.isEditing ? (
         // Estado de edição
@@ -205,7 +212,10 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                 <span className="toggle-text">Vincular</span>
               </label>
               <button
-                onClick={onDelete}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
                 className="delete-pergunta-button"
                 title="Excluir pergunta"
                 aria-label="Excluir pergunta"
@@ -515,7 +525,10 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
           {/* Rodapé com botão de salvar */}
           <div className="pergunta-footer">
             <button
-              onClick={onSave}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSave();
+              }}
               className="save-pergunta-footer-button"
               title="Salvar pergunta"
               aria-label="Salvar pergunta"
@@ -532,7 +545,10 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
             <span className="pergunta-numero-saved">Pergunta {index + 1}</span>
             <div className="pergunta-actions-saved">
               <button
-                onClick={onToggleEditing}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleEditing();
+                }}
                 className="edit-pergunta-button-saved"
                 title="Editar pergunta"
                 aria-label="Editar pergunta"
@@ -540,7 +556,10 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                 <Edit size={16} />
               </button>
               <button
-                onClick={onDelete}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
                 className="delete-pergunta-button-saved"
                 title="Excluir pergunta"
                 aria-label="Excluir pergunta"

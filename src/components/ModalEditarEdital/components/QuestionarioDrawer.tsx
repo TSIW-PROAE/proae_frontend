@@ -154,35 +154,51 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
           </div>
 
           <div className="questionario-list">
-            {questionarios.map((questionario, index) => (
-              <div
-                key={index}
-                className={`questionario-list-item ${
-                  activeQuestionarioIndex === index ? "active" : ""
-                }`}
-              >
+            {questionarios.map((questionario, index) => {
+              // Se é o questionário ativo, usa as perguntas reais, senão usa previewPerguntas
+              const numPerguntas =
+                activeQuestionarioIndex === index
+                  ? perguntas.length
+                  : questionario.value.previewPerguntas?.length || 0;
+
+              return (
                 <div
-                  className="questionario-item-content"
-                  onClick={() => onQuestionarioSelect(index)}
+                  key={index}
+                  className={`questionario-list-item ${
+                    activeQuestionarioIndex === index ? "active" : ""
+                  }`}
                 >
-                  <FileText size={16} />
-                  <span>
-                    {questionario.value.nome || `Questionário ${index + 1}`}
-                  </span>
+                  <div
+                    className="questionario-item-content"
+                    onClick={() => onQuestionarioSelect(index)}
+                  >
+                    <FileText size={16} />
+                    <span>
+                      {questionario.value.nome || `Questionário ${index + 1}`}
+                    </span>
+                  </div>
+                  <div className="questionario-item-actions">
+                    <span
+                      className="questionario-perguntas-badge"
+                      title={`${numPerguntas} pergunta${numPerguntas !== 1 ? "s" : ""}`}
+                    >
+                      {numPerguntas}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removerQuestionario(index);
+                      }}
+                      className="remove-questionario-button"
+                      title="Remover questionário"
+                      aria-label="Remover questionário"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removerQuestionario(index);
-                  }}
-                  className="remove-questionario-button"
-                  title="Remover questionário"
-                  aria-label="Remover questionário"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
