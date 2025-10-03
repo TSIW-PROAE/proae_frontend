@@ -113,7 +113,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
               }
 
             });
-            console.log(respostas)
+            
             await backendOnSubmit({ respostas });
           }
         },
