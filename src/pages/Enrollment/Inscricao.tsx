@@ -1,15 +1,11 @@
-import FormularioDinamico, {
-  TipoInput,
-  TipoFormatacao,
-} from "../../components/FormularioDinamico/FormularioDinamico";
+import FormularioDinamico from "../../components/FormularioDinamico/FormularioDinamico";
 import logoUfba from "../../assets/logo-ufba.png";
 import "./Inscricao.css";
-import IHttpClient, {
-  FetchAdapter,
-} from "@/services/BaseRequestService/HttpClient.ts";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import LoadingScreen from "@/components/Loading/LoadingScreen";
+import { TipoInput, } from "@/types/dynamicForm";
+import {InscricaoService} from "@/services/InscricaoService/inscricao.service";
 
 export type FormsConfiguration = {
   titleInscricao: string;
@@ -17,76 +13,55 @@ export type FormsConfiguration = {
   pages: PageConfig[];
 };
 
-type PageConfig = {
+export type PageConfig = {
   titulo: string;
   inputs: InputsConfig[];
   botaoContinuar?: string;
 };
 
-type InputsConfig = {
+export type InputsConfig = {
   titulo: string;
   nome: string;
   obrigatorio: boolean;
   tipo: TipoInput;
-  formatacao?: TipoFormatacao;
+  // TODO: FORMATACAO
+  formatacao?: any;
   placeholder?: string;
   opcoes?: Option[];
 };
 
-type Option = {
+export type Option = {
   valor: string;
   label: string;
 };
 
-type PagesResponse = {
+export type PagesResponse = {
   id: number;
   texto: string;
   perguntas: QuestionsResponse[];
 };
 
-type QuestionsResponse = {
+export type QuestionsResponse = {
   id: number;
   pergunta: string;
   tipo_Pergunta: TipoInput;
   obrigatoriedade: boolean;
-  tipo_formatacao: TipoFormatacao;
+  // TODO: FORMATACAO
+  tipo_formatacao: any;
   placeholder: string;
   opcoes: string[];
 };
 
-type Answers = {
-  edital: number;
-  respostas: Array<{ pergunta_id: number; texto: string }>;
+export type Answers = {
+  vaga_id: number;
+  respostas: Array<{
+    perguntaId: number;
+    valorTexto?: string;
+    valorOpcoes?: string[];
+    urlArquivo?: string;
+  }>;
 };
 
-export class InscricaoService {
-  private static instance: InscricaoService;
-  private readonly httpClient: IHttpClient;
-  private readonly url;
-
-  private constructor() {
-    this.httpClient = new FetchAdapter();
-    this.url = import.meta.env.VITE_API_URL_SERVICES;
-  }
-
-  static getInstance(): InscricaoService {
-    if (!InscricaoService.instance) {
-      InscricaoService.instance = new InscricaoService();
-    }
-    return InscricaoService.instance;
-  }
-
-  async fetchPagesInformation(editalId: number): Promise<PagesResponse[]> {
-    return await this.httpClient.get<PagesResponse[]>(
-      this.url + "/steps/edital/" + editalId);
-  }
-
-  async saveInscricao(answers: Answers) {
-    return await this.httpClient.post(
-      this.url + "/inscricoes",
-      answers);
-  }
-}
 
 // TODO: Retirar service da camada de pages!
 export default function Inscricao() {
@@ -140,13 +115,41 @@ export default function Inscricao() {
   };
 
   const handleFormSubmit = async (dados: Record<string, any>) => {
-    let answers: Answers = { edital: editalId, respostas: [] };
-    Object.entries(dados).forEach(([chave, valor]) => {
-      answers.respostas.push({
-        pergunta_id: parseInt(chave),
-        texto: Array.isArray(valor) ? valor.join(",") : valor.toString(),
-      });
+    // Extrair vaga_id dos dados (adicionado pelo FormularioDinamico)
+    const { vaga_id, ...respostasData } = dados;
+    
+    if (!vaga_id) {
+      console.error("Vaga não selecionada");
+      return;
+    }
+
+    let answers: Answers = { vaga_id: vaga_id, respostas: [] };
+    
+    Object.entries(respostasData).forEach(([chave, valor]) => {
+      const perguntaId = parseInt(chave);
+      
+      // Processar diferentes tipos de resposta
+      if (Array.isArray(valor)) {
+        // Para select múltiplo ou checkboxes
+        answers.respostas.push({
+          perguntaId: perguntaId,
+          valorOpcoes: valor,
+        });
+      } else if (typeof valor === 'string' && valor.startsWith('http')) {
+        // Para arquivos (URLs)
+        answers.respostas.push({
+          perguntaId: perguntaId,
+          urlArquivo: valor,
+        });
+      } else {
+        // Para texto, número, email, etc.
+        answers.respostas.push({
+          perguntaId: perguntaId,
+          valorTexto: valor.toString(),
+        });
+      }
     });
+
     try {
       setIsLoading(true);
       await inscricaoService.saveInscricao(answers);
@@ -166,6 +169,7 @@ export default function Inscricao() {
     rotaCancelamento: "/portal-aluno",
     logoSrc: logoUfba,
     onSubmit: handleFormSubmit,
+    editalId: editalId,
   };
 
   return (

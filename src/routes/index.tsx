@@ -24,6 +24,7 @@ import LoginAluno from "@/pages/paginaAluno/LoginAluno/LoginAluno";
 import LoginProae from "@/pages/paginaProae/LoginProae/LoginProae";
 import ForgotPassword from "@/pages/paginaAluno/forgotPassword/ForgotPassword";
 import ResetPassword from "@/pages/paginaAluno/resetPassword/ResetPassoword";
+import Questionario from "@/pages/questionarios/questionario";
 
 const routes = [
   {
@@ -45,6 +46,8 @@ const routes = [
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
           { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
+          { path: "questionario/:editalId", element: <Questionario /> },
+
         ],
       },
       {path: "login-proae", element: <LoginProae />},

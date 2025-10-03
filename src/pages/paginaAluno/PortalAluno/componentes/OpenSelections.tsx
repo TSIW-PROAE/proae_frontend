@@ -8,6 +8,7 @@ import {
   ArrowRight,
   FileText,
   AlertCircle,
+  BookOpen,
 } from "lucide-react";
 
 interface Edital {
@@ -106,7 +107,7 @@ const OpenSelectionCard: React.FC<Edital> = ({
       <div className="selection-card-footer">
         {isOpen ? (
           <button
-            onClick={() => redirectToInscricao(id)}
+            onClick={() => navigate(`/questionario/${id}`)}
             className="selection-action-button primary"
             title="Realizar Inscrição"
           >
@@ -137,8 +138,12 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
   ) || [];
 
   return (
-    <div className="open-selections-container">
+    <div className="bg-white border-2 p-[1.25rem] shadow-md border-solid rounded-[1.25rem] flex flex-col h-full">
       <div className="selections-header">
+        <div className="flex justify-start items-center gap-2 mb-4">
+        <BookOpen className="w-5 h-5 text-blue-600" />
+        <h2 className="text-2xl font-semibold text-gray-900 m-0">Seleções Abertas</h2>
+        </div>
         <div className="selections-stats">
           <div className="stat-item">
             <div className="stat-dot open"></div>
