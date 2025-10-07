@@ -40,7 +40,7 @@ export default function Home() {
     if (!authLoading && isAuthenticated) {
         if(userInfo?.roles.includes('admin') && userInfo?.aprovado){
             navigate("/portal-proae/inscricoes");
-        } else if(userInfo?.aprovado == false){
+        } else if(userInfo?.aprovado == false && userInfo?.roles.includes('admin')){
             navigate("/tela-de-espera");
         } else{
             navigate("/portal-aluno");
