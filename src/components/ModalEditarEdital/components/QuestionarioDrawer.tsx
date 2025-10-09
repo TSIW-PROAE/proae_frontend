@@ -428,7 +428,9 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                   <>
                     {perguntasFiltradas.map((pergunta) => {
                       // Encontra o índice real da pergunta no array original
-                      const realIndex = perguntas.findIndex((p) => p === pergunta);
+                      const realIndex = perguntas.findIndex(
+                        (p) => p === pergunta
+                      );
 
                       return (
                         <PerguntaItem
@@ -447,30 +449,36 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                             removeOpcao(realIndex, opcaoIndex)
                           }
                           onDelete={() => onDeletePergunta(realIndex)}
-                          onToggleEditing={() => togglePerguntaEditing(realIndex)}
+                          onToggleEditing={() =>
+                            togglePerguntaEditing(realIndex)
+                          }
                           onSave={() => onSavePergunta(realIndex)}
                           onCreateDado={onCreateDado}
                         />
                       );
                     })}
 
-                    {perguntasFiltradas.length === 0 && perguntas.length > 0 && (
-                      <div className="empty-perguntas">
-                        <p>Nenhuma pergunta encontrada com os filtros aplicados.</p>
-                        <button
-                          onClick={() => {
-                            setSearchTerm("");
-                            setFilterVinculadas(false);
-                            setFilterObrigatorias(false);
-                            setFilterTipo("");
-                            setSortOrder("none");
-                          }}
-                          className="clear-filters-link"
-                        >
-                          Limpar filtros
-                        </button>
-                      </div>
-                    )}
+                    {perguntasFiltradas.length === 0 &&
+                      perguntas.length > 0 && (
+                        <div className="empty-perguntas">
+                          <p>
+                            Nenhuma pergunta encontrada com os filtros
+                            aplicados.
+                          </p>
+                          <button
+                            onClick={() => {
+                              setSearchTerm("");
+                              setFilterVinculadas(false);
+                              setFilterObrigatorias(false);
+                              setFilterTipo("");
+                              setSortOrder("none");
+                            }}
+                            className="clear-filters-link"
+                          >
+                            Limpar filtros
+                          </button>
+                        </div>
+                      )}
 
                     {perguntas.length === 0 && !loading && (
                       <div className="empty-perguntas">
