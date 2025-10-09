@@ -10,7 +10,7 @@ import {
   Filter,
   X,
 } from "lucide-react";
-import { PerguntaEditorItem, EditableQuestionario } from "../types";
+import { PerguntaEditorItem, EditableQuestionario, DadoAluno } from "../types";
 import PerguntaItem from "./PerguntaItem";
 
 interface QuestionarioDrawerProps {
@@ -20,6 +20,7 @@ interface QuestionarioDrawerProps {
   activeQuestionarioIndex: number | null;
   titleEditing: boolean;
   perguntas: PerguntaEditorItem[];
+  dadosAluno?: DadoAluno[]; // Lista de dados do aluno
   onClose: () => void;
   onQuestionarioSelect: (index: number) => void;
   onTitleChange: (title: string) => void;
@@ -28,6 +29,7 @@ interface QuestionarioDrawerProps {
   onSave: () => void;
   onSavePergunta: (index: number) => void;
   onDeletePergunta: (index: number) => void;
+  onCreateDado?: (dado: Omit<DadoAluno, "id">) => Promise<DadoAluno | null>; // Função para criar dado
   adicionarQuestionario: () => void;
   removerQuestionario: (index: number) => void;
 }
@@ -38,6 +40,7 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   activeQuestionarioIndex,
   titleEditing,
   perguntas,
+  dadosAluno,
   onClose,
   onQuestionarioSelect,
   onTitleChange,
@@ -45,6 +48,7 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   onPerguntasChange,
   onSavePergunta,
   onDeletePergunta,
+  onCreateDado,
   adicionarQuestionario,
   removerQuestionario,
 }) => {
@@ -423,6 +427,7 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                       key={realIndex}
                       pergunta={pergunta}
                       index={realIndex}
+                      dadosAluno={dadosAluno}
                       onUpdate={(field, value) =>
                         updatePergunta(realIndex, field, value)
                       }
@@ -436,6 +441,7 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                       onDelete={() => onDeletePergunta(realIndex)}
                       onToggleEditing={() => togglePerguntaEditing(realIndex)}
                       onSave={() => onSavePergunta(realIndex)}
+                      onCreateDado={onCreateDado}
                     />
                   );
                 })}

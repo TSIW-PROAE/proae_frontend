@@ -30,6 +30,7 @@ export interface EditableQuestionario {
 }
 
 export interface DadoAluno {
+  id?: number; // ID do dado no backend
   nome: string;
   tipo: "text" | "number" | "date" | "select" | "file";
   obrigatorio: boolean;
@@ -52,6 +53,7 @@ export interface PerguntaEditorItem {
   opcoes: string[];
   vincularDadosAluno?: boolean;
   dadoVinculado?: string; // nome do dado do aluno vinculado
+  dadoId?: number; // ID do dado vinculado no backend
   isEditing?: boolean;
 }
 

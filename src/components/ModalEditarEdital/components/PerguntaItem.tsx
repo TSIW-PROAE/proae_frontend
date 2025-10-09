@@ -19,73 +19,10 @@ import {
 } from "lucide-react";
 import { PerguntaEditorItem, DadoAluno } from "../types";
 
-// Mock de dados do aluno - futuramente virá de uma API
-let DADOS_ALUNO_MOCK: DadoAluno[] = [
-  {
-    nome: "CPF",
-    tipo: "text",
-    obrigatorio: true,
-    opcoes: [],
-  },
-  {
-    nome: "Nome Completo",
-    tipo: "text",
-    obrigatorio: true,
-    opcoes: [],
-  },
-  {
-    nome: "Data de Nascimento",
-    tipo: "date",
-    obrigatorio: true,
-    opcoes: [],
-  },
-  {
-    nome: "Estado Civil",
-    tipo: "select",
-    obrigatorio: true,
-    opcoes: ["Solteiro(a)", "Casado(a)", "Divorciado(a)", "Viúvo(a)"],
-  },
-  {
-    nome: "Endereço Completo",
-    tipo: "text",
-    obrigatorio: true,
-    opcoes: [],
-  },
-  {
-    nome: "Telefone",
-    tipo: "text",
-    obrigatorio: true,
-    opcoes: [],
-  },
-  {
-    nome: "Renda Familiar",
-    tipo: "number",
-    obrigatorio: false,
-    opcoes: [],
-  },
-  {
-    nome: "Comprovante de Residência",
-    tipo: "file",
-    obrigatorio: true,
-    opcoes: [],
-  },
-  {
-    nome: "RG (Frente e Verso)",
-    tipo: "file",
-    obrigatorio: true,
-    opcoes: [],
-  },
-  {
-    nome: "Histórico Escolar",
-    tipo: "file",
-    obrigatorio: false,
-    opcoes: [],
-  },
-];
-
 interface PerguntaItemProps {
   pergunta: PerguntaEditorItem;
   index: number;
+  dadosAluno?: DadoAluno[]; // Lista de dados do aluno disponíveis
   onUpdate: (field: keyof PerguntaEditorItem, value: any) => void;
   onUpdateOpcao: (opcaoIndex: number, value: string) => void;
   onAddOpcao: () => void;
@@ -93,11 +30,13 @@ interface PerguntaItemProps {
   onDelete: () => void;
   onToggleEditing: () => void;
   onSave: () => void;
+  onCreateDado?: (dado: Omit<DadoAluno, "id">) => Promise<DadoAluno | null>; // Função para criar novo dado
 }
 
 const PerguntaItem: React.FC<PerguntaItemProps> = ({
   pergunta,
   index,
+  dadosAluno = [],
   onUpdate,
   onUpdateOpcao,
   onAddOpcao,
@@ -105,9 +44,9 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
   onDelete,
   onToggleEditing,
   onSave,
+  onCreateDado,
 }) => {
   const [showModalNovoDado, setShowModalNovoDado] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [novoDado, setNovoDado] = useState<DadoAluno>({
     nome: "",
     tipo: "text",
@@ -116,14 +55,14 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
   });
   const [opcoesTemp, setOpcoesTemp] = useState<string[]>([]);
 
-  const handleSolicitarCriacaoDado = () => {
+  const handleSolicitarCriacaoDado = async () => {
     if (!novoDado.nome.trim()) {
       alert("Por favor, informe o nome do dado.");
       return;
     }
 
     // Verifica duplicidade
-    const dadoDuplicado = DADOS_ALUNO_MOCK.find(
+    const dadoDuplicado = dadosAluno.find(
       (d) => d.nome.toLowerCase().trim() === novoDado.nome.toLowerCase().trim()
     );
 
@@ -134,33 +73,44 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
       return;
     }
 
-    // Mostra modal de confirmação
-    setShowConfirmModal(true);
-  };
+    // Se temos a função de criar, chama a API
+    if (onCreateDado) {
+      const dadoParaAdicionar: DadoAluno = {
+        ...novoDado,
+        opcoes:
+          novoDado.tipo === "select" ? opcoesTemp.filter((o) => o.trim()) : [],
+      };
 
-  const handleConfirmarCriacaoDado = () => {
-    // Adiciona o novo dado ao mock
-    const dadoParaAdicionar: DadoAluno = {
-      ...novoDado,
-      opcoes:
-        novoDado.tipo === "select" ? opcoesTemp.filter((o) => o.trim()) : [],
-    };
+      const created = await onCreateDado(dadoParaAdicionar);
 
-    DADOS_ALUNO_MOCK.push(dadoParaAdicionar);
+      if (created && created.id) {
+        // Limpa o formulário
+        setNovoDado({
+          nome: "",
+          tipo: "text",
+          obrigatorio: false,
+          opcoes: [],
+        });
+        setOpcoesTemp([]);
+        setShowModalNovoDado(false);
 
-    // Limpa o formulário
-    setNovoDado({
-      nome: "",
-      tipo: "text",
-      obrigatorio: false,
-      opcoes: [],
-    });
-    setOpcoesTemp([]);
-    setShowModalNovoDado(false);
-    setShowConfirmModal(false);
+        // Seleciona automaticamente o dado recém-criado e atualiza o dadoId
+        onUpdate(
+          {
+            dadoVinculado: created.nome,
+            dadoId: created.id,
+          } as any,
+          undefined
+        );
 
-    // Seleciona automaticamente o dado recém-criado
-    onUpdate("dadoVinculado", dadoParaAdicionar.nome);
+        alert("Dado criado com sucesso!");
+      } else {
+        alert("Erro ao criar o dado. Tente novamente.");
+      }
+    } else {
+      // Fallback caso não tenha a função (não deveria acontecer)
+      alert("Função de criação de dado não disponível.");
+    }
   };
 
   return (
@@ -247,7 +197,7 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                       value={pergunta.dadoVinculado || ""}
                       onChange={(e) => {
                         const nomeDado = e.target.value;
-                        const dado = DADOS_ALUNO_MOCK.find(
+                        const dado = dadosAluno.find(
                           (d) => d.nome === nomeDado
                         );
 
@@ -273,10 +223,12 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                             "Atualizando obrigatoria para:",
                             dado.obrigatorio
                           );
+                          console.log("Atualizando dadoId para:", dado.id);
 
-                          // Atualiza todos os campos de uma vez usando objeto
+                          // Atualiza todos os campos de uma vez usando objeto, incluindo dadoId
                           const updates: any = {
                             dadoVinculado: nomeDado,
+                            dadoId: dado.id, // Armazena o ID do dado
                             tipo: novoTipo,
                             obrigatoria: dado.obrigatorio,
                           };
@@ -294,15 +246,21 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                           console.log("Atualizando com:", updates);
                           onUpdate(updates as any, undefined);
                         } else {
-                          // Se não houver dado, apenas limpa dadoVinculado
-                          onUpdate("dadoVinculado", nomeDado);
+                          // Se não houver dado, apenas limpa dadoVinculado e dadoId
+                          onUpdate(
+                            {
+                              dadoVinculado: nomeDado,
+                              dadoId: undefined,
+                            } as any,
+                            undefined
+                          );
                         }
                       }}
                       aria-label="Dado do aluno"
                       className="select-dado-aluno"
                     >
                       <option value="">-- Selecione um dado --</option>
-                      {DADOS_ALUNO_MOCK.map((dado) => {
+                      {dadosAluno.map((dado) => {
                         const tipoLabel = {
                           text: "Texto",
                           number: "Número",
@@ -351,7 +309,7 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                       "Renderizando preview para:",
                       pergunta.dadoVinculado
                     );
-                    const dadoSelecionado = DADOS_ALUNO_MOCK.find(
+                    const dadoSelecionado = dadosAluno.find(
                       (d) => d.nome === pergunta.dadoVinculado
                     );
 
@@ -779,49 +737,6 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
       )}
 
       {/* Modal de Confirmação */}
-      {showConfirmModal && (
-        <div
-          className="mini-modal-overlay"
-          onClick={() => setShowConfirmModal(false)}
-        >
-          <div
-            className="confirm-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="confirm-modal-icon">
-              <AlertCircle size={48} />
-            </div>
-            <h3 className="confirm-modal-title">Confirmar Criação de Dado</h3>
-            <p className="confirm-modal-text">
-              Você está prestes a criar um novo tipo de dado{" "}
-              <strong>"{novoDado.nome}"</strong>.
-            </p>
-            <p className="confirm-modal-warning">
-              ⚠️ Este dado <strong>não poderá ser excluído facilmente</strong>{" "}
-              após a criação. Para remover, será necessário acessar o{" "}
-              <strong>Gerenciamento de Dados</strong>.
-            </p>
-            <p className="confirm-modal-question">
-              Deseja realmente continuar?
-            </p>
-            <div className="confirm-modal-footer">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="confirm-modal-btn-cancel"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirmarCriacaoDado}
-                className="confirm-modal-btn-confirm"
-              >
-                <CheckCircle size={16} />
-                Sim, Criar Dado
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

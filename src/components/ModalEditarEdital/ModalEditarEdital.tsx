@@ -3,6 +3,7 @@ import { Edital, DocumentoEdital, EtapaEdital } from "../../types/edital";
 import { stepService } from "@/services/StepService/stepService";
 import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import { editalService } from "../../services/EditalService/editalService";
+import { dadoService, Dado } from "@/services/DadoService/dadoService";
 import { toast } from "react-hot-toast";
 import "./ModalEditarEdital.css";
 
@@ -91,6 +92,9 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     []
   );
 
+  // Estado de Dados do Aluno
+  const [dadosAluno, setDadosAluno] = useState<Dado[]>([]);
+
   useEffect(() => {
     if (isOpen && edital) {
       setInitialized(false);
@@ -116,6 +120,9 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
 
       // Carregar Steps deste edital e montar UI de questionários
       loadSteps();
+
+      // Carregar Dados do Aluno
+      loadDadosAluno();
     }
   }, [isOpen, edital]);
 
@@ -209,6 +216,15 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
       }
     } catch (error) {
       console.error("Erro ao carregar steps:", error);
+    }
+  };
+
+  const loadDadosAluno = async () => {
+    try {
+      const dados = await dadoService.listarDados();
+      setDadosAluno(dados || []);
+    } catch (error) {
+      console.error("Erro ao carregar dados do aluno:", error);
     }
   };
 
@@ -548,6 +564,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
             "texto",
           obrigatoria: Boolean(p.obrigatoria ?? p.obrigatoriedade ?? false),
           opcoes: (p.opcoes_resposta || p.opcoes || []) as string[],
+          dadoId: (p as any).dadoId, // Adiciona dadoId se existir
         }));
         setEditorPerguntas(mapped);
       } else {
@@ -558,6 +575,24 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
       setEditorPerguntas([]);
     } finally {
       setDrawerLoading(false);
+    }
+  };
+
+  const handleCreateDado = async (
+    novoDado: Omit<Dado, "id" | "created_at" | "updated_at">
+  ): Promise<Dado | null> => {
+    try {
+      const created = await dadoService.criarDado(novoDado);
+
+      // Atualiza a lista local de dados
+      setDadosAluno((prev) => [...prev, created]);
+
+      toast.success("Dado criado com sucesso");
+      return created;
+    } catch (error) {
+      console.error("Erro ao criar dado:", error);
+      toast.error("Erro ao criar dado. Tente novamente.");
+      return null;
     }
   };
 
@@ -659,6 +694,11 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
         // Adicionar opções apenas se for tipo de seleção
         if (tipoBackend === "select" || tipoBackend === "selectGroup") {
           payload.opcoes = opcoesValidas;
+        }
+
+        // Adicionar dadoId se a pergunta estiver vinculada a um dado
+        if (pergunta.dadoId) {
+          payload.dadoId = pergunta.dadoId;
         }
 
         // Adicionar tipo_formatacao se necessário (opcional)
@@ -857,6 +897,13 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
           activeQuestionarioIndex={activeQuestionarioIndex}
           titleEditing={quizTitleEditing}
           perguntas={editorPerguntas}
+          dadosAluno={dadosAluno.map((d) => ({
+            id: d.id,
+            nome: d.nome,
+            tipo: d.tipo,
+            obrigatorio: d.obrigatorio,
+            opcoes: d.opcoes || [],
+          }))}
           onClose={() => setDrawerOpen(false)}
           onQuestionarioSelect={(index) => {
             // Carrega as perguntas do questionário selecionado
@@ -898,6 +945,10 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
           }}
           onSavePergunta={handleSavePergunta}
           onDeletePergunta={handleDeletePergunta}
+          onCreateDado={async (novoDado) => {
+            const created = await handleCreateDado(novoDado);
+            return created ? { ...created } : null;
+          }}
           adicionarQuestionario={handleAddQuestionario}
           removerQuestionario={async (index) => {
             const questionarioToRemove = questionarios[index];
