@@ -1,0 +1,52 @@
+.parecer-questionario {
+  width: 100%;
+  max-width: 800px;
+}
+
+.parecer-card {
+  transition: all 0.2s ease;
+}
+
+.parecer-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.parecer-content {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 3px solid var(--nextui-colors-primary);
+}
+
+.parecer-questionario .text-danger {
+  color: #f31260;
+}
+
+.parecer-questionario .text-default-500 {
+  color: #71717a;
+}
+
+.parecer-questionario .text-default-700 {
+  color: #3f3f46;
+}
+
+.parecer-questionario .text-default-300 {
+  color: #d4d4d8;
+}
+
+@media (max-width: 768px) {
+  .parecer-questionario {
+    padding: 0 16px;
+  }
+  
+  .parecer-card .flex.items-start.justify-between {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .parecer-card .flex.gap-2.justify-end {
+    width: 100%;
+  }
+}
+
