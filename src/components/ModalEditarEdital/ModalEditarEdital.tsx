@@ -554,24 +554,92 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     try {
       const stepId = questionarios[index].value.id;
       if (stepId) {
+        // Garantir que os dados do aluno estejam carregados antes de mapear as perguntas
+        console.log("Carregando dados do aluno...");
+        await loadDadosAluno();
+        console.log("Dados do aluno carregados:", dadosAluno.length, "itens");
+        
+        console.log("Carregando perguntas para step:", stepId);
         const perguntas = await perguntaService.listarPerguntasPorStep(stepId);
-        const mapped: PerguntaEditorItem[] = (perguntas || []).map((p) => ({
-          id: p.id, // Adiciona o ID da pergunta
-          texto: p.texto_pergunta || p.pergunta || "",
-          tipo:
-            (p.tipo_pergunta as PerguntaEditorItem["tipo"]) ||
-            (p.tipo_Pergunta as PerguntaEditorItem["tipo"]) ||
-            "texto",
-          obrigatoria: Boolean(p.obrigatoria ?? p.obrigatoriedade ?? false),
-          opcoes: (p.opcoes_resposta || p.opcoes || []) as string[],
-          dadoId: (p as any).dadoId, // Adiciona dadoId se existir
-        }));
+        console.log("Perguntas recebidas da API:", perguntas);
+        
+        const mapped: PerguntaEditorItem[] = (perguntas || []).map((p) => {
+          // Verifica se existe dado vinculado
+          const dadoVinculado = (p as any).dado;
+          const isVinculada = Boolean(dadoVinculado);
+          console.log(`Processando pergunta "${p.pergunta}":`, { dadoVinculado, isVinculada });
+
+          // Mapeia os tipos da API para os tipos do componente
+          let tipoFromAPI = p.tipo_pergunta || p.tipo_Pergunta || "text";
+          let opcoesFromAPI = (p.opcoes_resposta || p.opcoes || []) as string[];
+          let obrigatoriaFromAPI = Boolean(p.obrigatoria ?? p.obrigatoriedade ?? false);
+
+          // Se tem dado vinculado, busca o tipo, opções e obrigatoriedade do dado
+          if (isVinculada && dadoVinculado) {
+            console.log(`Buscando dado com ID ${dadoVinculado.id} na lista de ${dadosAluno.length} dados`);
+            const dadoCompleto = dadosAluno.find(d => d.id === dadoVinculado.id);
+            if (dadoCompleto) {
+              console.log(`Pergunta "${p.pergunta}" vinculada ao dado "${dadoCompleto.nome}":`, {
+                tipoOriginal: tipoFromAPI,
+                tipoNovo: dadoCompleto.tipo,
+                obrigatoriaOriginal: obrigatoriaFromAPI,
+                obrigatoriaNova: dadoCompleto.obrigatorio
+              });
+              tipoFromAPI = dadoCompleto.tipo;
+              opcoesFromAPI = dadoCompleto.opcoes || [];
+              obrigatoriaFromAPI = Boolean(dadoCompleto.obrigatorio);
+            } else {
+              console.warn(`Dado com ID ${dadoVinculado.id} não encontrado na lista de dados do aluno`);
+            }
+          }
+
+          let tipoMapeado: PerguntaEditorItem["tipo"] = "texto";
+          
+          switch (tipoFromAPI) {
+            case "text":
+              tipoMapeado = "texto";
+              break;
+            case "number":
+              tipoMapeado = "numero";
+              break;
+            case "date":
+              tipoMapeado = "data";
+              break;
+            case "select":
+              tipoMapeado = "multipla_escolha";
+              break;
+            case "file":
+              tipoMapeado = "arquivo";
+              break;
+            case "email":
+              tipoMapeado = "email";
+              break;
+            default:
+              tipoMapeado = "texto";
+          }
+
+          const result = {
+            id: p.id, // Adiciona o ID da pergunta
+            texto: p.texto_pergunta || p.pergunta || "",
+            tipo: tipoMapeado,
+            obrigatoria: obrigatoriaFromAPI,
+            opcoes: opcoesFromAPI,
+            vincularDadosAluno: isVinculada, // Define se está vinculada
+            dadoVinculado: dadoVinculado?.nome || undefined, // Nome do dado vinculado
+            dadoId: dadoVinculado?.id || undefined, // ID do dado vinculado
+          };
+          
+          console.log(`Resultado final da pergunta "${p.pergunta}":`, result);
+          return result;
+        });
+        console.log("Perguntas mapeadas:", mapped);
         setEditorPerguntas(mapped);
       } else {
         // novo questionário ainda sem id
         setEditorPerguntas([]);
       }
     } catch (e) {
+      console.error("Erro ao carregar questionário:", e);
       setEditorPerguntas([]);
     } finally {
       setDrawerLoading(false);
@@ -667,6 +735,9 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
         if (tipoBackend === "select" || tipoBackend === "selectGroup") {
           payload.opcoes = opcoesValidas;
         }
+
+        // Adicionar dadoId (pode ser null para desvincular, ou um ID para vincular/trocar)
+        payload.dadoId = pergunta.dadoId || null;
 
         const updated = await perguntaService.atualizarPergunta(
           pergunta.id,

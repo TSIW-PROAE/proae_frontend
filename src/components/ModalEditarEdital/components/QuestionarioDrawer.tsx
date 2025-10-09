@@ -36,6 +36,7 @@ interface QuestionarioDrawerProps {
 
 const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   isOpen,
+  loading,
   questionarios,
   activeQuestionarioIndex,
   titleEditing,
@@ -418,63 +419,72 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
 
               {/* Lista de perguntas */}
               <div className="perguntas-list">
-                {perguntasFiltradas.map((pergunta) => {
-                  // Encontra o índice real da pergunta no array original
-                  const realIndex = perguntas.findIndex((p) => p === pergunta);
-
-                  return (
-                    <PerguntaItem
-                      key={realIndex}
-                      pergunta={pergunta}
-                      index={realIndex}
-                      dadosAluno={dadosAluno}
-                      onUpdate={(field, value) =>
-                        updatePergunta(realIndex, field, value)
-                      }
-                      onUpdateOpcao={(opcaoIndex, value) =>
-                        updateOpcao(realIndex, opcaoIndex, value)
-                      }
-                      onAddOpcao={() => addOpcao(realIndex)}
-                      onRemoveOpcao={(opcaoIndex) =>
-                        removeOpcao(realIndex, opcaoIndex)
-                      }
-                      onDelete={() => onDeletePergunta(realIndex)}
-                      onToggleEditing={() => togglePerguntaEditing(realIndex)}
-                      onSave={() => onSavePergunta(realIndex)}
-                      onCreateDado={onCreateDado}
-                    />
-                  );
-                })}
-
-                {perguntasFiltradas.length === 0 && perguntas.length > 0 && (
-                  <div className="empty-perguntas">
-                    <p>Nenhuma pergunta encontrada com os filtros aplicados.</p>
-                    <button
-                      onClick={() => {
-                        setSearchTerm("");
-                        setFilterVinculadas(false);
-                        setFilterObrigatorias(false);
-                        setFilterTipo("");
-                        setSortOrder("none");
-                      }}
-                      className="clear-filters-link"
-                    >
-                      Limpar filtros
-                    </button>
+                {loading ? (
+                  <div className="loading-perguntas">
+                    <div className="loading-spinner"></div>
+                    <p>Carregando perguntas...</p>
                   </div>
-                )}
+                ) : (
+                  <>
+                    {perguntasFiltradas.map((pergunta) => {
+                      // Encontra o índice real da pergunta no array original
+                      const realIndex = perguntas.findIndex((p) => p === pergunta);
 
-                {perguntas.length === 0 && (
-                  <div className="empty-perguntas">
-                    <p>Nenhuma pergunta adicionada ainda.</p>
-                    <button
-                      onClick={addPergunta}
-                      className="add-first-question"
-                    >
-                      <Plus size={16} />
-                      Adicionar primeira pergunta
-                    </button>
-                  </div>
+                      return (
+                        <PerguntaItem
+                          key={realIndex}
+                          pergunta={pergunta}
+                          index={realIndex}
+                          dadosAluno={dadosAluno}
+                          onUpdate={(field, value) =>
+                            updatePergunta(realIndex, field, value)
+                          }
+                          onUpdateOpcao={(opcaoIndex, value) =>
+                            updateOpcao(realIndex, opcaoIndex, value)
+                          }
+                          onAddOpcao={() => addOpcao(realIndex)}
+                          onRemoveOpcao={(opcaoIndex) =>
+                            removeOpcao(realIndex, opcaoIndex)
+                          }
+                          onDelete={() => onDeletePergunta(realIndex)}
+                          onToggleEditing={() => togglePerguntaEditing(realIndex)}
+                          onSave={() => onSavePergunta(realIndex)}
+                          onCreateDado={onCreateDado}
+                        />
+                      );
+                    })}
+
+                    {perguntasFiltradas.length === 0 && perguntas.length > 0 && (
+                      <div className="empty-perguntas">
+                        <p>Nenhuma pergunta encontrada com os filtros aplicados.</p>
+                        <button
+                          onClick={() => {
+                            setSearchTerm("");
+                            setFilterVinculadas(false);
+                            setFilterObrigatorias(false);
+                            setFilterTipo("");
+                            setSortOrder("none");
+                          }}
+                          className="clear-filters-link"
+                        >
+                          Limpar filtros
+                        </button>
+                      </div>
+                    )}
+
+                    {perguntas.length === 0 && !loading && (
+                      <div className="empty-perguntas">
+                        <p>Nenhuma pergunta adicionada ainda.</p>
+                        <button
+                          onClick={addPergunta}
+                          className="add-first-question"
+                        >
+                          <Plus size={16} />
+                          Adicionar primeira pergunta
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </>

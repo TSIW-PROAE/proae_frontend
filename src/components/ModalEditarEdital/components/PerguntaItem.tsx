@@ -568,12 +568,19 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                           ? "Data"
                           : pergunta.tipo === "arquivo"
                             ? "Arquivo"
-                            : "Email"}
+                            : pergunta.tipo === "email"
+                              ? "Email"
+                              : "Texto"}
               </span>
-              {pergunta.obrigatoria && (
+              {pergunta.obrigatoria ? (
                 <span className="obrigatoria-badge-saved">
                   <CheckCircle size={12} />
                   Obrigatória
+                </span>
+              ) : (
+                <span className="opcional-badge-saved">
+                  <XCircle size={12} />
+                  Opcional
                 </span>
               )}
               {pergunta.vincularDadosAluno && (
