@@ -1,4 +1,5 @@
 import IHttpClient from "../BaseRequestService/HttpClient";
+import { RPendenciasAluno } from "../../types/pendencias";
 
 const url = import.meta.env.VITE_API_URL_SERVICES + `/documentos`;
 export default class PendenciasAlunoService {
