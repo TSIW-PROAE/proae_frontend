@@ -59,13 +59,7 @@ const PendenciasAluno: React.FC = () => {
     <PageLayout>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => navigate('/portal-aluno')}
-            aria-label="Voltar"
-            className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200"
-          >
-            <SetaEsquerda  />
-          </button>
+
           <div className="flex-1">
             <h1 className="text-2xl md:text-3xl font-semibold text-[#183b4e] leading-tight">
               Pendências
