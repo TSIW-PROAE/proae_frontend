@@ -20,7 +20,7 @@ export interface Documento {
   tipo_documento: string;
   documento_url: string;
   status_documento: StatusDocumento;
-  validacooes: Validacao[];
+  validacoes: Validacao[];
 }
 
 export interface Validacao {
