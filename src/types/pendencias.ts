@@ -4,17 +4,18 @@ enum StatusDocumento {
   Reprovado = "REPROVADO",
 }
 
-interface RPendenciasAluno {
+export interface RPendenciasAluno {
+  success: boolean;
   pendencias: Pendencia[];
 }
 
-interface Pendencia {
+export interface Pendencia {
   inscricao_id: number;
   titulo_edital: string;
   documentos: Documento[];
 }
 
-interface Documento {
+export interface Documento {
   documento_id: number;
   tipo_documento: string;
   documento_url: string;
@@ -22,7 +23,7 @@ interface Documento {
   validacooes: Validacao[];
 }
 
-interface Validacao {
+export interface Validacao {
   parecer: string;
   data_validacao: string;
 }
