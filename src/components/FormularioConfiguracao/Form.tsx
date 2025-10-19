@@ -9,7 +9,7 @@ import {
   obterMensagemErro,
   validarFormatacao,
 } from "../../utils/validations";
-import { TipoFormatacao } from "../FormularioDinamico/FormularioDinamico";
+import { TipoFormatacao } from "../../utils/validations";
 import "./Form.css";
 import { formSections } from "./FormConfig";
 import FormField, { FormFieldProps } from "./FormField";

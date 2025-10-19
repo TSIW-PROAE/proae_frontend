@@ -14,16 +14,19 @@ import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.ts
 import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
 import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
 import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
+import ParecerQuestionarios from "../pages/paginaProae/ParecerQuestionarios/ParecerQuestionarios";
+import CadastroProae from "@/pages/paginaProae/CadastroProae/CadastroProae.tsx";
+import TelaDeEspera from "@/pages/paginaProae/TelaDeEspera/TelaDeEspera";
 
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
 import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
-import ProtectedRouteAluno from "@/Auth/ProtectedRouteAluno";
-import ProtectedRouteProae from "@/Auth/ProtectedRouteProae";
-import LoginAluno from "@/pages/paginaAluno/LoginAluno/LoginAluno";
-import LoginProae from "@/pages/paginaProae/LoginProae/LoginProae";
-import ForgotPassword from "@/pages/paginaAluno/forgotPassword/ForgotPassword";
-import ResetPassword from "@/pages/paginaAluno/resetPassword/ResetPassoword";
+import ProtectedProaeRoute from "@/Auth/ProtectedProaeRoute";
+import ProtectedRouteAluno from "@/Auth/ProtectedAlunoRoute";
+import Login from "@/pages/Login/Login";
+import ForgotPassword from "@/pages/forgotPassword/ForgotPassword";
+import ResetPassword from "@/pages/resetPassword/ResetPassoword";
+import Questionario from "@/pages/questionarios/questionario";
 
 const routes = [
   {
@@ -34,8 +37,8 @@ const routes = [
         path: "",
         element: <Home />,
       },
+      {path: "login", element: <Login />},
       { path: "cadastro-aluno", element: <CadastroAluno /> },
-      {path: "login-aluno", element: <LoginAluno />},
       {path: "forgot-password", element: <ForgotPassword />},
       {path: "reset-password", element: <ResetPassword />},
       {
@@ -45,14 +48,18 @@ const routes = [
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
           { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
+          { path: "questionario/:editalId", element: <Questionario /> },
+
         ],
       },
-      {path: "login-proae", element: <LoginProae />},
+      {path: "cadastro-proae", element: <CadastroProae />},
+      {path: "tela-de-espera", element: <TelaDeEspera />},
       {
-        element: <ProtectedRouteProae />,
+        element: <ProtectedProaeRoute />,
         children: [
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
+          { path: "portal-proae/pareceres", element: <ParecerQuestionarios /> },
           { path: "portal-proae/configuracao", element: <ConfiguracaoProae /> },
           { path: "portal-proae/cadastro-edital", element: <CadastroEdital /> },
         ],

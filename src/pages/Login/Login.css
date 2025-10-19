@@ -1,5 +1,5 @@
 /* Importando variáveis globais */
-@import "../../../styles/variables.css";
+@import "../../styles/variables.css";
 
 /* Container principal */
 .login-container {
@@ -68,15 +68,15 @@
 
 /* Lado da imagem */
 .logo-container {
-  background-image: url("../../../assets/letras.jpg");
+  background-image: url("../../assets/letras.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 35%;
-  padding: 0;
+  justify-content: start;
+  align-items: end;
+  width: 70%;
+  padding: 12px;
   position: relative;
   min-height: 600px;
 }
@@ -235,8 +235,6 @@
 .register-link-container {
   display: flex;
   justify-content: center;
-  margin-top: 0px;
-  margin-bottom: 0px;
 }
 
 .register-link {
@@ -245,6 +243,7 @@
   color: var(--cor-azul-medio) !important;
   text-decoration: underline !important;
   transition: color 0.2s ease;
+  margin-bottom: 4px;
 }
 
 .register-link:hover {

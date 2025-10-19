@@ -1,19 +1,21 @@
-export interface UserInfo{
+
+import { CadastroFormData } from "@/pages/paginaProae/CadastroProae/CadastroProae";
+export interface UserInfo {
   id: number;
   nome: string;
   email: string;
+  roles: UserRole[];
   [key: string]: any;
 }
 
-export interface AuthContextType{
+export interface AuthContextType {
   isAuthenticated: boolean;
   userInfo: UserInfo | null;
-  login: (data: UserLogin) => Promise <UserLoginResponse>;
+  login: (data: UserLogin) => Promise<UserLoginResponse>;
   logout: () => void;
-  register: (data: UserSignup) => Promise<any>;
-  Oauth_login: () => void;
-  Oauth_logout: () => void;
-  Oauth_register: () => void;
+  registerAluno: (data: UserSignup) => Promise<DefaultResponse>;
+  registerAdmin: (data: CadastroFormData) => Promise<DefaultResponse>;
+  checkAuth: () => Promise<void>;
   loading: boolean;
 }
 
@@ -28,36 +30,42 @@ export type UserSignup = {
   cpf: string;
   data_ingresso: string;
   celular: string;
-}
+};
 
 export type UserLogin = {
   email: string;
   senha: string;
-}
+};
 
 export interface UserLoginResponse {
   success: string;
   user: {
-    aluno_id: number
-    nome: string;
+    usuario_id: number;
     email: string;
-    matricula: string;
+    nome: string;
+    roles: UserRole[];
   };
   [key: string]: any;
 }
 
-// TODO: Remover declaração any ao finalizar a implementação
-export interface UserSignupResponse {
+export interface DefaultResponse {
   success: string;
   mensagem: string;
-  [key:string]: any;
+  [key: string]: any;
 }
 
-export interface IResetPassword{
+export interface IResetPassword {
   token: string;
   newPassword: string;
   confirmPassword: string;
 }
 
-// ideia de criar um interface para validar o signup do usuário
-//interface ValidateUserSignup{}
+export interface IValidateTokenResponse {
+  valid: boolean;
+  user: UserInfo;
+  roles: UserRole[];
+  payload: any;
+  error?: undefined;
+}
+
+export type UserRole = "admin" | "aluno";

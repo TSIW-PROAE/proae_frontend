@@ -1,8 +1,8 @@
-/* Estilos para a página LoginProae */
+/* Importando variáveis globais */
 @import "../../../styles/variables.css";
 
 /* Container principal */
-.login-container {
+.cadastro-container {
   width: 100%;
   min-height: 100vh;
   display: flex;
@@ -10,24 +10,51 @@
   justify-content: center;
   align-items: center;
   background-color: var(--cor-azul-escuro);
+  /*background-image: url("../../../assets/icons/emoji.svg"),
+    url("../../../assets/icons/plant.svg"),
+    url("../../../assets/icons/arrow.svg"),
+    url("../../../assets/icons/cloud.svg"),
+    url("../../../assets/icons/stars.svg"),
+    url("../../../assets/icons/swirl.svg"),
+    url("../../../assets/icons/fluff.svg"),
+    url("../../../assets/icons/thoughts.svg");
+*/
+  background-size:
+    auto 15.26%,
+    /* emoji */ auto 20%,
+    /* plant  */ auto 27.34%,
+    /* arrow */ auto 11.66%,
+    /* cloud */ auto 14.06%,
+    /* stars */ auto 17.43%,
+    /* swirl */ auto 28%,
+    /* fluff */ auto 35%; /* thoughts */
+
+  background-position:
+    2.013% 2.16%,
+    /* emoji */ 29% 0%,
+    /* plant */ 98% -0.6%,
+    /* arrow */ 100% 39.52%,
+    /* cloud */ 98% 94%,
+    /* stars */ 55.16% 100%,
+    /* swirl */ 0% 100%,
+    /* fluff */ 0% 53.27%; /* thoughts */
+
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
 
-/* Logo */
-.login-image-container {
-        text-align: center;
-        margin-bottom: 10px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      
-.login-image {
-        max-width: 20%;
-        height: auto;
-        align-items: center;
-      }
+/* Botão de voltar */
+.voltar-link-cadastro {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  display: flex;
+  align-items: center;
+  color: var(--cor-creme);
+  font-size: 14px;
+  text-decoration: none;
+  z-index: 10;
+}
 
 /* Título do Portal */
 .portal-title {
@@ -41,18 +68,32 @@
   letter-spacing: 1px;
 }
 
-/* Card de login centralizado */
-.login-content {
-  width: 70%;
+/* Card de cadastro centralizado */
+.cadastro-content {
+  width: 90%;
   max-width: 800px;
   display: flex;
-  justify-content: center;
   flex-direction: column;
   align-items: center;
 }
 
-/* Formulário de login */
-.login-form {
+/* Logo */
+.cadastro-image-container {
+  text-align: center;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cadastro-image {
+  max-width: 20%;
+  height: auto;
+  align-items: center;
+}
+
+/* Formulário de cadastro */
+.cadastro-form {
   width: 100%;
   background: var(--cor-creme);
   border-radius: 24px;
@@ -63,14 +104,26 @@
   display: flex;
   overflow: hidden;
   position: relative;
-  justify-content: center;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
-.login-form:hover {
+.cadastro-form:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* Lado da imagem */
+.logo-container {
+  background-image: url("../../../assets/letras.jpg");
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 35%;
+  padding: 0;
+  position: relative;
 }
 
 /* Overlay para melhorar o contraste */
@@ -84,6 +137,13 @@
   z-index: 1;
 }
 
+.input-nomes {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  height: 60px;
+}
+
 /* Lado do formulário */
 .form-container {
   width: 65%;
@@ -91,12 +151,12 @@
 }
 
 /* Cabeçalho */
-.login-header {
+.cadastro-header {
   margin-bottom: 25px;
   text-align: center;
 }
 
-.login-title {
+.cadastro-title {
   color: var(--cor-azul-escuro);
   font-family: var(--fonte-titulos);
   font-size: var(--tamanho-2xl);
@@ -104,39 +164,42 @@
   margin-bottom: 10px;
 }
 
-.login-subtitle {
-  color: var(--cor-verde-escuro);
+.cadastro-subtitle {
+  color: var(--cor-azul-medio);
   font-family: var(--fonte-corpo);
   font-size: var(--tamanho-medio);
   font-weight: var(--peso-normal);
 }
 
 /* Formulário */
-.login-form-container {
+.cadastro-form-container {
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
+  gap: 20px;
 }
 
 /* Corrigindo problema do input que "salta" com mensagens de erro */
 .input-container {
   display: flex;
   flex-direction: column;
-  min-height: 30px;
-  height: 30px;
+  min-height: 10px;
+}
+
+.select-container {
+  background-color: var(--cor-creme);
 }
 
 .custom-input {
   margin-bottom: 0;
 }
 
-/* Opções de login */
-.login-options {
+/* Opções de cadastro */
+.cadastro-options {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1px;
-  margin-bottom: 1px;
+  margin-top: 5px;
+  margin-bottom: 10px;
 }
 
 .remember-option {
@@ -175,8 +238,8 @@
   width: 100%;
 }
 
-/* Botão de login */
-.login-button {
+/* Botão de cadastro */
+.cadastro-button {
   margin-top: 10px;
   height: 52px;
   font-weight: var(--peso-semi-negrito);
@@ -190,12 +253,12 @@
   position: relative;
 }
 
-.login-button:hover {
+.cadastro-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
-.login-button:after {
+.cadastro-button:after {
   content: "";
   position: absolute;
   top: -50%;
@@ -208,9 +271,29 @@
   opacity: 0;
 }
 
-.login-button:hover:after {
+.cadastro-button:hover:after {
   left: 120%;
   opacity: 1;
+}
+
+/* Link de cadastro */
+.register-link-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.register-link {
+  font-size: var(--tamanho-pequeno);
+  font-weight: var(--peso-medio);
+  color: var(--cor-azul-medio) !important;
+  text-decoration: underline !important;
+  transition: color 0.2s ease;
+}
+
+.register-link:hover {
+  color: var(--cor-azul-escuro) !important;
 }
 
 /* Copyright texto */
@@ -260,7 +343,7 @@
 
 /* Media queries para redimensionamento responsivo dos ícones de fundo */
 @media (max-width: 1200px) {
-  .login-container {
+  .cadastro-container {
     background-size:
       auto 13%,
       /* emoji - reduzido */ auto 18%,
@@ -284,7 +367,7 @@
 }
 
 @media (max-width: 992px) {
-  .login-container {
+  .cadastro-container {
     background-size:
       auto 11%,
       /* emoji - reduzido mais */ auto 15%,
@@ -299,11 +382,11 @@
 
 /* Responsividade */
 @media (max-width: 768px) {
-  .login-content {
+  .cadastro-content {
     width: 90%;
   }
 
-  .login-form {
+  .cadastro-form {
     flex-direction: column;
   }
 
@@ -317,11 +400,11 @@
     padding: 30px;
   }
 
-  .login-title {
+  .cadastro-title {
     font-size: var(--tamanho-xl);
   }
 
-  .login-subtitle {
+  .cadastro-subtitle {
     font-size: var(--tamanho-base);
   }
 
@@ -331,12 +414,12 @@
   }
 
   /* Ajuste do botão de voltar para mobile */
-  .voltar-link-login {
+  .voltar-link-cadastro {
     bottom: auto;
     top: 15px;
   }
   /* Ajuste dos ícones de fundo */
-  .login-container {
+  .cadastro-container {
     background-size:
       auto 9%,
       /* emoji - reduzido ainda mais */ auto 12%,
@@ -361,7 +444,7 @@
 
 @media (max-width: 580px) {
   /* Ajuste dos ícones de fundo */
-  .login-container {
+  .cadastro-container {
     background-size:
       auto 7%,
       /* emoji - reduzido mais */ auto 10%,
@@ -379,7 +462,7 @@
 }
 
 @media (max-width: 480px) {
-  .login-container {
+  .cadastro-container {
     padding: 20px 0;
     /* Ícones ainda mais reduzidos, mas não removidos */
     background-size:
@@ -403,11 +486,11 @@
       /* fluff - ajustado */ 0% 50%; /* thoughts - ajustado */
   }
 
-  .login-content {
+  .cadastro-content {
     width: 95%;
   }
 
-  .login-form {
+  .cadastro-form {
     border-radius: 20px;
   }
 
@@ -419,18 +502,17 @@
     height: 160px;
   }
 
-  .login-options {
+  .cadastro-options {
     flex-direction: column;
     gap: 16px;
     align-items: flex-start;
   }
 
-  .login-button {
+  .cadastro-button {
     margin-top: 20px;
   }
 
   .input-container {
-    min-height: 80px;
   }
 
   .portal-title {
@@ -439,6 +521,14 @@
   }
 }
 
+/* Removendo a regra antiga que escondia as imagens por completo */
+/* 🔽 Media query to hide images at 935px or lower 
+@media (max-width: 935px) {
+    body {
+        background-image: none;
+    }
+}
+*/
 
 #img-cultura {
   max-width: 334px;
@@ -453,6 +543,6 @@
   gap: 5px;
 }
 
-.login-form a {
+.cadastro-form a {
   color: #183b4e;
 }

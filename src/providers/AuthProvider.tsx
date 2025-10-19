@@ -1,24 +1,24 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AuthContext } from '@/context/AuthContext'
 import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
-import  {FetchAdapter} from '@/services/BaseRequestService/HttpClient'
-import CadastroAlunoService from '@/services/CadastroAluno.service/cadastroAluno.service'
+import AuthService from '@/services/AuthService/auth.service'
+import { CadastroFormData } from '@/pages/paginaProae/CadastroProae/CadastroProae';
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
-  const client = new FetchAdapter();
-  const cadastroAlunoService = new CadastroAlunoService(client);
+  const authService = new AuthService();
 
   const login = useCallback(async (data: UserLogin) => {
     try {
-      const response = await cadastroAlunoService.LoginAluno(data);
+      const response = await authService.login(data);
       const fillUserInfo: UserInfo = {
         email: response.user.email,
-        id: response.user.aluno_id,
-        nome: response.user.nome
+        id: response.user.usuario_id,
+        nome: response.user.nome,
+        roles: response.user.roles
       }
       setUserInfo(fillUserInfo);
       setIsAuthenticated(true);
@@ -30,14 +30,15 @@ function AuthProvider({children}: {children: React.ReactNode}){
   }, [])
 
   const logout = useCallback(() => {
-    cadastroAlunoService.LogoutAluno();
+    authService.logout();
     setIsAuthenticated(false);
     setUserInfo(null);
   }, []);
 
-  const register = useCallback(async (data: UserSignup) => {
+  const registerAdmin = useCallback(async (data: CadastroFormData) => {
     try {
-      const response = await cadastroAlunoService.createAlunoUser(data);
+      const {confirmarSenha, ...dataWithoutConfirmPass} = data;
+      const response = await authService.signupAdmin(dataWithoutConfirmPass);
       return response;
     } catch (error) {
       console.error("Register failed:", error);
@@ -45,38 +46,46 @@ function AuthProvider({children}: {children: React.ReactNode}){
     }
   }, [])
 
-  useEffect(() => {
-    // TODO: Melhorar lógica de verificação de rotas públicas e privadas
+  const registerAluno = useCallback(async (data: UserSignup) => {
+    try {
+      const response = await authService.signupAluno(data);
+      return response;
+    } catch (error) {
+      console.error("Register failed:", error);
+      throw error;
+    }
+  }, [])
 
-      const checkAuth = async () => {
-
-        try {
-            const response: any = await cadastroAlunoService.validateToken();
-            const fillUserInfo: UserInfo = {
-              email: response.user?.email || response.email,
-              id: response.user?.id || response.user?.aluno_id || response.id,
-              nome: response.user?.nome || response.nome,
+  const checkAuth = useCallback(async () => {
+    try {
+            const response: any = await authService.validateToken();
+            if (!response.valid) {
+              throw new Error("Token inválido");
             }
+             const fillUserInfo: UserInfo = {
+                email: response.user.email,
+                id: response.user.usuario_id,
+                nome: response.user.nome,
+                roles: response.user.roles,
+                aprovado: response.user.admin.aprovado
+              }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);
 
         } catch (error) {
           setIsAuthenticated(false);
           setUserInfo(null);
-          cadastroAlunoService.LogoutAluno();
+          authService.logout();
         } finally {
           setLoading(false);
         }
         return;
       }
-      checkAuth();
+  , [])
+
+  useEffect(() => {
+    checkAuth();
   }, []);
-
-
-  const Oauth_login = useCallback(() => {}, [])
-  const Oauth_logout = useCallback(() => {}, [])
-  const Oauth_register = useCallback(() => {}, [])
-
 
   return (
     <AuthContext.Provider value={{
@@ -84,11 +93,10 @@ function AuthProvider({children}: {children: React.ReactNode}){
       userInfo,
       login,
       logout,
-      register,
+      registerAdmin,
+      registerAluno,
+      checkAuth,
       loading,
-      Oauth_login,
-      Oauth_logout,
-      Oauth_register
     }}>
       {children}
     </AuthContext.Provider>
