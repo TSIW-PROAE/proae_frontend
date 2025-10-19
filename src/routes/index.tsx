@@ -14,6 +14,7 @@ import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.ts
 import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
 import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
 import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
+import ParecerQuestionarios from "../pages/paginaProae/ParecerQuestionarios/ParecerQuestionarios";
 import CadastroProae from "@/pages/paginaProae/CadastroProae/CadastroProae.tsx";
 import TelaDeEspera from "@/pages/paginaProae/TelaDeEspera/TelaDeEspera";
 
@@ -57,6 +58,7 @@ const routes = [
         children: [
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
+          { path: "portal-proae/pareceres", element: <ParecerQuestionarios /> },
           { path: "portal-proae/configuracao", element: <ConfiguracaoProae /> },
           { path: "portal-proae/cadastro-edital", element: <CadastroEdital /> },
         ],
