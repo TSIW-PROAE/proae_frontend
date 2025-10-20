@@ -6,6 +6,7 @@ import {
   Settings,
   BookOpen,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
@@ -14,6 +15,8 @@ export interface ISideBarProps {
   processIconRedirect: string;
   configIconRedirect: string;
   pendenciasIconRedirect: string;
+  docsIconRedirect: string;
+  pareceresIconRedirect?: string;
   logoutIconRedirect: string;
   logoutOnClick: () => void;
 }
