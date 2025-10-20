@@ -1,0 +1,176 @@
+.parecer-questionarios-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.header-title h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #18181b;
+  margin: 0;
+}
+
+.header-subtitle {
+  color: #71717a;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.filters-section {
+  margin-bottom: 24px;
+}
+
+.filters-container {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-container {
+  flex: 1;
+  min-width: 300px;
+}
+
+.filter-container {
+  min-width: 200px;
+}
+
+.questionarios-section {
+  margin-bottom: 24px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.questionarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.questionario-card {
+  transition: all 0.2s ease;
+  border: 1px solid #e4e4e7;
+}
+
+.questionario-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.questionario-info h3 {
+  margin: 0 0 4px 0;
+  color: #18181b;
+}
+
+.questionario-info p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.questionario-stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f4f4f5;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #71717a;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.questionario-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .parecer-questionarios-page {
+    padding: 16px;
+  }
+  
+  .header-title h1 {
+    font-size: 1.5rem;
+  }
+  
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-container,
+  .filter-container {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .questionarios-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .questionario-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .stat-item {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .parecer-questionarios-page {
+    padding: 12px;
+  }
+  
+  .header-title {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .header-title h1 {
+    font-size: 1.25rem;
+  }
+}
+

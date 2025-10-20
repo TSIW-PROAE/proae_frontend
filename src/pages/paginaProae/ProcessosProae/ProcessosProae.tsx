@@ -250,16 +250,13 @@ export default function ProcessosProae() {
       // Buscar steps reais do edital original
       // Alguns locais usam StepService.listarStepsPorEdital
       const stepsOriginais = duplicatingEdital.id
-        ? await stepService.listarStepsPorEdital(duplicatingEdital.id)
+        ? await stepService.listarStepsPorEdital(duplicatingEdital.id.toString())
         : [];
 
       // Criar steps do novo
       if (novo?.id && stepsOriginais.length) {
         for (const step of stepsOriginais) {
-          const novoStep = await stepService.criarStep({
-            texto: step.texto || step.titulo || "",
-            edital_id: novo.id,
-          });
+          const novoStep = await stepService.criarStep( novo.id!, step.texto || step.titulo || "",);
 
           // Clonar perguntas do step, se houver
           const perguntas = step.id
@@ -269,11 +266,11 @@ export default function ProcessosProae() {
             for (const p of perguntas) {
               await perguntaService.criarPergunta({
                 step_id: novoStep.id,
-                pergunta: (p as any).pergunta || p.texto_pergunta || "",
+                pergunta: (p as any).pergunta || p.pergunta || "",
                 obrigatoriedade:
-                  (p as any).obrigatoriedade ?? p.obrigatoria ?? false,
+                  (p as any).obrigatoriedade ?? p.obrigatoriedade ?? false,
                 tipo_Pergunta:
-                  (p as any).tipo_Pergunta || p.tipo_pergunta || "input",
+                  (p as any).tipo_Pergunta || p.tipo_Pergunta || "input",
                 ...(p as any).tipo_formatacao
                   ? { tipo_formatacao: (p as any).tipo_formatacao }
                   : {},

@@ -2,7 +2,7 @@
 
 .portal-container {
   max-width: 1400px;
-  margin: 0 auto;
+  margin: auto;
   padding: 1rem;
 }
 
@@ -437,7 +437,7 @@
   color: #6b7280;
   margin: 0;
 }
-
+url(PortalAluno.css)
 /* Estilos para OpenSelections - Cards Quadráticos */
 .open-selections-container {
   background: white;
@@ -445,9 +445,8 @@
   padding: 1.25rem;
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(229, 231, 235, 0.8);
-  height: fit-content;
+  height: 100%;
   min-height: 380px;
-  max-height: 580px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
