@@ -502,10 +502,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
 
     try {
       // Cria o Step no backend com o nome fornecido
-      const created = await stepService.criarStep({
-        texto: tituloTrimmed,
-        edital_id: edital.id,
-      });
+      const created = await stepService.criarStep(edital.id, tituloTrimmed);
 
       if (!created.id) {
         toast.error("Erro ao criar questionário");
@@ -569,7 +566,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
 
           // Mapeia os tipos da API para os tipos do componente
           let tipoFromAPI = p.tipo_pergunta || p.tipo_Pergunta || "text";
-          let opcoesFromAPI = (p.opcoes_resposta || p.opcoes || []) as string[];
+          let opcoesFromAPI = (p.opcoes || []) as string[];
           let obrigatoriaFromAPI = Boolean(
             p.obrigatoria ?? p.obrigatoriedade ?? false
           );
@@ -629,9 +626,9 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
 
           const result = {
             id: p.id, // Adiciona o ID da pergunta
-            texto: p.texto_pergunta || p.pergunta || "",
+            texto: p.pergunta || "",
             tipo: tipoMapeado,
-            obrigatoria: obrigatoriaFromAPI,
+            obrigatoria: (p as any).obrigatoriedade ?? obrigatoriaFromAPI,
             opcoes: opcoesFromAPI,
             vincularDadosAluno: isVinculada, // Define se está vinculada
             dadoVinculado: dadoVinculado?.nome || undefined, // Nome do dado vinculado
