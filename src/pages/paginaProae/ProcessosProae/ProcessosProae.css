@@ -4,6 +4,7 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 1rem;
+  max-height: 100vh;
 }
 
 /* Modal de Criação Simples */
@@ -551,6 +552,8 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  max-height: 100vh;
+  
 }
 
 /* Seções */
