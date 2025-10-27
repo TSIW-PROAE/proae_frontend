@@ -1,25 +1,37 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Save,
-  Edit,
-  Link,
-  Calendar,
-  Users,
-  Plus,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  FileText,
-} from "lucide-react";
-import { Edital, DocumentoEdital, EtapaEdital, Vaga } from "../../types/edital";
+import { Edital, DocumentoEdital, EtapaEdital } from "../../types/edital";
 import { stepService } from "@/services/StepService/stepService";
 import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import { editalService } from "../../services/EditalService/editalService";
+import { dadoService, Dado } from "@/services/DadoService/dadoService";
 import { toast } from "react-hot-toast";
 import "./ModalEditarEdital.css";
+
+// Importar tipos e utilitários
+import {
+  EditableDocumento,
+  EditableEtapa,
+  EditableVaga,
+  StatusEdital,
+  EditableQuestionario,
+  PerguntaEditorItem,
+} from "./types";
+import { toInternalStatus, makeSnapshot } from "./utils";
+
+// Importar componentes
+import {
+  StatusConfirmModal,
+  StatusErrorModal,
+  ModalHeader,
+  DescricaoSection,
+  VagasSection,
+  QuestionariosSection,
+  CronogramaSection,
+  DocumentosSection,
+  ModalFooter,
+  QuestionarioDrawer,
+  CelebrationOverlay,
+} from "./components";
 
 interface ModalEditarEditalProps {
   edital: Edital;
@@ -28,54 +40,6 @@ interface ModalEditarEditalProps {
   onSave: () => void;
   onStatusChanged?: () => void;
 }
-
-interface EditableDocumento {
-  value: DocumentoEdital;
-  isEditing: boolean;
-}
-
-interface EditableEtapa {
-  value: EtapaEdital;
-  isEditing: boolean;
-}
-
-interface EditableVaga {
-  value: Vaga;
-  isEditing: boolean;
-}
-
-type StatusEdital = "RASCUNHO" | "ABERTO" | "EM_ANDAMENTO" | "ENCERRADO";
-
-const statusLabelMap: Record<StatusEdital, string> = {
-  RASCUNHO: "Rascunho",
-  ABERTO: "Edital em aberto",
-  EM_ANDAMENTO: "Edital em andamento",
-  ENCERRADO: "Edital encerrado",
-};
-
-const toInternalStatus = (value: string): StatusEdital => {
-  const norm = (value || "")
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (norm === "rascunho") return "RASCUNHO";
-  if (norm === "aberto" || norm === "edital em aberto") return "ABERTO";
-  if (norm === "em andamento" || norm === "edital em andamento")
-    return "EM_ANDAMENTO";
-  if (norm === "encerrado" || norm === "edital encerrado") return "ENCERRADO";
-  // também aceitar já no formato interno
-  const upper = (value || "").toUpperCase();
-  if (
-    upper === "RASCUNHO" ||
-    upper === "ABERTO" ||
-    upper === "EM_ANDAMENTO" ||
-    upper === "ENCERRADO"
-  ) {
-    return upper as StatusEdital;
-  }
-  return "RASCUNHO";
-};
 
 const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
   edital,
@@ -112,55 +76,24 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
   // Celebração visual após sucesso
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Drawer lateral de Questionários
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activeQuestionarioIndex, setActiveQuestionarioIndex] = useState<
+    number | null
+  >(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [quizTitleEditing, setQuizTitleEditing] = useState(false);
+  const [editorPerguntas, setEditorPerguntas] = useState<PerguntaEditorItem[]>(
+    []
+  );
+
   // Estado local de Questionários (somente UI por enquanto)
-  interface QuestionarioItem {
-    id?: number; // id do step
-    titulo: string;
-    previewPerguntas: string[]; // primeiras perguntas carregadas
-  }
-  interface EditableQuestionario {
-    value: QuestionarioItem;
-    isEditing: boolean;
-  }
   const [questionarios, setQuestionarios] = useState<EditableQuestionario[]>(
     []
   );
 
-  const makeSnapshot = (
-    t: string,
-    d: string,
-    docsArr: DocumentoEdital[],
-    etapasArr: EtapaEdital[],
-    vagasArr: Vaga[],
-    questionariosArr: QuestionarioItem[] = []
-  ) => {
-    const norm = {
-      titulo: (t || "").trim(),
-      descricao: (d || "").trim(),
-      documentos: (docsArr || []).map((x) => ({
-        titulo_documento: (x.titulo_documento || "").trim(),
-        url_documento: (x.url_documento || "").trim(),
-      })),
-      etapas: (etapasArr || []).map((x) => ({
-        etapa: (x.etapa || "").trim(),
-        data_inicio: x.data_inicio || "",
-        data_fim: x.data_fim || "",
-        ordem_elemento: x.ordem_elemento ?? null,
-      })),
-      vagas: (vagasArr || []).map((x) => ({
-        beneficio: (x.beneficio || "").trim(),
-        descricao_beneficio: (x.descricao_beneficio || "").trim(),
-        numero_vagas: Number(x.numero_vagas) || 0,
-      })),
-      questionarios: (questionariosArr || []).map((q) => ({
-        titulo: (q.titulo || "").trim(),
-        previewPerguntas: (q.previewPerguntas || []).map((p) =>
-          (p || "").trim()
-        ),
-      })),
-    };
-    return JSON.stringify(norm);
-  };
+  // Estado de Dados do Aluno
+  const [dadosAluno, setDadosAluno] = useState<Dado[]>([]);
 
   useEffect(() => {
     if (isOpen && edital) {
@@ -187,6 +120,9 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
 
       // Carregar Steps deste edital e montar UI de questionários
       loadSteps();
+
+      // Carregar Dados do Aluno
+      loadDadosAluno();
     }
   }, [isOpen, edital]);
 
@@ -195,12 +131,23 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     if (!isOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // Prioridade: fecha drawer primeiro; depois modais de status; por último fecha o modal principal
+        if (drawerOpen) {
+          setDrawerOpen(false);
+          return;
+        }
         if (!showStatusConfirmModal && !showStatusErrorModal) onClose();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen, onClose, showStatusConfirmModal, showStatusErrorModal]);
+  }, [
+    isOpen,
+    onClose,
+    showStatusConfirmModal,
+    showStatusErrorModal,
+    drawerOpen,
+  ]);
 
   const loadVagasAndInitBaseline = async () => {
     if (!edital.id) return;
@@ -241,6 +188,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
           value: {
             id: s.id,
             titulo: s.titulo || s.texto || "",
+            nome: s.titulo || s.texto || "",
             previewPerguntas: [],
           },
           isEditing: false,
@@ -271,6 +219,15 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     }
   };
 
+  const loadDadosAluno = async () => {
+    try {
+      const dados = await dadoService.listarDados();
+      setDadosAluno(dados || []);
+    } catch (error) {
+      console.error("Erro ao carregar dados do aluno:", error);
+    }
+  };
+
   // Recalcula hasChanges após inicialização e a cada alteração
   useEffect(() => {
     if (!initialized) return;
@@ -292,21 +249,6 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     vagas,
     questionarios,
   ]);
-
-  const getStatusIcon = (statusValue: StatusEdital) => {
-    switch (statusValue) {
-      case "RASCUNHO":
-        return <FileText size={16} />;
-      case "ABERTO":
-        return <CheckCircle size={16} />;
-      case "EM_ANDAMENTO":
-        return <Clock size={16} />;
-      case "ENCERRADO":
-        return <AlertTriangle size={16} />;
-      default:
-        return <FileText size={16} />;
-    }
-  };
 
   const isEditalCompleteLocal = () => {
     const hasTitulo = Boolean(titulo && titulo.trim().length > 0);
@@ -531,6 +473,61 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     setDescricaoEditando(false);
   };
 
+  const handleAddQuestionario = () => {
+    // Adiciona um questionário temporário em modo de edição (sem ID ainda)
+    const novoQuestionario: EditableQuestionario = {
+      value: {
+        titulo: "",
+        nome: "",
+        previewPerguntas: [],
+      },
+      isEditing: true, // Modo de edição ativado para permitir nomeação
+    };
+    setQuestionarios([...questionarios, novoQuestionario]);
+  };
+
+  const handleSaveQuestionario = async (index: number) => {
+    const questionario = questionarios[index];
+    const tituloTrimmed = questionario.value.titulo.trim();
+
+    if (!tituloTrimmed) {
+      toast.error("O título do questionário não pode estar vazio");
+      return;
+    }
+
+    if (!edital.id) {
+      toast.error("Erro: ID do edital não encontrado");
+      return;
+    }
+
+    try {
+      // Cria o Step no backend com o nome fornecido
+      const created = await stepService.criarStep(edital.id, tituloTrimmed);
+
+      if (!created.id) {
+        toast.error("Erro ao criar questionário");
+        return;
+      }
+
+      // Atualiza o questionário na UI com o ID retornado e sai do modo de edição
+      const updatedQuestionarios = [...questionarios];
+      updatedQuestionarios[index] = {
+        value: {
+          id: created.id,
+          titulo: tituloTrimmed,
+          nome: tituloTrimmed,
+          previewPerguntas: [],
+        },
+        isEditing: false,
+      };
+      setQuestionarios(updatedQuestionarios);
+      toast.success("Questionário criado com sucesso");
+    } catch (error) {
+      console.error("Erro ao criar questionário:", error);
+      toast.error("Erro ao criar questionário. Tente novamente.");
+    }
+  };
+
   const handleSave = async () => {
     if (!edital.id) return;
     const ok = await persistChanges();
@@ -540,919 +537,529 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
     }
   };
 
+  const handleOpenQuestionario = async (index: number) => {
+    setActiveQuestionarioIndex(index);
+    setDrawerOpen(true);
+    setQuizTitleEditing(false);
+    // Carrega perguntas reais para este step (se existir id)
+    setDrawerLoading(true);
+    try {
+      const stepId = questionarios[index].value.id;
+      if (stepId) {
+        // Garantir que os dados do aluno estejam carregados antes de mapear as perguntas
+        console.log("Carregando dados do aluno...");
+        await loadDadosAluno();
+        console.log("Dados do aluno carregados:", dadosAluno.length, "itens");
+
+        console.log("Carregando perguntas para step:", stepId);
+        const perguntas = await perguntaService.listarPerguntasPorStep(stepId);
+        console.log("Perguntas recebidas da API:", perguntas);
+
+        const mapped: PerguntaEditorItem[] = (perguntas || []).map((p) => {
+          // Verifica se existe dado vinculado
+          const dadoVinculado = (p as any).dado;
+          const isVinculada = Boolean(dadoVinculado);
+          console.log(`Processando pergunta "${p.pergunta}":`, {
+            dadoVinculado,
+            isVinculada,
+          });
+
+          // Mapeia os tipos da API para os tipos do componente
+          let tipoFromAPI = p.tipo_pergunta || p.tipo_Pergunta || "text";
+          let opcoesFromAPI = (p.opcoes || []) as string[];
+          let obrigatoriaFromAPI = Boolean(
+            p.obrigatoria ?? p.obrigatoriedade ?? false
+          );
+
+          // Se tem dado vinculado, busca o tipo, opções e obrigatoriedade do dado
+          if (isVinculada && dadoVinculado) {
+            console.log(
+              `Buscando dado com ID ${dadoVinculado.id} na lista de ${dadosAluno.length} dados`
+            );
+            const dadoCompleto = dadosAluno.find(
+              (d) => d.id === dadoVinculado.id
+            );
+            if (dadoCompleto) {
+              console.log(
+                `Pergunta "${p.pergunta}" vinculada ao dado "${dadoCompleto.nome}":`,
+                {
+                  tipoOriginal: tipoFromAPI,
+                  tipoNovo: dadoCompleto.tipo,
+                  obrigatoriaOriginal: obrigatoriaFromAPI,
+                  obrigatoriaNova: dadoCompleto.obrigatorio,
+                }
+              );
+              tipoFromAPI = dadoCompleto.tipo;
+              opcoesFromAPI = dadoCompleto.opcoes || [];
+              obrigatoriaFromAPI = Boolean(dadoCompleto.obrigatorio);
+            } else {
+              console.warn(
+                `Dado com ID ${dadoVinculado.id} não encontrado na lista de dados do aluno`
+              );
+            }
+          }
+
+          let tipoMapeado: PerguntaEditorItem["tipo"] = "texto";
+
+          switch (tipoFromAPI) {
+            case "text":
+              tipoMapeado = "texto";
+              break;
+            case "number":
+              tipoMapeado = "numero";
+              break;
+            case "date":
+              tipoMapeado = "data";
+              break;
+            case "select":
+              tipoMapeado = "multipla_escolha";
+              break;
+            case "file":
+              tipoMapeado = "arquivo";
+              break;
+            case "email":
+              tipoMapeado = "email";
+              break;
+            default:
+              tipoMapeado = "texto";
+          }
+
+          const result = {
+            id: p.id, // Adiciona o ID da pergunta
+            texto: p.pergunta || "",
+            tipo: tipoMapeado,
+            obrigatoria: (p as any).obrigatoriedade ?? obrigatoriaFromAPI,
+            opcoes: opcoesFromAPI,
+            vincularDadosAluno: isVinculada, // Define se está vinculada
+            dadoVinculado: dadoVinculado?.nome || undefined, // Nome do dado vinculado
+            dadoId: dadoVinculado?.id || undefined, // ID do dado vinculado
+          };
+
+          console.log(`Resultado final da pergunta "${p.pergunta}":`, result);
+          return result;
+        });
+        console.log("Perguntas mapeadas:", mapped);
+        setEditorPerguntas(mapped);
+      } else {
+        // novo questionário ainda sem id
+        setEditorPerguntas([]);
+      }
+    } catch (e) {
+      console.error("Erro ao carregar questionário:", e);
+      setEditorPerguntas([]);
+    } finally {
+      setDrawerLoading(false);
+    }
+  };
+
+  const handleCreateDado = async (
+    novoDado: Omit<Dado, "id" | "created_at" | "updated_at">
+  ): Promise<Dado | null> => {
+    try {
+      const created = await dadoService.criarDado(novoDado);
+
+      // Atualiza a lista local de dados
+      setDadosAluno((prev) => [...prev, created]);
+
+      toast.success("Dado criado com sucesso");
+      return created;
+    } catch (error) {
+      console.error("Erro ao criar dado:", error);
+      toast.error("Erro ao criar dado. Tente novamente.");
+      return null;
+    }
+  };
+
+  const handleSavePergunta = async (perguntaIndex: number) => {
+    if (activeQuestionarioIndex === null) {
+      toast.error("Nenhum questionário ativo");
+      return;
+    }
+
+    const questionario = questionarios[activeQuestionarioIndex];
+    const stepId = questionario.value.id;
+
+    if (!stepId) {
+      toast.error("Salve o questionário antes de adicionar perguntas");
+      return;
+    }
+
+    const pergunta = editorPerguntas[perguntaIndex];
+    const textoTrimmed = pergunta.texto.trim();
+
+    if (!textoTrimmed) {
+      toast.error("O texto da pergunta não pode estar vazio");
+      return;
+    }
+
+    if (textoTrimmed.length > 255) {
+      toast.error("O texto da pergunta deve ter no máximo 255 caracteres");
+      return;
+    }
+
+    // Mapear o tipo da pergunta para o formato do backend (EnumTipoInput)
+    const tipoBackend =
+      pergunta.tipo === "texto"
+        ? "text"
+        : pergunta.tipo === "numero"
+          ? "number"
+          : pergunta.tipo === "data"
+            ? "date"
+            : pergunta.tipo === "multipla_escolha"
+              ? "select"
+              : pergunta.tipo === "multipla_selecao"
+                ? "selectGroup"
+                : pergunta.tipo === "arquivo"
+                  ? "file"
+                  : pergunta.tipo === "email"
+                    ? "email"
+                    : "text";
+
+    // Validar opções para tipos de seleção
+    if (
+      (tipoBackend === "select" || tipoBackend === "selectGroup") &&
+      (!pergunta.opcoes ||
+        pergunta.opcoes.length === 0 ||
+        pergunta.opcoes.every((o) => !o.trim()))
+    ) {
+      toast.error("Perguntas de seleção precisam ter pelo menos uma opção");
+      return;
+    }
+
+    // Preparar opções filtradas (remover vazias)
+    const opcoesValidas = pergunta.opcoes?.filter((o) => o.trim()) || [];
+
+    try {
+      if (pergunta.id) {
+        // Atualizar pergunta existente
+        const payload: any = {
+          pergunta: textoTrimmed,
+          obrigatoriedade: pergunta.obrigatoria,
+        };
+
+        // Adicionar opções apenas se for tipo de seleção
+        if (tipoBackend === "select" || tipoBackend === "selectGroup") {
+          payload.opcoes = opcoesValidas;
+        }
+
+        // Adicionar dadoId (pode ser null para desvincular, ou um ID para vincular/trocar)
+        payload.dadoId = pergunta.dadoId || null;
+
+        const updated = await perguntaService.atualizarPergunta(
+          pergunta.id,
+          payload
+        );
+
+        // Atualizar na UI
+        const updatedPerguntas = [...editorPerguntas];
+        updatedPerguntas[perguntaIndex] = {
+          ...pergunta,
+          id: updated.id,
+          isEditing: false,
+        };
+        setEditorPerguntas(updatedPerguntas);
+        toast.success("Pergunta atualizada com sucesso");
+      } else {
+        // Criar nova pergunta
+        const payload: any = {
+          step_id: stepId,
+          pergunta: textoTrimmed,
+          tipo_Pergunta: tipoBackend,
+          obrigatoriedade: pergunta.obrigatoria,
+        };
+
+        // Adicionar opções apenas se for tipo de seleção
+        if (tipoBackend === "select" || tipoBackend === "selectGroup") {
+          payload.opcoes = opcoesValidas;
+        }
+
+        // Adicionar dadoId se a pergunta estiver vinculada a um dado
+        if (pergunta.dadoId) {
+          payload.dadoId = pergunta.dadoId;
+        }
+
+        // Adicionar tipo_formatacao se necessário (opcional)
+        // payload.tipo_formatacao = "none";
+
+        const created = await perguntaService.criarPergunta(payload);
+
+        // Atualizar na UI com o ID retornado
+        const updatedPerguntas = [...editorPerguntas];
+        updatedPerguntas[perguntaIndex] = {
+          ...pergunta,
+          id: created.id,
+          isEditing: false,
+        };
+        setEditorPerguntas(updatedPerguntas);
+        toast.success("Pergunta criada com sucesso");
+      }
+
+      // Atualizar o preview do questionário
+      const preview = editorPerguntas
+        .map((p) => p.texto.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+      setQuestionarios((prev) =>
+        prev.map((qq, idx) =>
+          idx === activeQuestionarioIndex
+            ? {
+                ...qq,
+                value: {
+                  ...qq.value,
+                  previewPerguntas: preview,
+                },
+              }
+            : qq
+        )
+      );
+    } catch (error) {
+      console.error("Erro ao salvar pergunta:", error);
+      toast.error("Erro ao salvar pergunta. Tente novamente.");
+    }
+  };
+
+  const handleDeletePergunta = async (perguntaIndex: number) => {
+    const pergunta = editorPerguntas[perguntaIndex];
+
+    // Se tem ID, deleta do backend
+    if (pergunta.id) {
+      try {
+        await perguntaService.deletarPergunta(pergunta.id);
+        toast.success("Pergunta removida com sucesso");
+      } catch (error) {
+        console.error("Erro ao deletar pergunta:", error);
+        toast.error("Erro ao remover pergunta. Tente novamente.");
+        return; // Não remove da UI se falhar no backend
+      }
+    }
+
+    // Remove da UI
+    const newPerguntas = editorPerguntas.filter((_, i) => i !== perguntaIndex);
+    setEditorPerguntas(newPerguntas);
+
+    // Atualizar o preview do questionário
+    if (activeQuestionarioIndex !== null) {
+      const preview = newPerguntas
+        .map((p) => p.texto.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+      setQuestionarios((prev) =>
+        prev.map((qq, idx) =>
+          idx === activeQuestionarioIndex
+            ? {
+                ...qq,
+                value: {
+                  ...qq.value,
+                  previewPerguntas: preview,
+                },
+              }
+            : qq
+        )
+      );
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div
       className="modal-overlay"
       onClick={() => {
+        if (drawerOpen) {
+          setDrawerOpen(false);
+          return;
+        }
         if (!showStatusConfirmModal && !showStatusErrorModal) onClose();
       }}
       role="dialog"
       aria-modal="true"
       aria-label="Editar edital"
     >
-      {/* Modal de Confirmação de Status */}
-      {showStatusConfirmModal && (
-        <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
-          <div
-            className="status-confirm-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="confirm-title warn">
-              <AlertTriangle size={18} className="icon-warn" />
-              Confirmar mudança de status
-            </h3>
-            <p>
-              A mudança de status é imediata e não requer salvar o formulário.
-            </p>
-            <p>
-              Novo status:{" "}
-              <strong>{newStatus ? statusLabelMap[newStatus] : ""}</strong>
-            </p>
-            <div className="confirm-input-group">
-              <label htmlFor="confirm-status-input">
-                Para continuar, digite exatamente: TENHO CERTEZA
-              </label>
-              <input
-                id="confirm-status-input"
-                className="confirm-input"
-                type="text"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder="TENHO CERTEZA"
-                autoFocus
-              />
-            </div>
-            <div className="confirm-buttons">
-              <button onClick={cancelStatusChange} className="btn-cancel">
-                Cancelar
-              </button>
-              <button
-                onClick={confirmStatusChange}
-                className="btn-confirm"
-                disabled={confirmText !== "TENHO CERTEZA" || isSaving}
-                title={
-                  confirmText !== "TENHO CERTEZA"
-                    ? "Digite TENHO CERTEZA para confirmar"
-                    : "Confirmar mudança"
-                }
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <StatusConfirmModal
+        isOpen={showStatusConfirmModal}
+        newStatus={newStatus}
+        confirmText={confirmText}
+        isSaving={isSaving}
+        onConfirmTextChange={setConfirmText}
+        onConfirm={confirmStatusChange}
+        onCancel={cancelStatusChange}
+      />
 
-      {showStatusErrorModal && (
-        <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
-          <div
-            className="status-confirm-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="confirm-title danger">
-              <AlertTriangle size={18} className="icon-danger" />
-              Não é possível alterar o status
-            </h3>
-            <p>{statusErrorMessage}</p>
-            <div className="confirm-buttons">
-              <button
-                onClick={() => setShowStatusErrorModal(false)}
-                className="btn-confirm"
-              >
-                Entendi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <StatusErrorModal
+        isOpen={showStatusErrorModal}
+        errorMessage={statusErrorMessage}
+        onClose={() => setShowStatusErrorModal(false)}
+      />
 
       {/* Modal Principal - Layout Horizontal */}
-      <div className="modal-horizontal" onClick={(e) => e.stopPropagation()}>
-        {/* Camada de celebração (balões) */}
-        {showCelebration && (
-          <div className="celebration-container" aria-hidden="true">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <span key={i} className={`balloon b${i + 1}`} />
-            ))}
-          </div>
-        )}
-        {/* Header fixo com Título e Status */}
-        <div className="modal-header-horizontal">
-          <div className="header-container">
-            {/* Título Editável */}
-            <div className="titulo-section">
-              {tituloEditando ? (
-                <div className="titulo-editing">
-                  <input
-                    type="text"
-                    value={titulo}
-                    onChange={(e) => setTitulo(e.target.value)}
-                    className="titulo-input"
-                    autoFocus
-                    onBlur={handleTituloSave}
-                    onKeyPress={(e) => e.key === "Enter" && handleTituloSave()}
-                    placeholder="Título do edital"
-                    title="Título do edital"
-                  />
-                </div>
-              ) : (
-                <div
-                  className="titulo-display"
-                  onClick={() => setTituloEditando(true)}
-                >
-                  <h1>{titulo}</h1>
-                  <Edit size={16} className="edit-icon" />
-                </div>
-              )}
-            </div>
+      <div
+        className={`modal-horizontal ${drawerOpen ? "drawer-open" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <CelebrationOverlay isVisible={showCelebration} />
 
-            {/* Status com Dropdown - sem label */}
-            <div className="status-section">
-              <div className="status-selector">
-                <button
-                  className={`status-button status-${status.toLowerCase().replace("_", "-")}`}
-                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                >
-                  {getStatusIcon(status)}
-                  <span>{statusLabelMap[status]}</span>
-                  <div className="status-indicator-active"></div>
-                  <ChevronDown size={16} />
-                </button>
-                {showStatusDropdown && (
-                  <div className="status-dropdown">
-                    {(
-                      [
-                        "RASCUNHO",
-                        "ABERTO",
-                        "EM_ANDAMENTO",
-                        "ENCERRADO",
-                      ] as StatusEdital[]
-                    ).map((statusOption) => (
-                      <button
-                        key={statusOption}
-                        onClick={() => handleStatusChange(statusOption)}
-                        className={`status-option ${statusOption === status ? "active" : ""}`}
-                        aria-current={
-                          statusOption === status ? "true" : undefined
-                        }
-                      >
-                        {getStatusIcon(statusOption)}
-                        <span>{statusLabelMap[statusOption]}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ModalHeader
+          titulo={titulo}
+          tituloEditando={tituloEditando}
+          status={status}
+          showStatusDropdown={showStatusDropdown}
+          onTituloChange={setTitulo}
+          onTituloEditToggle={setTituloEditando}
+          onTituloSave={handleTituloSave}
+          onStatusDropdownToggle={() =>
+            setShowStatusDropdown(!showStatusDropdown)
+          }
+          onStatusChange={handleStatusChange}
+        />
 
         <div className="modal-content-horizontal">
-          {/* Descrição - topo */}
-          <section className="section-card">
-            <div
-              className="section-header-modal"
-              onClick={() => setOpenDescricao(!openDescricao)}
-            >
-              <div className="section-title">
-                <h3>Descrição</h3>
-                <p className="section-subtitle">
-                  Resumo claro sobre o edital para orientar o aluno
-                </p>
-              </div>
-              <button
-                className={`section-toggle ${openDescricao ? "open" : ""}`}
-                aria-label="Alternar descrição"
-                title="Alternar descrição"
-              >
-                <ChevronDown size={18} />
-              </button>
-            </div>
-            {openDescricao && (
-              <div className="section-body">
-                {descricaoEditando ? (
-                  <div className="descricao-editing">
-                    <textarea
-                      value={descricao}
-                      onChange={(e) => setDescricao(e.target.value)}
-                      className="descricao-textarea"
-                      rows={4}
-                      autoFocus
-                      onBlur={handleDescricaoSave}
-                      placeholder="Descrição do edital"
-                      title="Descrição do edital"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className="descricao-display"
-                    onClick={() => setDescricaoEditando(true)}
-                  >
-                    <p>{descricao || "Clique para adicionar uma descrição"}</p>
-                    <Edit size={16} className="edit-icon" />
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
+          <DescricaoSection
+            descricao={descricao}
+            descricaoEditando={descricaoEditando}
+            openDescricao={openDescricao}
+            onDescricaoChange={setDescricao}
+            onDescricaoEditToggle={setDescricaoEditando}
+            onDescricaoSave={handleDescricaoSave}
+            onToggleOpen={() => setOpenDescricao(!openDescricao)}
+          />
 
-          {/* Seção de Vagas - Largura completa (movida para logo após Descrição) */}
-          <section className="vagas-section-full section-card">
-            <div
-              className="section-header-modal"
-              onClick={() => setOpenVagas(!openVagas)}
-            >
-              <div className="section-title">
-                <h3>
-                  <Users size={20} /> Vagas
-                </h3>
-                <p className="section-subtitle">
-                  Gerencie benefícios, quantidades e descrições
-                </p>
-              </div>
-              <button
-                className={`section-toggle ${openVagas ? "open" : ""}`}
-                aria-label="Alternar vagas"
-                title="Alternar vagas"
-              >
-                <ChevronDown size={18} />
-              </button>
-            </div>
-            {openVagas && (
-              <div className="vagas-list section-body">
-                {vagas.map((vaga, index) => (
-                  <div key={index} className="vaga-item">
-                    {vaga.isEditing ? (
-                      <div className="vaga-editing">
-                        <input
-                          type="text"
-                          placeholder="Benefício"
-                          value={vaga.value.beneficio}
-                          onChange={(e) => {
-                            const newVagas = [...vagas];
-                            newVagas[index].value.beneficio = e.target.value;
-                            setVagas(newVagas);
-                          }}
-                          className="vaga-input"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Número de vagas"
-                          value={vaga.value.numero_vagas}
-                          onChange={(e) => {
-                            const newVagas = [...vagas];
-                            newVagas[index].value.numero_vagas =
-                              parseInt(e.target.value) || 0;
-                            setVagas(newVagas);
-                          }}
-                          className="vaga-number"
-                          min={0}
-                        />
-                        <textarea
-                          placeholder="Descrição do benefício"
-                          value={vaga.value.descricao_beneficio}
-                          onChange={(e) => {
-                            const newVagas = [...vagas];
-                            newVagas[index].value.descricao_beneficio =
-                              e.target.value;
-                            setVagas(newVagas);
-                          }}
-                          className="vaga-textarea"
-                          rows={2}
-                        />
-                        <div className="vaga-actions">
-                          <button
-                            aria-label="Salvar vaga"
-                            title="Salvar vaga"
-                            onClick={() => {
-                              if (
-                                vaga.value.beneficio &&
-                                vaga.value.numero_vagas > 0
-                              ) {
-                                const newVagas = [...vagas];
-                                newVagas[index].isEditing = false;
-                                setVagas(newVagas);
-                              }
-                            }}
-                            className="btn-save-vaga"
-                          >
-                            <Save size={16} />
-                          </button>
-                          <button
-                            aria-label="Excluir vaga"
-                            title="Excluir vaga"
-                            onClick={() => {
-                              const newVagas = vagas.filter(
-                                (_, i) => i !== index
-                              );
-                              setVagas(newVagas);
-                            }}
-                            className="btn-delete-vaga"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="vaga-display">
-                        <div className="vaga-content">
-                          <div className="vaga-header">
-                            <h4>{vaga.value.beneficio}</h4>
-                            <span className="vaga-count">
-                              {vaga.value.numero_vagas} vagas
-                            </span>
-                          </div>
-                          {vaga.value.descricao_beneficio && (
-                            <p className="vaga-description">
-                              {vaga.value.descricao_beneficio}
-                            </p>
-                          )}
-                        </div>
-                        <div className="vaga-actions">
-                          <button
-                            aria-label="Editar vaga"
-                            title="Editar vaga"
-                            onClick={() => {
-                              const newVagas = [...vagas];
-                              newVagas[index].isEditing = true;
-                              setVagas(newVagas);
-                            }}
-                            className="btn-edit-vaga"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            aria-label="Excluir vaga"
-                            title="Excluir vaga"
-                            onClick={() => {
-                              const newVagas = vagas.filter(
-                                (_, i) => i !== index
-                              );
-                              setVagas(newVagas);
-                            }}
-                            className="btn-delete-vaga"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {vagas.length === 0 && (
-                  <div className="empty-state">Nenhuma vaga adicionada.</div>
-                )}
-                <button
-                  onClick={() => {
-                    setVagas([
-                      ...vagas,
-                      {
-                        value: {
-                          edital_id: edital.id!,
-                          beneficio: "",
-                          descricao_beneficio: "",
-                          numero_vagas: 1,
-                        },
-                        isEditing: true,
-                      },
-                    ]);
-                  }}
-                  className="btn-add-vaga"
-                >
-                  <Plus size={16} />
-                  Adicionar Vaga
-                </button>
-              </div>
-            )}
-          </section>
+          <VagasSection
+            vagas={vagas}
+            openVagas={openVagas}
+            editalId={edital.id!}
+            onVagasChange={setVagas}
+            onToggleOpen={() => setOpenVagas(!openVagas)}
+          />
 
-          {/* Seção de Questionários - abaixo de Vagas (UI-only) */}
-          <section className="questionarios-section-full section-card">
-            <div
-              className="section-header-modal"
-              onClick={() => setOpenQuestionarios(!openQuestionarios)}
-            >
-              <div className="section-title">
-                <h3>
-                  <FileText size={20} /> Questionários
-                </h3>
-                <p className="section-subtitle">
-                  Organize formulários em seções com prévia de perguntas
-                </p>
-              </div>
-              <button
-                className={`section-toggle ${openQuestionarios ? "open" : ""}`}
-                aria-label="Alternar questionários"
-                title="Alternar questionários"
-              >
-                <ChevronDown size={18} />
-              </button>
-            </div>
-            {openQuestionarios && (
-              <div className="questionarios-grid section-body">
-                {questionarios.map((q, index) => (
-                  <div key={index} className="questionario-item">
-                    {q.isEditing ? (
-                      <div className="questionario-editing">
-                        <input
-                          type="text"
-                          placeholder="Título do questionário"
-                          value={q.value.titulo}
-                          onChange={(e) => {
-                            const list = [...questionarios];
-                            list[index].value.titulo = e.target.value;
-                            setQuestionarios(list);
-                          }}
-                          className="questionario-input"
-                        />
-                        <div className="questionario-actions">
-                          <button
-                            aria-label="Salvar questionário"
-                            title="Salvar questionário"
-                            onClick={() => {
-                              if (q.value.titulo.trim().length > 0) {
-                                const list = [...questionarios];
-                                list[index].isEditing = false;
-                                setQuestionarios(list);
-                              }
-                            }}
-                            className="btn-save-questionario"
-                          >
-                            <Save size={16} />
-                          </button>
-                          <button
-                            aria-label="Excluir questionário"
-                            title="Excluir questionário"
-                            onClick={() => {
-                              setQuestionarios(
-                                questionarios.filter((_, i) => i !== index)
-                              );
-                            }}
-                            className="btn-delete-questionario"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className="questionario-display"
-                        onClick={() => {
-                          // TODO: abrir editor de Steps/Perguntas deste questionário
-                          console.log("Abrir questionário", q.value);
-                        }}
-                      >
-                        <div className="questionario-preview">
-                          {q.value.previewPerguntas &&
-                          q.value.previewPerguntas.length > 0 ? (
-                            <div
-                              className="preview-list"
-                              title={q.value.previewPerguntas.join("\n")}
-                            >
-                              {q.value.previewPerguntas
-                                .filter((t) => (t || "").trim().length > 0)
-                                .slice(0, 4)
-                                .map((t, i) => (
-                                  <p key={i} className="preview-line">
-                                    {t}
-                                  </p>
-                                ))}
-                            </div>
-                          ) : (
-                            <div className="preview-empty">Sem perguntas</div>
-                          )}
-                        </div>
-                        <div className="questionario-header">
-                          <h4 title={q.value.titulo}>
-                            {q.value.titulo || "Sem título"}
-                          </h4>
-                          <div className="questionario-meta">
-                            <span className="questionario-count">
-                              {q.value.previewPerguntas?.length || 0}{" "}
-                              {(q.value.previewPerguntas?.length || 0) === 1
-                                ? "pergunta"
-                                : "perguntas"}
-                            </span>
-                            <ChevronRight
-                              className="open-indicator"
-                              size={16}
-                            />
-                            <div className="questionario-actions">
-                              {/* <button
-                                aria-label="Editar questionário"
-                                title="Editar questionário"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const list = [...questionarios];
-                                  list[index].isEditing = true;
-                                  setQuestionarios(list);
-                                }}
-                                className="btn-edit-questionario"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                aria-label="Excluir questionário"
-                                title="Excluir questionário"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setQuestionarios(
-                                    questionarios.filter((_, i) => i !== index)
-                                  );
-                                }}
-                                className="btn-delete-questionario"
-                              >
-                                <Trash2 size={16} />
-                              </button> */}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {questionarios.length === 0 && (
-                  <div className="empty-state">
-                    Nenhum questionário adicionado.
-                  </div>
-                )}
-                <button
-                  onClick={() => {
-                    setQuestionarios([
-                      ...questionarios,
-                      {
-                        value: { titulo: "", previewPerguntas: [] },
-                        isEditing: true,
-                      },
-                    ]);
-                  }}
-                  className="btn-add-questionario"
-                >
-                  <Plus size={16} />
-                  Adicionar Questionário
-                </button>
-              </div>
-            )}
-          </section>
+          <QuestionariosSection
+            questionarios={questionarios}
+            openQuestionarios={openQuestionarios}
+            onQuestionariosChange={setQuestionarios}
+            onToggleOpen={() => setOpenQuestionarios(!openQuestionarios)}
+            onOpenQuestionario={handleOpenQuestionario}
+            onAddQuestionario={handleAddQuestionario}
+            onSaveQuestionario={handleSaveQuestionario}
+          />
 
-          {/* Row de 2 colunas: Cronograma (esquerda) e Links (direita) */}
           <div className="two-col-row">
-            {/* Cronograma */}
-            <section className="timeline-section-full section-card">
-              <div
-                className="section-header-modal"
-                onClick={() => setOpenCronograma(!openCronograma)}
-              >
-                <div className="section-title">
-                  <h3>
-                    <Calendar size={20} /> Cronograma
-                  </h3>
-                  <p className="section-subtitle">
-                    Defina as etapas e períodos do processo seletivo
-                  </p>
-                </div>
-                <button
-                  className={`section-toggle ${openCronograma ? "open" : ""}`}
-                  aria-label="Alternar cronograma"
-                  title="Alternar cronograma"
-                >
-                  <ChevronDown size={18} />
-                </button>
-              </div>
-              {openCronograma && (
-                <div className="timeline-container section-body">
-                  {etapas.map((etapa, index) => (
-                    <div key={index} className="timeline-item">
-                      <div className="timeline-dot"></div>
-                      {etapa.isEditing ? (
-                        <div className="timeline-editing">
-                          <input
-                            type="text"
-                            placeholder="Nome da etapa"
-                            value={etapa.value.etapa}
-                            onChange={(e) => {
-                              const newEtapas = [...etapas];
-                              newEtapas[index].value.etapa = e.target.value;
-                              setEtapas(newEtapas);
-                            }}
-                            className="timeline-input"
-                          />
-                          <div className="timeline-dates">
-                            <input
-                              type="date"
-                              value={etapa.value.data_inicio}
-                              title="Data de início"
-                              onChange={(e) => {
-                                const newEtapas = [...etapas];
-                                newEtapas[index].value.data_inicio =
-                                  e.target.value;
-                                setEtapas(newEtapas);
-                              }}
-                              className="date-input"
-                            />
-                            <span>até</span>
-                            <input
-                              type="date"
-                              value={etapa.value.data_fim}
-                              title="Data de término"
-                              onChange={(e) => {
-                                const newEtapas = [...etapas];
-                                newEtapas[index].value.data_fim =
-                                  e.target.value;
-                                setEtapas(newEtapas);
-                              }}
-                              className="date-input"
-                            />
-                          </div>
-                          <div className="timeline-actions">
-                            <button
-                              aria-label="Salvar etapa"
-                              title="Salvar etapa"
-                              onClick={() => {
-                                if (
-                                  etapa.value.etapa &&
-                                  etapa.value.data_inicio &&
-                                  etapa.value.data_fim
-                                ) {
-                                  const newEtapas = [...etapas];
-                                  newEtapas[index].isEditing = false;
-                                  setEtapas(newEtapas);
-                                }
-                              }}
-                              className="btn-save-timeline"
-                            >
-                              <Save size={16} />
-                            </button>
-                            <button
-                              aria-label="Excluir etapa"
-                              title="Excluir etapa"
-                              onClick={() => {
-                                const newEtapas = etapas.filter(
-                                  (_, i) => i !== index
-                                );
-                                setEtapas(newEtapas);
-                              }}
-                              className="btn-delete-timeline"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="timeline-display">
-                          <div className="timeline-content">
-                            <h4>{etapa.value.etapa}</h4>
-                            <div className="timeline-period">
-                              {new Date(
-                                etapa.value.data_inicio
-                              ).toLocaleDateString("pt-BR")}{" "}
-                              -{" "}
-                              {new Date(
-                                etapa.value.data_fim
-                              ).toLocaleDateString("pt-BR")}
-                            </div>
-                          </div>
-                          <div className="timeline-actions">
-                            <button
-                              aria-label="Editar etapa"
-                              title="Editar etapa"
-                              onClick={() => {
-                                const newEtapas = [...etapas];
-                                newEtapas[index].isEditing = true;
-                                setEtapas(newEtapas);
-                              }}
-                              className="btn-edit-timeline"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              aria-label="Excluir etapa"
-                              title="Excluir etapa"
-                              onClick={() => {
-                                const newEtapas = etapas.filter(
-                                  (_, i) => i !== index
-                                );
-                                setEtapas(newEtapas);
-                              }}
-                              className="btn-delete-timeline"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => {
-                      setEtapas([
-                        ...etapas,
-                        {
-                          value: {
-                            etapa: "",
-                            ordem_elemento: etapas.length + 1,
-                            data_inicio: "",
-                            data_fim: "",
-                          },
-                          isEditing: true,
-                        },
-                      ]);
-                    }}
-                    className="btn-add-timeline"
-                  >
-                    <Plus size={16} />
-                    Adicionar Etapa
-                  </button>
-                </div>
-              )}
-            </section>
-
-            {/* Links/Documentos */}
-            <section className="section-card">
-              <div
-                className="section-header-modal"
-                onClick={() => setOpenLinks(!openLinks)}
-              >
-                <div className="section-title">
-                  <h3>
-                    <Link size={20} /> Links e Documentos
-                  </h3>
-                  <p className="section-subtitle">
-                    URLs e PDFs relevantes que complementam o edital
-                  </p>
-                </div>
-                <button
-                  className={`section-toggle ${openLinks ? "open" : ""}`}
-                  aria-label="Alternar links"
-                  title="Alternar links"
-                >
-                  <ChevronDown size={18} />
-                </button>
-              </div>
-              {openLinks && (
-                <div className="links-list section-body">
-                  {documentos.map((documento, index) => (
-                    <div key={index} className="link-item">
-                      {documento.isEditing ? (
-                        <div className="link-editing">
-                          <input
-                            type="text"
-                            placeholder="Título do documento"
-                            value={documento.value.titulo_documento}
-                            onChange={(e) => {
-                              const newDocs = [...documentos];
-                              newDocs[index].value.titulo_documento =
-                                e.target.value;
-                              setDocumentos(newDocs);
-                            }}
-                            className="link-input"
-                          />
-                          <input
-                            type="url"
-                            placeholder="URL do documento"
-                            value={documento.value.url_documento}
-                            onChange={(e) => {
-                              const newDocs = [...documentos];
-                              newDocs[index].value.url_documento =
-                                e.target.value;
-                              setDocumentos(newDocs);
-                            }}
-                            className="link-input"
-                          />
-                          <div className="link-actions">
-                            <button
-                              aria-label="Salvar link"
-                              title="Salvar link"
-                              onClick={() => {
-                                if (
-                                  documento.value.titulo_documento &&
-                                  documento.value.url_documento
-                                ) {
-                                  const newDocs = [...documentos];
-                                  newDocs[index].isEditing = false;
-                                  setDocumentos(newDocs);
-                                }
-                              }}
-                              className="btn-save-link"
-                            >
-                              <Save size={16} />
-                            </button>
-                            <button
-                              aria-label="Excluir link"
-                              title="Excluir link"
-                              onClick={() => {
-                                const newDocs = documentos.filter(
-                                  (_, i) => i !== index
-                                );
-                                setDocumentos(newDocs);
-                              }}
-                              className="btn-delete-link"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="link-display">
-                          <div className="link-info">
-                            <span className="link-title">
-                              {documento.value.titulo_documento}
-                            </span>
-                            <a
-                              href={documento.value.url_documento}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="link-url"
-                            >
-                              {documento.value.url_documento}
-                            </a>
-                          </div>
-                          <div className="link-actions">
-                            <button
-                              aria-label="Editar link"
-                              title="Editar link"
-                              onClick={() => {
-                                const newDocs = [...documentos];
-                                newDocs[index].isEditing = true;
-                                setDocumentos(newDocs);
-                              }}
-                              className="btn-edit-link"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              aria-label="Excluir link"
-                              title="Excluir link"
-                              onClick={() => {
-                                const newDocs = documentos.filter(
-                                  (_, i) => i !== index
-                                );
-                                setDocumentos(newDocs);
-                              }}
-                              className="btn-delete-link"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {documentos.length === 0 && (
-                    <div className="empty-state">Nenhum link adicionado.</div>
-                  )}
-                  <button
-                    onClick={() => {
-                      setDocumentos([
-                        ...documentos,
-                        {
-                          value: { titulo_documento: "", url_documento: "" },
-                          isEditing: true,
-                        },
-                      ]);
-                    }}
-                    className="btn-add-link"
-                  >
-                    <Plus size={16} />
-                    Adicionar Link
-                  </button>
-                </div>
-              )}
-            </section>
+            <CronogramaSection
+              etapas={etapas}
+              openCronograma={openCronograma}
+              onEtapasChange={setEtapas}
+              onToggleOpen={() => setOpenCronograma(!openCronograma)}
+            />
+            <DocumentosSection
+              documentos={documentos}
+              openLinks={openLinks}
+              onDocumentosChange={setDocumentos}
+              onToggleOpen={() => setOpenLinks(!openLinks)}
+            />
           </div>
 
           {/* fim da row 2 colunas */}
         </div>
 
-        {/* Footer com botões de ação */}
-        <div className="modal-footer-horizontal">
-          {error && <div className="error-message">{error}</div>}
-          <div className="footer-buttons">
-            <button onClick={onClose} className="btn-cancel-footer">
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving || !hasChanges}
-              className="btn-save-footer"
-              title={!hasChanges ? "Nenhuma alteração para salvar" : undefined}
-            >
-              {isSaving ? (
-                <span className="btn-save-content">
-                  <span className="spinner" aria-hidden="true" />
-                  Salvando...
-                </span>
-              ) : (
-                <span className="btn-save-content">
-                  <Save size={16} />
-                  Salvar Alterações
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
+        <ModalFooter
+          error={error}
+          isSaving={isSaving}
+          hasChanges={hasChanges}
+          onSave={handleSave}
+          onCancel={onClose}
+        />
+
+        <QuestionarioDrawer
+          isOpen={drawerOpen}
+          loading={drawerLoading}
+          questionarios={questionarios}
+          activeQuestionarioIndex={activeQuestionarioIndex}
+          titleEditing={quizTitleEditing}
+          perguntas={editorPerguntas}
+          dadosAluno={dadosAluno.map((d) => ({
+            id: d.id,
+            nome: d.nome,
+            tipo: d.tipo,
+            obrigatorio: d.obrigatorio,
+            opcoes: d.opcoes || [],
+          }))}
+          onClose={() => setDrawerOpen(false)}
+          onQuestionarioSelect={(index) => {
+            // Carrega as perguntas do questionário selecionado
+            handleOpenQuestionario(index);
+          }}
+          onTitleChange={(title) => {
+            if (activeQuestionarioIndex !== null) {
+              const list = [...questionarios];
+              list[activeQuestionarioIndex].value.titulo = title;
+              list[activeQuestionarioIndex].value.nome = title;
+              setQuestionarios(list);
+            }
+          }}
+          onTitleEditToggle={setQuizTitleEditing}
+          onPerguntasChange={setEditorPerguntas}
+          onSave={() => {
+            // UI-only: atualiza a prévia com base nas primeiras 3 perguntas
+            if (activeQuestionarioIndex !== null) {
+              const preview = editorPerguntas
+                .map((p) => p.texto.trim())
+                .filter(Boolean)
+                .slice(0, 3);
+              setQuestionarios((prev) =>
+                prev.map((qq, idx) =>
+                  idx === activeQuestionarioIndex
+                    ? {
+                        ...qq,
+                        value: {
+                          ...qq.value,
+                          previewPerguntas: preview,
+                        },
+                      }
+                    : qq
+                )
+              );
+            }
+            toast.success("Alterações do questionário aplicadas (UI)");
+            setDrawerOpen(false);
+          }}
+          onSavePergunta={handleSavePergunta}
+          onDeletePergunta={handleDeletePergunta}
+          onCreateDado={async (novoDado) => {
+            const created = await handleCreateDado(novoDado);
+            return created ? { ...created } : null;
+          }}
+          adicionarQuestionario={handleAddQuestionario}
+          removerQuestionario={async (index) => {
+            const questionarioToRemove = questionarios[index];
+
+            // Se tem ID, deleta do backend
+            if (questionarioToRemove.value.id) {
+              try {
+                await stepService.deletarStep(questionarioToRemove.value.id);
+                toast.success("Questionário removido com sucesso");
+              } catch (error) {
+                console.error("Erro ao deletar questionário:", error);
+                toast.error("Erro ao remover questionário. Tente novamente.");
+                return; // Não remove da UI se falhar no backend
+              }
+            }
+
+            const newQuestionarios = questionarios.filter(
+              (_, i) => i !== index
+            );
+            setQuestionarios(newQuestionarios);
+
+            // Se o questionário ativo foi removido, limpar a seleção
+            if (activeQuestionarioIndex === index) {
+              setActiveQuestionarioIndex(null);
+              setEditorPerguntas([]);
+            } else if (
+              activeQuestionarioIndex !== null &&
+              activeQuestionarioIndex > index
+            ) {
+              // Se um questionário antes do ativo foi removido, ajustar o índice
+              setActiveQuestionarioIndex(activeQuestionarioIndex - 1);
+            }
+          }}
+        />
       </div>
     </div>
   );

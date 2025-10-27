@@ -10,20 +10,23 @@ export class StepService {
     this.httpClient = new FetchAdapter();
   }
 
-  async criarStep(_editalId: number, _texto: string): Promise<any> {
-    throw new Error("Method not implemented.");
+  async criarStep(editalId: number, texto: string): Promise<StepResponseDto> {
+    // Cria um Step para um edital
+    const payload = { texto, edital_id: editalId } as const;
+    const resp = await this.httpClient.post<StepResponseDto>(`${BASE_URL}`, payload);
+    return resp.data;
   }
   
   async listarStepsPorEdital(editalId: string): Promise<StepResponseDto[]> {
     return this.httpClient.get<StepResponseDto[]>(`${BASE_URL}/edital/${editalId}/with-perguntas`);
   }
 
-  async deletarStep(_stepId: number): Promise<any> {
-     throw new Error("Method not implemented.");
+  async deletarStep(stepId: number): Promise<{ message?: string }> {
+     return this.httpClient.delete<{ message?: string }>(`${BASE_URL}/${stepId}`);
   }
 
-  async atualizarStep(_stepId: number, _texto: string): Promise<any> {
-    throw new Error("Method not implemented.");
+  async atualizarStep(stepId: number, texto: string): Promise<StepResponseDto> {
+    return this.httpClient.patch<StepResponseDto>(`${BASE_URL}/${stepId}`, { texto });
   }
 
 }
