@@ -180,7 +180,9 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
   const loadSteps = async () => {
     if (!edital.id) return;
     try {
-      const steps = await stepService.listarStepsPorEdital(edital.id.toString());
+      const steps = await stepService.listarStepsPorEdital(
+        edital.id.toString()
+      );
       // Monta questionários com preview vazio inicialmente
       const qs: EditableQuestionario[] = steps
         .sort((a, b) => (a.id || 0) - (b.id || 0))
@@ -202,7 +204,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
           const perguntas = await perguntaService.listarPerguntasPorStep(s.id);
           const preview = (perguntas || [])
             .slice(0, 3)
-            .map((p) => p.pergunta  || "");
+            .map((p) => p.pergunta || "");
           setQuestionarios((prev) =>
             prev.map((q) =>
               q.value.id === s.id
@@ -321,7 +323,9 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
 
       // Sincronizar Steps (Questionários)
       // 1) Buscar steps atuais do backend
-      const stepsExistentes = await stepService.listarStepsPorEdital(edital.id.toString());
+      const stepsExistentes = await stepService.listarStepsPorEdital(
+        edital.id.toString()
+      );
       const idsExistentesSteps = new Set(
         (stepsExistentes || []).map((s) => s.id!).filter(Boolean)
       );
@@ -333,10 +337,13 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({
         const tituloStep = q.value.titulo?.trim();
         if (!tituloStep) continue; // ignora sem título
         if (q.value.id) {
-          const updated = await stepService.atualizarStep(q.value.id, tituloStep);
+          const updated = await stepService.atualizarStep(
+            q.value.id,
+            tituloStep
+          );
           if (updated.id) idsPersistentesSteps.add(updated.id);
         } else {
-          const created = await stepService.criarStep( edital.id, tituloStep);
+          const created = await stepService.criarStep(edital.id, tituloStep);
           if (created.id) {
             idsPersistentesSteps.add(created.id);
             // atualiza id na UI

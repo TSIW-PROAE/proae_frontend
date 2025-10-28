@@ -13,22 +13,30 @@ export class StepService {
   async criarStep(editalId: number, texto: string): Promise<StepResponseDto> {
     // Cria um Step para um edital
     const payload = { texto, edital_id: editalId } as const;
-    const resp = await this.httpClient.post<StepResponseDto>(`${BASE_URL}`, payload);
+    const resp = await this.httpClient.post<StepResponseDto>(
+      `${BASE_URL}`,
+      payload
+    );
     return resp.data;
   }
-  
+
   async listarStepsPorEdital(editalId: string): Promise<StepResponseDto[]> {
-    return this.httpClient.get<StepResponseDto[]>(`${BASE_URL}/edital/${editalId}/with-perguntas`);
+    return this.httpClient.get<StepResponseDto[]>(
+      `${BASE_URL}/edital/${editalId}/with-perguntas`
+    );
   }
 
   async deletarStep(stepId: number): Promise<{ message?: string }> {
-     return this.httpClient.delete<{ message?: string }>(`${BASE_URL}/${stepId}`);
+    return this.httpClient.delete<{ message?: string }>(
+      `${BASE_URL}/${stepId}`
+    );
   }
 
   async atualizarStep(stepId: number, texto: string): Promise<StepResponseDto> {
-    return this.httpClient.patch<StepResponseDto>(`${BASE_URL}/${stepId}`, { texto });
+    return this.httpClient.patch<StepResponseDto>(`${BASE_URL}/${stepId}`, {
+      texto,
+    });
   }
-
 }
 
 export const stepService = new StepService();
