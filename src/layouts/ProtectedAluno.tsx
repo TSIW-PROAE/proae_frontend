@@ -2,6 +2,7 @@ import SideBar from "@/components/SideBar/SideBar";
 import { useLocation, Outlet } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
+import InfoModal from "@/components/InfoModal/InfoModal";
 
 export default function ProtectedRouteAluno() {
   const location = useLocation();
@@ -14,6 +15,7 @@ export default function ProtectedRouteAluno() {
 
   return (
     <div className="app-layout">
+      <InfoModal />
       {shouldShowSideBar && (
         <SideBar
           homeIconRedirect={"/portal-aluno"}
