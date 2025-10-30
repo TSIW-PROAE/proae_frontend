@@ -40,6 +40,8 @@ export default function InfoModal() {
         placement="center"
         closeButton={<></>}
         shouldBlockScroll={true}
+        backdrop="blur"
+        className={`z-50`}
       >
         <ModalContent>
           {(onClose) => (
