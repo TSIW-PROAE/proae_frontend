@@ -40,9 +40,7 @@ export default function InfoCard({
         <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/10 translate-y-12 -translate-x-12"></div>
       </div>
 
-      {/* Content */}
       <div className="relative z-10 flex flex-col h-full">
-        {/* Header with Icon and Title */}
         <div className="flex items-center gap-4 mb-3">
           <div
             className={`
@@ -67,7 +65,6 @@ export default function InfoCard({
           </div>
         </div>
 
-        {/* Description */}
         <div className="mt-2">
           <p className="text-sm leading-relaxed font-medium text-white/90">
             {description}
@@ -75,7 +72,6 @@ export default function InfoCard({
         </div>
       </div>
 
-      {/* Hover Effect Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
     </div>
   );
