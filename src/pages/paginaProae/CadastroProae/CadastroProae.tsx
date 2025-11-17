@@ -158,7 +158,6 @@ export default function CadastroProae() {
                         <DatePicker 
                             label="Data de Nascimento"
                             variant='bordered'
-                            value={field.value ? undefined : null}
                             onChange={(val) => field.onChange(formatarData(val))}
                             isInvalid={!!errors.data_nascimento}
                             errorMessage={errors.data_nascimento?.message}
