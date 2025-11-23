@@ -14,6 +14,7 @@ export interface ISideBarProps {
   homeIconRedirect: string;
   processIconRedirect: string;
   configIconRedirect: string;
+  pendenciasIconRedirect: string;
   docsIconRedirect: string;
   pareceresIconRedirect?: string;
   logoutIconRedirect: string;
@@ -35,7 +36,7 @@ const SideBar: React.FC<ISideBarProps> = ({
   configIconRedirect,
   logoutIconRedirect,
   logoutOnClick,
-  docsIconRedirect = "",
+  pendenciasIconRedirect = "",
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,10 +70,10 @@ const SideBar: React.FC<ISideBarProps> = ({
     },
     {
       icon: BookOpen,
-      alt: "Documentos",
-      label: "Documentos",
-      redirect: docsIconRedirect,
-      shouldShowIcon: docsIconRedirect !== "",
+      alt: "Pendências",
+      label: "Pendências",
+      redirect: pendenciasIconRedirect,
+      shouldShowIcon: pendenciasIconRedirect !== "",
     },
     {
       icon: Settings,
