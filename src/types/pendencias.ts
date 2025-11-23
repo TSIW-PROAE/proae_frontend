@@ -1,4 +1,4 @@
-enum StatusDocumento {
+export enum StatusDocumento {
   Pendente = "PENDENTE",
   Aprovado = "APROVADO",
   Reprovado = "REPROVADO",
