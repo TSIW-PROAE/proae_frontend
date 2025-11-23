@@ -41,8 +41,12 @@ const PendenciasAluno: React.FC = () => {
         setPendencias(response.pendencias || []);
       } catch (error) {
         setPendencias([]);
-        toast.error("Erro ao buscar pendências.");
-      } finally {
+        toast.error(
+          "Erro ao buscar pendências." +
+            (error && (error as Error).message
+              ? ` Detalhes: ${(error as Error).message}`
+              : "")
+        );
         setLoading(false);
       }
     };
