@@ -19,7 +19,7 @@ export default function ProtectedRouteAluno() {
           homeIconRedirect={"/portal-aluno"}
           processIconRedirect={""}
           configIconRedirect={"/portal-aluno/configuracao"}
-          docsIconRedirect={""}
+          pendenciasIconRedirect={"/portal-aluno/pendencias"}
           logoutIconRedirect={"/"}
           logoutOnClick={logout}
         />
