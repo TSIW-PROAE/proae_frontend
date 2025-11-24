@@ -17,6 +17,8 @@ import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
 import ParecerQuestionarios from "../pages/paginaProae/ParecerQuestionarios/ParecerQuestionarios";
 import CadastroProae from "@/pages/paginaProae/CadastroProae/CadastroProae.tsx";
 import TelaDeEspera from "@/pages/paginaProae/TelaDeEspera/TelaDeEspera";
+import ListaAlunos from "@/pages/paginaProae/ListaAlunos/ListaAlunos";
+import GerenciarInscricoes from "@/pages/paginaProae/GerenciarInscricoes/GerenciarInscricoes";
 
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
@@ -37,10 +39,10 @@ const routes = [
         path: "",
         element: <Home />,
       },
-      {path: "login", element: <Login />},
+      { path: "login", element: <Login /> },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
-      {path: "forgot-password", element: <ForgotPassword />},
-      {path: "reset-password", element: <ResetPassword />},
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password", element: <ResetPassword /> },
       {
         element: <ProtectedRouteAluno />,
         children: [
@@ -49,17 +51,18 @@ const routes = [
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
           { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
           { path: "questionario/:editalId", element: <Questionario /> },
-
         ],
       },
-      {path: "cadastro-proae", element: <CadastroProae />},
-      {path: "tela-de-espera", element: <TelaDeEspera />},
+      { path: "cadastro-proae", element: <CadastroProae /> },
+      { path: "tela-de-espera", element: <TelaDeEspera /> },
       {
         element: <ProtectedProaeRoute />,
         children: [
+          { path: "portal-proae/inscricoes-gerenciar", element: <GerenciarInscricoes /> },
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
           { path: "portal-proae/pareceres", element: <ParecerQuestionarios /> },
+          { path: "portal-proae/alunos", element: <ListaAlunos /> },
           { path: "portal-proae/configuracao", element: <ConfiguracaoProae /> },
           { path: "portal-proae/cadastro-edital", element: <CadastroEdital /> },
         ],

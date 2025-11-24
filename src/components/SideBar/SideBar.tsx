@@ -1,13 +1,6 @@
 import "./sidebar.css";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Home,
-  FileText,
-  Settings,
-  BookOpen,
-  LogOut,
-  MessageSquare,
-} from "lucide-react";
+import { Home, FileText, Settings, BookOpen, LogOut, Users, ClipboardList } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
 export interface ISideBarProps {
@@ -16,6 +9,8 @@ export interface ISideBarProps {
   configIconRedirect: string;
   docsIconRedirect: string;
   pareceresIconRedirect?: string;
+  alunosIconRedirect?: string;
+  inscricoesIconRedirect?: string;
   logoutIconRedirect: string;
   logoutOnClick: () => void;
 }
@@ -36,6 +31,8 @@ const SideBar: React.FC<ISideBarProps> = ({
   logoutIconRedirect,
   logoutOnClick,
   docsIconRedirect = "",
+  alunosIconRedirect = "",
+  inscricoesIconRedirect = "",
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,6 +63,20 @@ const SideBar: React.FC<ISideBarProps> = ({
       label: "Processos",
       redirect: processIconRedirect,
       shouldShowIcon: processIconRedirect !== "",
+    },
+    {
+      icon: ClipboardList,
+      alt: "Inscrições",
+      label: "Inscrições",
+      redirect: inscricoesIconRedirect,
+      shouldShowIcon: inscricoesIconRedirect !== "",
+    },
+    {
+      icon: Users,
+      alt: "Alunos",
+      label: "Alunos",
+      redirect: alunosIconRedirect,
+      shouldShowIcon: alunosIconRedirect !== "",
     },
     {
       icon: BookOpen,
@@ -117,8 +128,7 @@ const SideBar: React.FC<ISideBarProps> = ({
           {icons
             .filter((icon) => icon.shouldShowIcon)
             .map((iconConfig) => {
-              const isCurrentIconSelected =
-                location.pathname === iconConfig.redirect;
+              const isCurrentIconSelected = location.pathname === iconConfig.redirect;
               const IconComponent = iconConfig.icon;
 
               return (
@@ -149,8 +159,7 @@ const SideBar: React.FC<ISideBarProps> = ({
           {icons
             .filter((icon) => icon.shouldShowIcon)
             .map((iconConfig) => {
-              const isCurrentIconSelected =
-                location.pathname === iconConfig.redirect;
+              const isCurrentIconSelected = location.pathname === iconConfig.redirect;
               const IconComponent = iconConfig.icon;
 
               return (

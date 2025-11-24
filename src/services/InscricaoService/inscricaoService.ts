@@ -1,0 +1,70 @@
+import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import { AlunoInscrito, ListaAlunosInscritosResponse } from "../../types/inscricao";
+
+const BASE_URL = import.meta.env.VITE_API_URL_SERVICES;
+
+export class InscricaoServiceManager {
+  private httpClient: FetchAdapter;
+
+  constructor() {
+    this.httpClient = new FetchAdapter();
+  }
+
+  async listarAlunosPorQuestionario(editalId: number, stepId: number): Promise<AlunoInscrito[]> {
+    try {
+      const response = await this.httpClient.get<ListaAlunosInscritosResponse>(`${BASE_URL}/aluno/edital/${editalId}/step/${stepId}/alunos`);
+
+      // Verifica se a resposta tem a estrutura esperada
+      if (response.sucesso && response.dados && Array.isArray(response.dados.alunos)) {
+        return response.dados.alunos;
+      }
+
+      console.warn("Formato de resposta inesperado:", response);
+      return [];
+    } catch (error: any) {
+      console.error("Erro ao buscar alunos do questionário:", error);
+
+      // Se der 404, retorna array vazio
+      if (error.response?.status === 404) {
+        return [];
+      }
+
+      // Se der 400, lança erro com mensagem específica
+      if (error.response?.status === 400) {
+        const message = error.response?.data?.message || "Parâmetros inválidos";
+        throw new Error(message);
+      }
+
+      // Se der 500, lança erro com mensagem amigável
+      if (error.response?.status === 500) {
+        throw new Error("Erro interno do servidor ao buscar alunos.");
+      }
+
+      // Para outros erros, repassa a mensagem
+      throw new Error(error.response?.data?.message || error.message || "Erro ao carregar alunos");
+    }
+  }
+
+  async buscarInscricaoPorId(id: number): Promise<AlunoInscrito | null> {
+    try {
+      const response = await this.httpClient.get<{ sucesso: boolean; dados: AlunoInscrito }>(`${BASE_URL}/inscricoes/${id}`);
+
+      if (response.sucesso && response.dados) {
+        return response.dados;
+      }
+
+      return null;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async atualizarStatusInscricao(id: number, status: AlunoInscrito["status_inscricao"]): Promise<AlunoInscrito> {
+    return this.httpClient.patch<AlunoInscrito>(`${BASE_URL}/inscricoes/${id}/status`, { status_inscricao: status });
+  }
+}
+
+export const inscricaoServiceManager = new InscricaoServiceManager();

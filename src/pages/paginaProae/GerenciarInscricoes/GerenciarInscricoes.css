@@ -1,0 +1,661 @@
+/* ====================================
+   GERENCIAR INSCRIÇÕES - SEGUINDO PADRÃO PROCESSOS PROAE
+   ==================================== */
+
+/* Container Principal */
+.inscricoes-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+  max-height: 100vh;
+}
+
+/* Header Principal - SEM CARD, transparente igual ProcessosProae */
+.inscricoes-page-header {
+  background: transparent;
+  border-radius: 0;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: none;
+  border: none;
+}
+
+.inscricoes-page-header .header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.inscricoes-page-header .welcome-section {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.inscricoes-page-header .avatar-container {
+  position: relative;
+}
+
+.inscricoes-page-header .avatar {
+  width: 64px;
+  height: 64px;
+  background: #4285f4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
+}
+
+.inscricoes-page-header .welcome-text {
+  color: #1f2937;
+}
+
+.inscricoes-page-header .welcome-title {
+  font-size: 2.5rem;
+  font-weight: 500;
+  margin: 0;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: #202124;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inscricoes-page-header .welcome-subtitle {
+  font-size: 1rem;
+  color: #5f6368;
+  margin: 0.5rem 0 0 0;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-weight: 400;
+}
+
+/* Error Message */
+.inscricoes-page-header .error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideDownInscricoes 0.3s ease-out;
+}
+
+@keyframes slideDownInscricoes {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inscricoes-page-header .error-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.inscricoes-page-header .btn-close-error {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inscricoes-page-header .btn-close-error:hover {
+  background: #fee2e2;
+}
+
+/* Main Content */
+.inscricoes-container .main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Section Inscrições */
+.inscricoes-container .inscricoes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Edital Selector */
+.edital-selector {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-trocar-edital {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn-trocar-edital:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Lista Container - Caixa branca igual ProcessosProae */
+.lista-inscricoes-container {
+  background: white;
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  min-height: 70vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Content */
+.inscricoes-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Cabeçalho fixo da tabela */
+.inscricoes-content .table-header-fixed {
+  flex-shrink: 0;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.inscricoes-table-header {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inscricoes-table-header thead {
+  background: #f8fafc;
+}
+
+.inscricoes-table-header .table-header-cell {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: none;
+  height: 48px;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.inscricoes-table-header .table-header-cell:nth-child(1) {
+  width: 80px;
+  min-width: 80px;
+}
+
+.inscricoes-table-header .table-header-cell:nth-child(2) {
+  width: 120px;
+  min-width: 120px;
+}
+
+.inscricoes-table-header .table-header-cell:nth-child(3) {
+  width: 280px;
+  min-width: 280px;
+}
+
+.inscricoes-table-header .table-header-cell:nth-child(4) {
+  width: 200px;
+  min-width: 200px;
+}
+
+.inscricoes-table-header .table-header-cell:nth-child(5) {
+  width: 180px;
+  min-width: 180px;
+}
+
+.inscricoes-table-header .table-header-cell:nth-child(6) {
+  width: 150px;
+  min-width: 150px;
+}
+
+.inscricoes-table-header .table-header-cell:nth-child(7) {
+  width: 150px;
+  min-width: 150px;
+}
+
+/* Container scrollável */
+.inscricoes-content .table-container {
+  flex: 1;
+  overflow-y: auto;
+  background: white;
+}
+
+.inscricoes-content .table-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.inscricoes-content .table-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.inscricoes-content .table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.inscricoes-content .table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.inscricoes-content .table-container::-webkit-scrollbar-thumb:active {
+  background: #6b7280;
+}
+
+/* Tabela */
+.inscricoes-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 0.875rem;
+  table-layout: fixed;
+}
+
+.inscricoes-table .table-body {
+  background: white;
+}
+
+.inscricoes-table .table-row {
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.inscricoes-table .table-row:focus {
+  outline: 2px solid rgba(3,105,161,0.12);
+  outline-offset: -2px;
+}
+
+.inscricoes-table .table-row:first-child {
+  border-top: none;
+}
+
+.inscricoes-table .table-row:hover {
+  background: #f8fafc;
+}
+
+.inscricoes-table .table-row:last-child {
+  border-bottom: none;
+}
+
+.inscricoes-table .table-cell {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  color: #374151;
+}
+
+.inscricoes-table .table-cell:nth-child(1) {
+  width: 80px;
+  min-width: 80px;
+}
+
+.inscricoes-table .table-cell:nth-child(2) {
+  width: 120px;
+  min-width: 120px;
+}
+
+.inscricoes-table .table-cell:nth-child(3) {
+  width: 280px;
+  min-width: 280px;
+}
+
+.inscricoes-table .table-cell:nth-child(4) {
+  width: 200px;
+  min-width: 200px;
+}
+
+.inscricoes-table .table-cell:nth-child(5) {
+  width: 180px;
+  min-width: 180px;
+}
+
+.inscricoes-table .table-cell:nth-child(6) {
+  width: 150px;
+  min-width: 150px;
+}
+
+.inscricoes-table .table-cell:nth-child(7) {
+  width: 150px;
+  min-width: 150px;
+}
+
+/* Células específicas */
+.inscricoes-table .id-cell .cell-content {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.inscricoes-table .matricula-cell .matricula-badge {
+  display: inline-flex;
+  padding: 0.125rem 0.5rem;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}
+
+.inscricoes-table .email-cell .email-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.inscricoes-table .email-cell .email-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.inscricoes-table .email-cell .email-nome {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.8125rem;
+}
+
+.inscricoes-table .email-cell .email-text {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.inscricoes-table .curso-cell .curso-content {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #374151;
+}
+
+.inscricoes-table .campus-cell .campus-content {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #374151;
+}
+
+.inscricoes-table .data-cell .data-content {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Status Cell */
+.inscricoes-table .status-cell .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+.status-aprovada {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-reprovada {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-analise {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-pendente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Footer */
+.inscricoes-footer {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.inscricoes-footer .footer-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.inscricoes-footer .total-count {
+  font-weight: 500;
+  color: #374151;
+}
+
+.inscricoes-footer .last-updated {
+  font-style: italic;
+}
+
+/* Loading state */
+.lista-inscricoes-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  gap: 1rem;
+  min-height: 400px;
+}
+
+.lista-inscricoes-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #4285f4;
+  border-radius: 50%;
+  animation: spin-inscricoes 1s linear infinite;
+}
+
+@keyframes spin-inscricoes {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.lista-inscricoes-loading p {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Empty state */
+.lista-inscricoes-container .empty-inscricoes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  gap: 1rem;
+  min-height: 400px;
+}
+
+.lista-inscricoes-container .empty-inscricoes .empty-icon {
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 50%;
+}
+
+.lista-inscricoes-container .empty-inscricoes .empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.lista-inscricoes-container .empty-inscricoes .empty-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+  max-width: 500px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-selecionar-edital {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+  margin-top: 1rem;
+}
+
+.btn-selecionar-edital:hover {
+  background: #3367d6;
+  box-shadow: 0 6px 16px rgba(66, 133, 244, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-selecionar-edital:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .inscricoes-container {
+    padding: 0.75rem;
+  }
+
+  .inscricoes-page-header {
+    padding: 1.5rem 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .inscricoes-page-header .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .inscricoes-page-header .welcome-title {
+    font-size: 1.75rem;
+  }
+
+  .inscricoes-page-header .welcome-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .inscricoes-table-header .table-header-cell,
+  .inscricoes-table .table-cell {
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .inscricoes-footer .footer-info {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .edital-selector {
+    padding: 0;
+  }
+
+  .btn-trocar-edital {
+    width: 100%;
+    justify-content: center;
+  }
+}
