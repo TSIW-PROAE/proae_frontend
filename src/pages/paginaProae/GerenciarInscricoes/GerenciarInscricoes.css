@@ -325,7 +325,7 @@
 }
 
 .inscricoes-table .table-row:focus {
-  outline: 2px solid rgba(3,105,161,0.12);
+  outline: 2px solid rgba(3, 105, 161, 0.12);
   outline-offset: -2px;
 }
 

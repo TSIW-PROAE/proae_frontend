@@ -65,9 +65,15 @@ export default function ModalRespostaAluno({ aluno, questionarioId, onClose, onS
 
         <div className="modal-body">
           <div className="aluno-info">
-            <div><strong>Matrícula:</strong> {aluno.matricula}</div>
-            <div><strong>Email:</strong> {aluno.email}</div>
-            <div><strong>Curso:</strong> {aluno.curso} - {aluno.campus}</div>
+            <div>
+              <strong>Matrícula:</strong> {aluno.matricula}
+            </div>
+            <div>
+              <strong>Email:</strong> {aluno.email}
+            </div>
+            <div>
+              <strong>Curso:</strong> {aluno.curso} - {aluno.campus}
+            </div>
           </div>
 
           <div className="respostas-list">
