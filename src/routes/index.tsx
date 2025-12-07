@@ -47,7 +47,7 @@ const routes = [
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
-          { path: "portal-aluno/pendencias/:inscricaoId", element: <PendenciasAluno /> },
+          { path: "portal-aluno/pendencias/", element: <PendenciasAluno /> },
           { path: "questionario/:editalId", element: <Questionario /> },
 
         ],
