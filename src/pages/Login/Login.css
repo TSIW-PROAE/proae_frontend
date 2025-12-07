@@ -81,6 +81,12 @@
   min-height: 600px;
 }
 
+@media (max-width: 1000px){
+  .logo-container{
+    display: none;
+  }
+}
+
 /* Overlay para melhorar o contraste */
 .logo-container::after {
   content: "";
