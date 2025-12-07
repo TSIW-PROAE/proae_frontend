@@ -4,6 +4,7 @@ export enum TipoDocumento{
   HISTORICO_ESCOLAR = 'Cert. de conclusão ou Hist. escolar do ensino médio',
   RG = 'Documento de Identidade',
   COMPROVANTE_MATRICULA = 'Comprovante de matrícula',
+  OUTROS = 'Outros'
 }
 
 export type StatusDocumento = 'PENDENTE' | 'APROVADO' | 'REJEITADO';

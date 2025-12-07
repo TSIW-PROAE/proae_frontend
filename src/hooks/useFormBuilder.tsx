@@ -6,6 +6,8 @@ import { UseFormBuilderProps, UseFormBuilderReturn, InputConfig, FormularioDinam
 import { filtrarPaginasCondicionais } from "@/utils/conditionalLogic";
 import { stepService } from "@/services/StepService/stepService";
 import { InscricaoService } from "@/services/InscricaoService/inscricao.service";
+import { TipoDocumento } from "@/types/documento";
+import DocumentoService from "@/services/DocumentoService/documento.service";
 
 
 export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn {
@@ -78,44 +80,55 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
         paginas,
         onSubmit: async (data) => {
           if (backendOnSubmit) {
-            const respostas = Object.entries(data)
-              .filter(([key]) => key.startsWith('pergunta_'))
-              .map(([key, value]) => {
-                const perguntaId = parseInt(key.replace('pergunta_', ''));
-                const perguntaConfig = paginas
-                .flatMap(p => p.inputs)
-                .find(input => input.nome === key)
-
-                const isMultiplaEscolha = perguntaConfig?.tipo === 'select';
-
-                if(isMultiplaEscolha){
-                  return {
-                    perguntaId: perguntaId,
-                    valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
-                    inscricaoId: Math.floor(Math.random() * 1000000),
-                    valorOpcoes: [String(value)]
-                  };
-                } else if(perguntaConfig?.tipo === 'file'){
-                  const fileName = typeof value === 'object' && value !== null && 'name' in value ? value.name : 'arquivo';
-                  const urlArquivo = `https://exemplo.com/uploads/${fileName}.pdf`;
-                  return {
-                  perguntaId: perguntaId,
-                  valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
-                  inscricaoId: Math.floor(Math.random() * 1000000),
-                  urlArquivo
-                };
-                }else{
-                  return {
-                  perguntaId: perguntaId,
-                  valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
-                  inscricaoId: Math.floor(Math.random() * 1000000)
-                };
-                }
-              });
-            
             const dadosAdicionais = Object.entries(data)
               .filter(([key]) => !key.startsWith('pergunta_'))
-              .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+              .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as Record<string, any>);
+
+            const inscricaoId = (dadosAdicionais.vaga_id as number);
+            const documentoService = new DocumentoService();
+
+            const respostas = await Promise.all(
+              Object.entries(data)
+                .filter(([key]) => key.startsWith('pergunta_'))
+                .map(async ([key, value]) => {
+                  const perguntaId = parseInt(key.replace('pergunta_', ''));
+                  const perguntaConfig = paginas
+                    .flatMap(p => p.inputs)
+                    .find(input => input.nome === key);
+
+                  const isMultiplaEscolha = perguntaConfig?.tipo === 'select';
+                  const isFile = perguntaConfig?.tipo === 'file';
+
+                  if (isMultiplaEscolha) {
+                    return {
+                      perguntaId: perguntaId,
+                      valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
+                      inscricaoId: inscricaoId,
+                      valorOpcoes: [String(value)]
+                    };
+                  } else if (isFile && value instanceof File) {
+                    const uploadResponse = await documentoService.uploadDocumento(
+                      value,
+                      inscricaoId,
+                      TipoDocumento.RG
+                    );
+                    const urlArquivo = uploadResponse.documento.documento_url;
+
+                    return {
+                      perguntaId: perguntaId,
+                      valorTexto: value.name,
+                      inscricaoId: inscricaoId,
+                      urlArquivo: urlArquivo
+                    };
+                  } else {
+                    return {
+                      perguntaId: perguntaId,
+                      valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
+                      inscricaoId: inscricaoId
+                    };
+                  }
+                })
+            );
 
             await backendOnSubmit({ respostas, ...dadosAdicionais });
           }
@@ -206,21 +219,35 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
       if (backendConfig?.onSubmit) {
         await backendConfig.onSubmit(formData);
       } else {
-        const respostas = Object.entries(formData)
-          .filter(([fieldId]) => fieldId.startsWith('pergunta_'))
-          .map(([fieldId, value]) => {
-            const perguntaId = parseInt(fieldId.replace('pergunta_', ''));
-            return {
-              perguntaId: perguntaId,
-              valorTexto: Array.isArray(value) ? value.join(", ") : String(value || ''),
-              inscricaoId: Math.floor(Math.random() * 1000000)
-            };
-          });
-
-        // Preservar dados adicionais que não são perguntas (como vaga_id)
         const dadosAdicionais = Object.entries(formData)
           .filter(([key]) => !key.startsWith('pergunta_'))
-          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as Record<string, any>);
+
+        const inscricaoId = (dadosAdicionais.vaga_id as number) || Math.floor(Math.random() * 1000000);
+
+        const respostas = await Promise.all(
+          Object.entries(formData)
+            .filter(([fieldId]) => fieldId.startsWith('pergunta_'))
+            .map(async ([fieldId, value]) => {
+              const perguntaId = parseInt(fieldId.replace('pergunta_', ''));
+
+              if (value instanceof File) {
+                const urlArquivo = await uploadFile(value, TipoDocumento.OUTROS, inscricaoId);
+                return {
+                  perguntaId: perguntaId,
+                  valorTexto: value.name,
+                  inscricaoId: inscricaoId,
+                  urlArquivo: urlArquivo
+                };
+              }
+
+              return {
+                perguntaId: perguntaId,
+                valorTexto: Array.isArray(value) ? value.join(", ") : String(value || ''),
+                inscricaoId: inscricaoId
+              };
+            })
+        );
 
         await InscricaoService.getInstance().submeterRespostas({
           respostas,
@@ -240,6 +267,12 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     setCurrentPage(0);
     setPageErrors({});
   }, [form, initialData]);
+
+  const uploadFile = async (file: File, tipo_documento: TipoDocumento, inscricaoId: number): Promise<string> => {
+    const url = await new DocumentoService().uploadDocumento(file, inscricaoId, tipo_documento);
+    console.log(url)
+    return url.documento.documento_url;
+  }
 
   return {
     form,
