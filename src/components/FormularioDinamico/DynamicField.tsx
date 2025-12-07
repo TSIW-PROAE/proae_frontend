@@ -9,7 +9,8 @@ import TextInputGroup from '../TextInputGroup/TextInputGroup';
 export const DynamicField: React.FC<DynamicFieldProps> = ({
   input,
   form,
-  formatValue
+  formatValue,
+  value
 }) => {
   const {
     nome,
@@ -82,7 +83,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                 label={titulo}
                 description={subtitulo}
                 type={tipo === "number" ? "text" : tipo}
-                value={String(field.value || "")}
+                value={value !== undefined ? String(value) : String(field.value || "")}
                 onChange={(e) => {
                   let value = e.target.value;
                   if (tipo === "number") {
@@ -107,7 +108,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               <Textarea
                 label={titulo}
                 description={subtitulo}
-                value={String(field.value || "")}
+                value={value !== undefined ? String(value) : String(field.value || "")}
                 onChange={(e) => {
                   const value = formatValue ? formatValue(e.target.value) : e.target.value;
                   field.onChange(value);
@@ -134,6 +135,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                 errorMessage={error?.message}
                 isRequired={obrigatorio}
                 placeholder={input.placeholder}
+                value={value !== undefined ? String(value) : String(field.value || "")}
               >
                 {options.map((option: SelectOption) => (
                   <SelectItem key={option.value}>
