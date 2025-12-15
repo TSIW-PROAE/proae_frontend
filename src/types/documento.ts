@@ -1,0 +1,15 @@
+export type DocumentoStatus = "Não Enviado" | "Pendente" | "Aprovado" | "Reprovado" | "Em Análise";
+
+export interface DocumentoValidacaoResumo {
+  parecer: string;
+  data_validacao?: string;
+  status?: "pendente" | "aprovado" | "reprovado";
+}
+
+export interface DocumentoInscricao {
+  documento_id: number;
+  tipo_documento: string;
+  documento_url?: string | null;
+  status_documento: DocumentoStatus;
+  validacoes?: DocumentoValidacaoResumo[];
+}

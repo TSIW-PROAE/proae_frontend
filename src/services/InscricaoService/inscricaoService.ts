@@ -62,8 +62,15 @@ export class InscricaoServiceManager {
     }
   }
 
-  async atualizarStatusInscricao(id: number, status: AlunoInscrito["status_inscricao"]): Promise<AlunoInscrito> {
-    return this.httpClient.patch<AlunoInscrito>(`${BASE_URL}/inscricoes/${id}/status`, { status_inscricao: status });
+  async atualizarStatusInscricao(inscricaoId: number, status: string): Promise<void> {
+    try {
+      await this.httpClient.patch(`${BASE_URL}/inscricoes/${inscricaoId}`, {
+        status_inscricao: status,
+      });
+    } catch (error: any) {
+      console.error("Erro ao atualizar status da inscrição:", error);
+      throw new Error(error.response?.data?.message || error.message || "Erro ao atualizar status da inscrição");
+    }
   }
 }
 

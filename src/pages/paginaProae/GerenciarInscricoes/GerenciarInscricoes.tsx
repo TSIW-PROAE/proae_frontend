@@ -434,7 +434,6 @@ export default function GerenciarInscricoes() {
       {showModalRespostas && selectedAluno && (
         <ModalRespostaAluno
           aluno={selectedAluno}
-          questionarioId={questionarioSelecionado?.id}
           onClose={() => {
             setShowModalRespostas(false);
             setSelectedAluno(null);

@@ -1,8 +1,14 @@
 export interface RespostaStep {
+  resposta_id: number;
   pergunta_id: number;
   pergunta_texto: string;
   resposta_texto: string;
   data_resposta: string;
+  validada?: boolean;
+  data_validacao?: string;
+  valor_texto?: string | null;
+  valor_opcoes?: string[] | null;
+  url_arquivo?: string | null;
 }
 
 export interface AlunoInscrito {
