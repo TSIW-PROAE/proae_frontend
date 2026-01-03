@@ -1,10 +1,10 @@
-.inscricoes-proae-container {
+.ranqueamento-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 1rem;
 }
 
-.inscricoes-proae-header {
+.ranqueamento-header {
   background: transparent;
   padding: 2rem 0;
   margin-bottom: 2rem;
@@ -31,13 +31,13 @@
 .avatar {
   width: 64px;
   height: 64px;
-  background: #4285f4;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 3px solid #ffffff;
-  box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
 }
 
 .welcome-text {
@@ -97,16 +97,16 @@
 }
 
 .edital-select:hover {
-  border-color: #4285f4;
+  border-color: #f59e0b;
 }
 
 .edital-select:focus {
   outline: none;
-  border-color: #4285f4;
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
-.filters-section {
+.stats-section {
   background: white;
   border-radius: 20px;
   padding: 1.5rem;
@@ -114,9 +114,62 @@
   border: 1px solid #e5e7eb;
 }
 
-.filters-card {
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0 0 0.25rem 0;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.actions-section {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.actions-card {
   display: flex;
   gap: 1rem;
+  align-items: center;
   flex-wrap: wrap;
 }
 
@@ -146,38 +199,31 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #4285f4;
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
-.filter-container {
+.btn-export {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.filter-icon {
-  color: #6b7280;
-}
-
-.status-filter {
-  padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
+  padding: 0.75rem 1.5rem;
+  background: #f59e0b;
+  color: white;
+  border: none;
   border-radius: 12px;
-  font-size: 1rem;
-  background: white;
-  color: #1f2937;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.status-filter:focus {
-  outline: none;
-  border-color: #4285f4;
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+.btn-export:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
-.inscricoes-list-section {
+.ranking-section {
   background: white;
   border-radius: 20px;
   padding: 1.5rem;
@@ -198,7 +244,7 @@
   width: 40px;
   height: 40px;
   border: 4px solid #e5e7eb;
-  border-top-color: #4285f4;
+  border-top-color: #f59e0b;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -231,21 +277,21 @@
   margin: 0;
 }
 
-.inscricoes-table-container {
+.ranking-table-container {
   overflow-x: auto;
 }
 
-.inscricoes-table {
+.ranking-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.inscricoes-table thead {
+.ranking-table thead {
   background: #f9fafb;
   border-bottom: 2px solid #e5e7eb;
 }
 
-.inscricoes-table th {
+.ranking-table th {
   padding: 1rem;
   text-align: left;
   font-weight: 600;
@@ -255,19 +301,52 @@
   letter-spacing: 0.05em;
 }
 
-.inscricoes-table tbody tr {
+.ranking-table tbody tr {
   border-bottom: 1px solid #e5e7eb;
   transition: background 0.2s;
 }
 
-.inscricoes-table tbody tr:hover {
+.ranking-table tbody tr:hover {
   background: #f9fafb;
 }
 
-.inscricoes-table td {
+.ranking-table td {
   padding: 1rem;
   color: #1f2937;
   font-size: 0.875rem;
+}
+
+.ranking-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.ranking-badge.gold {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.ranking-badge.silver {
+  background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
+  color: #1f2937;
+  box-shadow: 0 4px 12px rgba(156, 163, 175, 0.3);
+}
+
+.ranking-badge.bronze {
+  background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+}
+
+.ranking-badge.default {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .matricula-badge {
@@ -281,51 +360,44 @@
 }
 
 .nome-cell,
-.email-cell,
-.curso-cell,
-.campus-cell,
-.data-cell {
+.email-cell {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .nome-cell svg,
-.email-cell svg,
-.curso-cell svg,
-.campus-cell svg,
-.data-cell svg {
+.email-cell svg {
   color: #6b7280;
   flex-shrink: 0;
 }
 
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 0.75rem;
-  border-radius: 6px;
+.nota-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nota-value {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+}
+
+.nota-detail {
   font-size: 0.75rem;
-  font-weight: 500;
+  color: #6b7280;
 }
 
-.status-aprovada {
-  background: #d1fae5;
-  color: #065f46;
+.nota-final-cell {
+  display: flex;
+  align-items: center;
 }
 
-.status-reprovada {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.status-analise {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.status-pendente {
-  background: #fef3c7;
-  color: #92400e;
+.nota-final-value {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #f59e0b;
 }
 
 .table-footer {
@@ -337,7 +409,7 @@
 }
 
 @media (max-width: 768px) {
-  .inscricoes-proae-container {
+  .ranqueamento-container {
     padding: 0.5rem;
   }
 
@@ -345,15 +417,20 @@
     font-size: 1.5rem;
   }
 
-  .filters-card {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-card {
     flex-direction: column;
   }
 
-  .inscricoes-table-container {
+  .ranking-table-container {
     overflow-x: scroll;
   }
 
-  .inscricoes-table {
-    min-width: 800px;
+  .ranking-table {
+    min-width: 1000px;
   }
 }
+

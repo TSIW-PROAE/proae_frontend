@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CheckCircle,
@@ -9,7 +9,10 @@ import {
   Calendar,
   TrendingUp,
   ArrowRight,
+  Award,
+  MessageSquare,
 } from "lucide-react";
+import { calculoNotasService, NotaCalculada } from "@/services/CalculoNotasService/calculoNotas.service";
 
 // Tipos baseados no formato da API
 interface Etapa {
@@ -36,6 +39,8 @@ interface CandidateStatusProps {
 
 const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
   const navigate = useNavigate();
+  const [notaAluno, setNotaAluno] = useState<NotaCalculada | null>(null);
+  const [isLoadingNota, setIsLoadingNota] = useState(false);
 
   if (!edital) return null;
 
@@ -45,7 +50,27 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
     possui_pendencias,
     etapas_edital,
     inscricao_id,
+    edital_id,
   } = edital;
+
+  useEffect(() => {
+    if (edital_id && inscricao_id) {
+      carregarNotaAluno();
+    }
+  }, [edital_id, inscricao_id]);
+
+  const carregarNotaAluno = async () => {
+    try {
+      setIsLoadingNota(true);
+      const notas = await calculoNotasService.calcularNotasEdital(edital_id);
+      const minhaNota = notas.find((n) => n.inscricao_id === inscricao_id);
+      setNotaAluno(minhaNota || null);
+    } catch (error) {
+      console.error("Erro ao carregar nota do aluno:", error);
+    } finally {
+      setIsLoadingNota(false);
+    }
+  };
 
   const etapasOrdenadas = etapas_edital.sort((a, b) => a.ordem - b.ordem);
   const nomesEtapas = etapasOrdenadas.map((etapa) => etapa.nome);
@@ -211,6 +236,59 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
             })}
           </div>
         </div>
+
+        {/* Parecer Final e Nota */}
+        {notaAluno && (
+          <div className="parecer-section">
+            <div className="parecer-header">
+              <Award className="w-5 h-5 text-purple-600" />
+              <h4 className="parecer-title">Parecer Final</h4>
+            </div>
+            <div className="parecer-content">
+              <div className="nota-final-display">
+                <div className="nota-principal">
+                  <span className="nota-label">Sua Nota Final</span>
+                  <span className="nota-valor">{notaAluno.nota_final.toFixed(2)}</span>
+                  <span className="nota-maxima">/ 100</span>
+                </div>
+                <div className="nota-ranking">
+                  <span className="ranking-label">Sua Posição no Ranking</span>
+                  <span className="ranking-valor">{notaAluno.ranking}º lugar</span>
+                </div>
+              </div>
+              <div className="nota-detalhes">
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Nota de Documentos</span>
+                  <span className="detalhe-valor">
+                    {notaAluno.nota_documentos.toFixed(2)} ({notaAluno.detalhes.documentos_aprovados}/
+                    {notaAluno.detalhes.documentos_total} aprovados)
+                  </span>
+                </div>
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Nota de Respostas</span>
+                  <span className="detalhe-valor">
+                    {notaAluno.nota_respostas.toFixed(2)} ({notaAluno.detalhes.respostas_completas}/
+                    {notaAluno.detalhes.respostas_total} completas)
+                  </span>
+                </div>
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Nota de Pareceres</span>
+                  <span className="detalhe-valor">
+                    {notaAluno.nota_pareceres.toFixed(2)} ({notaAluno.detalhes.pareceres_aprovados}/
+                    {notaAluno.detalhes.pareceres_total} aprovados)
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isLoadingNota && (
+          <div className="loading-nota">
+            <Clock className="w-4 h-4 animate-spin" />
+            <span>Carregando parecer final...</span>
+          </div>
+        )}
       </div>
 
       <div className="status-actions">
