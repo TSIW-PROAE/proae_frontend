@@ -65,13 +65,13 @@ const SideBar: React.FC<ISideBarProps> = ({
       redirect: processIconRedirect,
       shouldShowIcon: processIconRedirect !== "",
     },
-    {
-      icon: ClipboardList,
-      alt: "Inscrições",
-      label: "Inscrições",
-      redirect: inscricoesIconRedirect,
-      shouldShowIcon: inscricoesIconRedirect !== "",
-    },
+    // {
+    //   icon: ClipboardList,
+    //   alt: "Inscrições",
+    //   label: "Inscrições",
+    //   redirect: inscricoesIconRedirect,
+    //   shouldShowIcon: inscricoesIconRedirect !== "",
+    // },
     {
       icon: Users,
       alt: "Alunos",
