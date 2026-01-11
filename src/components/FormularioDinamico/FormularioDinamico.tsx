@@ -6,7 +6,7 @@ import { Button } from '@heroui/react';
 import toast, { Toaster } from 'react-hot-toast';
 import { filtrarInputsCondicionais } from '@/utils/conditionalLogic';
 import { VagasService } from '@/services/VagasService/vagas.service';
-import { FetchAdapter } from '@/services/BaseRequestService/HttpClient';
+import { FetchAdapter } from '@/services/api';
 import { useParams } from 'react-router-dom';
 import { GradeBeneficios } from '@/components/GradeBeneficios/GradeBeneficios';
 import { VagaResponse as Vaga } from '@/types/vaga';

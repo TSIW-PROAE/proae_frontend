@@ -1,6 +1,6 @@
 import PendenciaItem from "@/components/PendenciaItem/PendenciaItem";
 import PageLayout from "@/pages/PageLayout/PageLayout";
-import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
+import { FetchAdapter } from "@/services/api";
 import PendenciasAlunoService from "@/services/PendenciasAluno.service/pendenciasAluno.service";
 import { Pendencia } from "@/types/pendencias";
 import React, { useEffect, useState } from "react";

@@ -1,7 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { InscricaoService } from "@/services/InscricaoService/inscricao.service";
+import { CalendarDate } from "@internationalized/date";
 import toast from "react-hot-toast";
+
+
+function isDateString(value: string): boolean {
+  return /^\d{2}\/\d{2}\/\d{4}$/.test(value);
+}
+
+
+function parseStringToDateValue(dateStr: string): CalendarDate | null {
+  const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+  
+  const [, day, month, year] = match;
+  return new CalendarDate(parseInt(year), parseInt(month), parseInt(day));
+}
 
 interface UseFormCacheProps {
   form: UseFormReturn<any>;
@@ -114,6 +129,8 @@ export function useFormCache({ form, vagaId, currentPage }: UseFormCacheProps): 
           cachedData[fieldName] = null;
         } else if (resposta.valorOpcoes?.length > 0) {
           cachedData[fieldName] = resposta.valorOpcoes;
+        } else if (resposta.valorTexto && isDateString(resposta.valorTexto)) {
+          cachedData[fieldName] = parseStringToDateValue(resposta.valorTexto);
         } else {
           cachedData[fieldName] = resposta.valorTexto || '';
         }

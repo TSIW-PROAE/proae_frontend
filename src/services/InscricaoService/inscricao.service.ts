@@ -1,5 +1,5 @@
 import { PagesResponse, Answers } from "@/pages/Enrollment/Inscricao";
-import IHttpClient, { FetchAdapter } from "../BaseRequestService/HttpClient";
+import IHttpClient, { FetchAdapter } from "../api";
 
 export interface CacheRespostasResponse {
   message: string;

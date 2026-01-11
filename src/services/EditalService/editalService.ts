@@ -1,4 +1,4 @@
-import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import { FetchAdapter } from "../api";
 import {
   Edital,
   CreateEditalRequest,
