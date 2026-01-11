@@ -47,6 +47,7 @@ const PendenciasAluno: React.FC = () => {
               ? ` Detalhes: ${(error as Error).message}`
               : "")
         );
+      } finally{
         setLoading(false);
       }
     };
