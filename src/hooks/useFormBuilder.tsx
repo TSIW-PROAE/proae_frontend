@@ -7,6 +7,7 @@ import { filtrarPaginasCondicionais } from "@/utils/conditionalLogic";
 import { stepService } from "@/services/StepService/stepService";
 import { InscricaoService } from "@/services/InscricaoService/inscricao.service";
 import toast from "react-hot-toast";
+import { MinioService } from "@/services/MinioService/minio.service";
 
 
 
@@ -38,6 +39,8 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
   const defaultSchema = createDynamicSchema([]);
   const formSchema = backendConfig ? createDynamicSchema(backendConfig.paginas.flatMap((pagina: PaginaConfig) => pagina.inputs)) : defaultSchema;
 
+  const minioService = new MinioService();
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {},
@@ -66,10 +69,6 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
           return {
             perguntaId,
             valorTexto: value.name,
-            isFile: true,
-            fileName: value.name,
-            fileSize: value.size,
-            fileType: value.type
           };
         }
         
@@ -133,7 +132,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
         response.respostas.forEach((resposta: any) => {
           const fieldName = `pergunta_${resposta.perguntaId}`;
           
-          if (resposta.isFile) {
+          if (resposta.valorTexto.endsWith('.pdf')){
             cachedData[fieldName] = null;
           } else if (resposta.valorOpcoes && resposta.valorOpcoes.length > 0) {
             cachedData[fieldName] = resposta.valorOpcoes;
@@ -256,9 +255,8 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
                     };
                   } else if (isFile && value instanceof File) {
                     // Upload do arquivo para o MinIO
-                    try {
-;
-                      const urlArquivo = "https://mockminio.endpoint/aquivo.pdf"
+                    try { 
+                      const urlArquivo = await minioService.uploadDocument(value, selectedVagaId!);
                       return {
                         perguntaId: perguntaId,
                         urlArquivo: urlArquivo
@@ -298,7 +296,9 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     const currentPageConfig = paginasVisiveis[currentPage - 1];
     const fieldsToValidate = currentPageConfig.inputs.map((input: InputConfig) => input.nome);
 
+    console.log(form.formState.errors);
     const isValid = await form.trigger(fieldsToValidate as any);
+    
 
     if (!isValid) {
       const pageErrorList = fieldsToValidate
@@ -390,7 +390,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
               // Se for arquivo, fazer upload e obter URL
               if (value instanceof File) {
                 try {
-                  const urlArquivo = "https://mockminio.endpoint/aquivo.pdf";
+                  const urlArquivo = await minioService.uploadDocument(value, selectedVagaId!);
                   return {
                     perguntaId: perguntaId,
                     urlArquivo: urlArquivo
@@ -416,6 +416,8 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
               };
             })
         );
+
+        console.log(respostas);
 
         await InscricaoService.getInstance().submeterRespostas({
           respostas,
