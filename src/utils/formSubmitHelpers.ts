@@ -40,8 +40,9 @@ export async function prepareRespostasForSubmit(
       .map(async ([key, value]) => {
         const perguntaId = parseInt(key.replace('pergunta_', ''));
         const inputConfig = allInputs.find((input: InputConfig) => input.nome === key);
+        const tipo = inputConfig?.tipo;
 
-        if (inputConfig?.tipo === 'file' && value instanceof File) {
+        if (tipo === 'file' && value instanceof File) {
           try {
             const urlArquivo = await minioService.uploadDocument(value, vagaId);
             return { perguntaId, urlArquivo };
@@ -49,6 +50,24 @@ export async function prepareRespostasForSubmit(
             console.error('Erro no upload:', error);
             throw new Error(`Falha no upload do arquivo: ${value.name}`);
           }
+        }
+
+        if (tipo === 'select' || tipo === 'radio') {
+          const opcaoSelecionada = String(value || '');
+          return {
+            perguntaId,
+            valorOpcoes: opcaoSelecionada ? [opcaoSelecionada] : [],
+            valorTexto: opcaoSelecionada
+          };
+        }
+
+        if (tipo === 'selectGroup' && typeof value === 'object' && value !== null) {
+          const valores = Object.values(value).filter(Boolean) as string[];
+          return {
+            perguntaId,
+            valorOpcoes: valores,
+            valorTexto: valores.join(', ')
+          };
         }
 
         if (Array.isArray(value)) {
@@ -59,14 +78,13 @@ export async function prepareRespostasForSubmit(
           };
         }
 
-        if (inputConfig?.tipo === 'date') {
+        if (tipo === 'date') {
           return {
             perguntaId,
             valorTexto: dateValueToString(value)
           };
         }
 
-        // Texto simples
         return {
           perguntaId,
           valorTexto: String(value || '')

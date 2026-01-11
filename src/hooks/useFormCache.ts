@@ -128,7 +128,9 @@ export function useFormCache({ form, vagaId, currentPage }: UseFormCacheProps): 
         if (resposta.valorTexto?.endsWith('.pdf')) {
           cachedData[fieldName] = null;
         } else if (resposta.valorOpcoes?.length > 0) {
-          cachedData[fieldName] = resposta.valorOpcoes;
+          cachedData[fieldName] = resposta.valorOpcoes.length === 1 
+            ? resposta.valorOpcoes[0] 
+            : resposta.valorOpcoes;
         } else if (resposta.valorTexto && isDateString(resposta.valorTexto)) {
           cachedData[fieldName] = parseStringToDateValue(resposta.valorTexto);
         } else {
