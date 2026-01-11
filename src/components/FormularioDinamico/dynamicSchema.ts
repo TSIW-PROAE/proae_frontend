@@ -49,6 +49,12 @@ const dataMesSchema = z.string()
   .min(1, "Data é obrigatória")
   .regex(/^\d{2}\/\d{4}$/, "Data deve estar no formato MM/AAAA");
 
+const dateValueSchema = z.object({
+  year: z.number(),
+  month: z.number(),
+  day: z.number()
+}).passthrough();
+
 const idadeSchema = z.number()
   .min(15, { message: "Idade deve ser pelo menos 15 anos" });
 
@@ -93,9 +99,17 @@ export const createDynamicSchema = (fields: InputConfig[]) => {
       fieldSchema = emailSchema;
     }
 
-    if (!field.obrigatorio) {
+    if (field.tipo === 'date') {
+      fieldSchema = field.obrigatorio
+        ? dateValueSchema.refine(val => val !== null && val !== undefined, {
+            message: `${field.titulo} é obrigatório`
+          })
+        : dateValueSchema.optional().nullable();
+    }
+
+    if (!field.obrigatorio && field.tipo !== 'date') {
       fieldSchema = fieldSchema.optional().or(z.literal(''));
-    } else if (fieldSchema instanceof z.ZodString) {
+    } else if (field.tipo !== 'date' && fieldSchema instanceof z.ZodString) {
       fieldSchema = fieldSchema.min(1, `${field.titulo} é obrigatório`);
     }
 
