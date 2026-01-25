@@ -112,7 +112,7 @@ export default function LoginProae() {
             </div>
 
             <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)}>
-              <div>
+              <div className="h-20">
                 <Controller
                   name="email"
                   control={control}
@@ -137,7 +137,7 @@ export default function LoginProae() {
                 />
               </div>
 
-              <div>
+              <div className="h-20">
                 <Controller
                   name="senha"
                   control={control}
