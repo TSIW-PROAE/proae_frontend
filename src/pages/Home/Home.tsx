@@ -1,8 +1,8 @@
 import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { Button } from "@heroui/button";
-import { useEffect, useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, useContext, useRef, useMemo } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import InfoCard from "../../components/InfoCard/InfoCard";
 import ProcessoSeletivo from "../../components/ProcessoSeletivo/ProcessoSeletivo";
 import restauranteIcon from "../../assets/dashboard icons/alimentação.svg";
@@ -17,8 +17,19 @@ import { AuthContext } from "@/context/AuthContext";
 export default function Home() {
   const {isAuthenticated, userInfo, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasNavigated = useRef(false);
   const [editais, setEditais] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Create stable values for role checking to prevent unnecessary re-renders
+  const userRoleInfo = useMemo(() => {
+    if (!userInfo) return { isAdmin: false, isAprovado: false, rolesString: '' };
+    const isAdmin = userInfo.roles?.includes('admin') ?? false;
+    const isAprovado = userInfo.aprovado ?? false;
+    const rolesString = Array.isArray(userInfo.roles) ? userInfo.roles.join(',') : '';
+    return { isAdmin, isAprovado, rolesString };
+  }, [userInfo?.roles, userInfo?.aprovado]);
 
   useEffect(() => {
     const fetchEditais = async () => {
@@ -37,18 +48,28 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-        if(userInfo?.roles.includes('admin') && userInfo?.aprovado){
-            navigate("/portal-proae/inscricoes");
-        } else if(userInfo?.aprovado == false && userInfo?.roles.includes('admin')){
-            navigate("/tela-de-espera");
-        } else{
-            navigate("/portal-aluno");
-        }
-      } else {
-        navigate("/")
+    // Only redirect if auth check is complete and user is authenticated
+    // Don't redirect if not authenticated - let them stay on the home page
+    // Also prevent multiple navigations with a ref and check current location
+    const isOnHomePage = location.pathname === '/';
+    const isOnPortalRoute = location.pathname.startsWith('/portal-') || location.pathname.startsWith('/tela-de-espera');
+    
+    if (!authLoading && isAuthenticated && !hasNavigated.current && isOnHomePage && !isOnPortalRoute) {
+      hasNavigated.current = true;
+      
+      if(userRoleInfo.isAdmin && userRoleInfo.isAprovado){
+        navigate("/portal-proae/inscricoes", { replace: true });
+      } else if(!userRoleInfo.isAprovado && userRoleInfo.isAdmin){
+        navigate("/tela-de-espera", { replace: true });
+      } else{
+        navigate("/portal-aluno", { replace: true });
       }
-  }, [isAuthenticated, userInfo, authLoading, navigate]);
+    }
+    // Reset ref when user logs out or becomes unauthenticated
+    if (!isAuthenticated) {
+      hasNavigated.current = false;
+    }
+  }, [isAuthenticated, authLoading, navigate, location.pathname, userRoleInfo.isAdmin, userRoleInfo.isAprovado, userRoleInfo.rolesString]);
 
   const handleAccessPortal = () => {
     if (isAuthenticated) {

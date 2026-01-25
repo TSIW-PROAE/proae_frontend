@@ -72,6 +72,46 @@ export class InscricaoServiceManager {
       throw new Error(error.response?.data?.message || error.message || "Erro ao atualizar status da inscrição");
     }
   }
+
+  async downloadPdfAprovados(editalId?: number): Promise<void> {
+    try {
+      const url = editalId 
+        ? `${BASE_URL}/inscricoes/aprovados/pdf?editalId=${editalId}`
+        : `${BASE_URL}/inscricoes/aprovados/pdf`;
+      
+      // Usa axios diretamente para fazer download de arquivo
+      const axios = (await import("axios")).default;
+      const response = await axios.get(url, {
+        responseType: "blob",
+        withCredentials: true,
+      });
+
+      // Cria um link temporário para download
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      
+      // Define o nome do arquivo
+      const contentDisposition = response.headers["content-disposition"];
+      let filename = "aprovados.pdf";
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, "");
+        }
+      }
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error: any) {
+      console.error("Erro ao baixar PDF de aprovados:", error);
+      throw new Error(error.response?.data?.message || error.message || "Erro ao baixar PDF de aprovados");
+    }
+  }
 }
 
 export const inscricaoServiceManager = new InscricaoServiceManager();

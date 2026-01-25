@@ -12,7 +12,10 @@ import {
   AlertCircle,
   ChevronDown,
   ClipboardList,
+  Download,
 } from "lucide-react";
+import { Button } from "@heroui/button";
+import { toast } from "react-hot-toast";
 import { AlunoInscrito } from "../../../types/inscricao";
 import { Edital } from "../../../types/edital";
 import { StepResponseDto } from "../../../types/step";
@@ -38,6 +41,7 @@ export default function GerenciarInscricoes() {
   const [showModalQuestionarios, setShowModalQuestionarios] = useState(false);
   const [selectedAluno, setSelectedAluno] = useState<AlunoInscrito | null>(null);
   const [showModalRespostas, setShowModalRespostas] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Carregar edital e questionário salvos no sessionStorage ao montar
   useEffect(() => {
@@ -193,6 +197,7 @@ export default function GerenciarInscricoes() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Toaster position="top-right" />
       <div className="inscricoes-container">
         {/* Header Principal */}
         <header className="inscricoes-page-header">
@@ -294,6 +299,17 @@ export default function GerenciarInscricoes() {
                   <span>{questionarioSelecionado.texto || questionarioSelecionado.titulo || `Questionário ${questionarioSelecionado.id}`}</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
+                <div style={{ marginLeft: "auto" }}>
+                  <Button
+                    color="primary"
+                    variant="solid"
+                    startContent={<Download className="w-4 h-4" />}
+                    onPress={handleDownloadPdf}
+                    isLoading={isDownloadingPdf}
+                  >
+                    Baixar PDF Aprovados
+                  </Button>
+                </div>
               </div>
 
               <div className="lista-inscricoes-container">

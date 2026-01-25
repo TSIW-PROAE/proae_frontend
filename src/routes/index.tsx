@@ -20,6 +20,7 @@ import TelaDeEspera from "@/pages/paginaProae/TelaDeEspera/TelaDeEspera";
 import ListaAlunos from "@/pages/paginaProae/ListaAlunos/ListaAlunos";
 import GerenciarInscricoes from "@/pages/paginaProae/GerenciarInscricoes/GerenciarInscricoes";
 import RanqueamentoProae from "@/pages/paginaProae/RanqueamentoProae/RanqueamentoProae";
+import AdminAprovado from "@/pages/paginaProae/AdminAprovado/AdminAprovado";
 
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
@@ -56,6 +57,7 @@ const routes = [
       },
       { path: "cadastro-proae", element: <CadastroProae /> },
       { path: "tela-de-espera", element: <TelaDeEspera /> },
+      { path: "admin/aprovado", element: <AdminAprovado /> },
       {
         element: <ProtectedProaeRoute />,
         children: [
