@@ -2,32 +2,39 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { createDynamicSchema } from "@/components/FormularioDinamico/dynamicSchema";
-import { UseFormBuilderProps, UseFormBuilderReturn, InputConfig, FormularioDinamicoProps, PaginaConfig, TipoInput } from "@/types/dynamicForm";
+import { 
+  UseFormBuilderProps, 
+  UseFormBuilderReturn, 
+  InputConfig, 
+  PaginaConfig 
+} from "@/types/dynamicForm";
 import { filtrarPaginasCondicionais } from "@/utils/conditionalLogic";
+import { mapStepsToPaginas } from "@/utils/formAdapter";
+import { prepareRespostasForSubmit, extractDadosAdicionais } from "@/utils/formSubmitHelpers";
 import { stepService } from "@/services/StepService/stepService";
 import { InscricaoService } from "@/services/InscricaoService/inscricao.service";
-import { TipoDocumento } from "@/types/documento";
-import DocumentoService from "@/services/DocumentoService/documento.service";
-
+import { MinioService } from "@/services/MinioService/minio.service";
+import { useFormCache } from "./useFormCache";
 
 export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn {
-  const {
-    editalId,
-    initialData,
-    onSubmit: backendOnSubmit,
-    titulo = "Formulário de Inscrição",
-    subtitulo = "Preencha todas as etapas para concluir sua inscrição"
-  } = props;
+  const { editalId, initialData, onSubmit: backendOnSubmit } = props;
 
-  const [backendConfig, setBackendConfig] = useState<FormularioDinamicoProps | null>(null);
+  const [paginas, setPaginas] = useState<PaginaConfig[]>([]);
   const [isLoadingFromBackend, setIsLoadingFromBackend] = useState(false);
   const [backendError, setBackendError] = useState<string | null>(null);
+
   const [currentPage, setCurrentPage] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pageErrors, setPageErrors] = useState<Record<number, string[]> | null>(null);
 
-  const defaultSchema = createDynamicSchema([]);
-  const formSchema = backendConfig ? createDynamicSchema(backendConfig.paginas.flatMap((pagina: PaginaConfig) => pagina.inputs)) : defaultSchema;
+  const [selectedVagaId, setSelectedVagaId] = useState<number | null>(null);
+
+  const minioService = useMemo(() => new MinioService(), []);
+
+  const formSchema = useMemo(() => {
+    const allInputs = paginas.flatMap((pagina: PaginaConfig) => pagina.inputs);
+    return createDynamicSchema(allInputs);
+  }, [paginas]);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -39,12 +46,22 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
   const formData = form.watch();
 
   const paginasVisiveis = useMemo(() => {
-    return backendConfig ? filtrarPaginasCondicionais(backendConfig.paginas, formData) : [];
-  }, [backendConfig, formData]);
+    return filtrarPaginasCondicionais(paginas, formData);
+  }, [paginas, formData]);
 
   const totalPages = paginasVisiveis.length;
   const progress = totalPages > 0 ? ((currentPage + 1) / totalPages) * 100 : 0;
   const isLastPage = currentPage === totalPages;
+
+  const {
+    saveToCache,
+    loadFromCache,
+    isSavingCache,
+    lastSavedAt,
+    hasUnsavedChanges,
+    clearCacheState
+  } = useFormCache({ form, vagaId: selectedVagaId, currentPage });
+
 
   useEffect(() => {
     loadFormConfiguration();
@@ -56,87 +73,9 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
       setBackendError(null);
 
       const steps = await stepService.listarStepsPorEdital(editalId);
-
-      const paginas: PaginaConfig[] = steps.map(step => ({
-        titulo: step.texto,
-        inputs: step.perguntas.map(pergunta => ({
-          nome: `pergunta_${pergunta.id}`,
-          titulo: pergunta.pergunta,
-          tipo: pergunta.tipo_Pergunta as TipoInput,
-          obrigatorio: pergunta.obrigatoriedade,
-          formatacao: pergunta.tipo_formatacao,
-          options: pergunta.opcoes?.map(opcao => ({
-            value: opcao,
-            label: opcao
-          })) || [],
-          placeholder: pergunta.placeholder
-        }))
-      }));
-
-      const formConfig: FormularioDinamicoProps = {
-        titulo,
-        subtitulo,
-        botaoFinal: 'Finalizar Inscrição',
-        paginas,
-        onSubmit: async (data) => {
-          if (backendOnSubmit) {
-            const dadosAdicionais = Object.entries(data)
-              .filter(([key]) => !key.startsWith('pergunta_'))
-              .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as Record<string, any>);
-
-            const inscricaoId = (dadosAdicionais.vaga_id as number);
-            const documentoService = new DocumentoService();
-
-            const respostas = await Promise.all(
-              Object.entries(data)
-                .filter(([key]) => key.startsWith('pergunta_'))
-                .map(async ([key, value]) => {
-                  const perguntaId = parseInt(key.replace('pergunta_', ''));
-                  const perguntaConfig = paginas
-                    .flatMap(p => p.inputs)
-                    .find(input => input.nome === key);
-
-                  const isMultiplaEscolha = perguntaConfig?.tipo === 'select';
-                  const isFile = perguntaConfig?.tipo === 'file';
-
-                  if (isMultiplaEscolha) {
-                    return {
-                      perguntaId: perguntaId,
-                      valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
-                      inscricaoId: inscricaoId,
-                      valorOpcoes: [String(value)]
-                    };
-                  } else if (isFile && value instanceof File) {
-                    const uploadResponse = await documentoService.uploadDocumento(
-                      value,
-                      inscricaoId,
-                      TipoDocumento.RG
-                    );
-                    const urlArquivo = uploadResponse.documento.documento_url;
-
-                    return {
-                      perguntaId: perguntaId,
-                      valorTexto: value.name,
-                      inscricaoId: inscricaoId,
-                      urlArquivo: urlArquivo
-                    };
-                  } else {
-                    return {
-                      perguntaId: perguntaId,
-                      valorTexto: Array.isArray(value) ? value.join(', ') : String(value || ''),
-                      inscricaoId: inscricaoId
-                    };
-                  }
-                })
-            );
-
-            await backendOnSubmit({ respostas, ...dadosAdicionais });
-          }
-        },
-        showProgress: true
-      };
-
-      setBackendConfig(formConfig);
+      const paginasConfig = mapStepsToPaginas(steps);
+      
+      setPaginas(paginasConfig);
     } catch (err: any) {
       setBackendError(err.message || 'Erro ao carregar formulário');
     } finally {
@@ -144,8 +83,9 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     }
   };
 
+
   const validateCurrentPage = useCallback(async (): Promise<boolean> => {
-    if (currentPage === 0 || !backendConfig) {
+    if (currentPage === 0 || paginasVisiveis.length === 0) {
       return true;
     }
 
@@ -155,58 +95,57 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     const isValid = await form.trigger(fieldsToValidate as any);
 
     if (!isValid) {
-      const pageErrorList = fieldsToValidate
-        .filter((field: string) => form.formState.errors[field])
-        .map((field: string) => {
-          const inputConfig = currentPageConfig.inputs.find((q: InputConfig) => q.nome === field);
-          return inputConfig?.titulo || field;
-        });
+      const errorFields = fieldsToValidate.filter(
+        (field: string) => form.formState.errors[field]
+      );
+      const errorTitles = errorFields.map((field: string) => {
+        const input = currentPageConfig.inputs.find((q: InputConfig) => q.nome === field);
+        return input?.titulo || field;
+      });
 
-      setPageErrors(prev => ({ ...prev, [currentPage]: pageErrorList }));
+      setPageErrors(prev => ({ ...prev, [currentPage]: errorTitles }));
       return false;
     }
 
     setPageErrors(prev => ({ ...prev, [currentPage]: [] }));
     return true;
-  }, [currentPage, form, paginasVisiveis, backendConfig]);
+  }, [currentPage, form, paginasVisiveis]);
+
 
   const nextPage = useCallback(async (): Promise<boolean> => {
     const isValid = await validateCurrentPage();
+    if (!isValid) return false;
 
-    if (!isValid) {
-      return false;
+    if (selectedVagaId) {
+      await saveToCache(true);
     }
 
     if (currentPage < paginasVisiveis.length) {
       setCurrentPage(prev => prev + 1);
-
-      backendConfig?.onStepChange?.(currentPage + 1, totalPages);
-
       window.scrollTo(0, 0);
     }
 
-    return isValid;
-  }, [currentPage, paginasVisiveis.length, validateCurrentPage, backendConfig, totalPages]);
+    return true;
+  }, [currentPage, paginasVisiveis.length, validateCurrentPage, selectedVagaId, saveToCache]);
 
   const prevPage = useCallback(() => {
+    if (selectedVagaId) {
+      saveToCache(false);
+    }
+
     if (currentPage > 0) {
       setCurrentPage(prev => prev - 1);
-
-      backendConfig?.onStepChange?.(currentPage - 1, totalPages);
-
       window.scrollTo(0, 0);
     }
-  }, [currentPage, backendConfig, totalPages]);
+  }, [currentPage, selectedVagaId, saveToCache]);
 
   const goToPage = useCallback((page: number) => {
     if (page >= 0 && page < paginasVisiveis.length) {
       setCurrentPage(page);
-
-      backendConfig?.onStepChange?.(page, totalPages);
-
       window.scrollTo(0, 0);
     }
-  }, [paginasVisiveis.length, backendConfig, totalPages]);
+  }, [paginasVisiveis.length]);
+
 
   const submitForm = useCallback(async () => {
     setIsSubmitting(true);
@@ -216,63 +155,45 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
       if (!isValid) throw new Error("Formulário contém erros");
 
       const formData = form.getValues();
-      if (backendConfig?.onSubmit) {
-        await backendConfig.onSubmit(formData);
+      const dadosAdicionais = extractDadosAdicionais(formData);
+
+      const respostas = await prepareRespostasForSubmit(
+        formData,
+        paginasVisiveis,
+        selectedVagaId!,
+        minioService
+      );
+
+      if (backendOnSubmit) {
+        await backendOnSubmit({ respostas, ...dadosAdicionais });
       } else {
-        const dadosAdicionais = Object.entries(formData)
-          .filter(([key]) => !key.startsWith('pergunta_'))
-          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as Record<string, any>);
-
-        const inscricaoId = (dadosAdicionais.vaga_id as number) || Math.floor(Math.random() * 1000000);
-
-        const respostas = await Promise.all(
-          Object.entries(formData)
-            .filter(([fieldId]) => fieldId.startsWith('pergunta_'))
-            .map(async ([fieldId, value]) => {
-              const perguntaId = parseInt(fieldId.replace('pergunta_', ''));
-
-              if (value instanceof File) {
-                const urlArquivo = await uploadFile(value, TipoDocumento.OUTROS, inscricaoId);
-                return {
-                  perguntaId: perguntaId,
-                  valorTexto: value.name,
-                  inscricaoId: inscricaoId,
-                  urlArquivo: urlArquivo
-                };
-              }
-
-              return {
-                perguntaId: perguntaId,
-                valorTexto: Array.isArray(value) ? value.join(", ") : String(value || ''),
-                inscricaoId: inscricaoId
-              };
-            })
-        );
-
         await InscricaoService.getInstance().submeterRespostas({
           respostas,
           ...dadosAdicionais
         });
       }
+
+      clearCacheState();
     } catch (error) {
       console.error('Erro ao enviar formulário', error);
       throw error;
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, backendConfig, editalId]);
+  }, [form, paginasVisiveis, selectedVagaId, backendOnSubmit, minioService, clearCacheState]);
+
 
   const resetForm = useCallback(() => {
     form.reset(initialData || {});
     setCurrentPage(0);
     setPageErrors({});
-  }, [form, initialData]);
+    clearCacheState();
+  }, [form, initialData, clearCacheState]);
 
-  const uploadFile = async (file: File, tipo_documento: TipoDocumento, inscricaoId: number): Promise<string> => {
-    const url = await new DocumentoService().uploadDocumento(file, inscricaoId, tipo_documento);
-    console.log(url)
-    return url.documento.documento_url;
-  }
+
+  const saveProgress = useCallback(async () => {
+    await saveToCache(true);
+  }, [saveToCache]);
 
   return {
     form,
@@ -289,6 +210,12 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     pageErrors,
     paginasVisiveis,
     isLoadingFromBackend,
-    backendError
+    backendError,
+    saveProgress,
+    loadFromCache,
+    isSavingCache,
+    lastSavedAt,
+    hasUnsavedChanges,
+    setSelectedVagaId
   };
 }

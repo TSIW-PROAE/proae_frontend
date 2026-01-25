@@ -1,6 +1,6 @@
 import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
-import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
+import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { useEffect, useState, useContext } from "react";
 import "./PortalAluno.css";

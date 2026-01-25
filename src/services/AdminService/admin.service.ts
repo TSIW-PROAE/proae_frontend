@@ -1,4 +1,4 @@
-import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import { FetchAdapter } from "../api";
 import {  DefaultResponse } from "@/types/auth";
 
 const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/auth";

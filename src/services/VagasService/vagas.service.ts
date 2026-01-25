@@ -1,4 +1,4 @@
-import IhttpClient from "@/services/BaseRequestService/HttpClient";
+import IhttpClient from "@/services/api";
 
 export class VagasService{
   constructor(
