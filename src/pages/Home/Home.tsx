@@ -1,4 +1,4 @@
-import { FetchAdapter } from "@/services/BaseRequestService/HttpClient";
+import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { Button } from "@heroui/button";
 import { useEffect, useState, useContext } from "react";

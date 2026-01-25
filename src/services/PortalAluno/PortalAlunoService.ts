@@ -1,4 +1,4 @@
-import IHttpClient from "../BaseRequestService/HttpClient";
+import IHttpClient from "../api";
 
 export default class PortalAlunoService {
 

@@ -1,4 +1,4 @@
-import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import { FetchAdapter } from "../api";
 
 export interface Validacao {
   id?: number;

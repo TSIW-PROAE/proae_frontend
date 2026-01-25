@@ -4,6 +4,7 @@ import minusIcon from "../../assets/minus-icon.svg";
 import {DatePicker, Input, RadioGroup, Select, SelectItem, Textarea} from "@heroui/react";
 import {Controller, useFormContext} from "react-hook-form";
 import {TypeFormat, TypeInput} from "@/utils/enumInput.tsx";
+import { parseDate } from "@internationalized/date";
 
 interface Option {
     value: string;
@@ -117,21 +118,41 @@ const CustomInput: React.FC<InputProps> = ( props : InputProps) => {
                                 name={props.name + "1"}
                                 control={control}
                                 rules={{ required: props.required }}
-                                render={({ field }) => (
-                                    <DatePicker
-                                        label="Data"
-                                        isRequired={props.required}
-                                        variant="bordered"
-                                        radius="lg"
-                                        fullWidth
-                                        errorMessage={errorMessage}
-                                        classNames={{ base: "custom-input" }}
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        onBlur={field.onBlur}
-                                        isInvalid={!!errors[props.name]}
-                                    />
-                                )}
+                                render={({ field }) => { 
+
+                                    let dateValue = null;
+        
+                                    try {
+                                        if (field.value && typeof field.value === "string") {
+                                            // Se sua string for "2024-12-25", isso funciona
+                                            dateValue = parseDate(field.value);
+                                        } else if (field.value && typeof field.value === "object" && "year" in field.value) {
+                                            // Se já for um objeto do tipo CalendarDate
+                                            dateValue = field.value;
+                                        }
+                                    } catch (e) {
+                                        console.error("Data inválida recebida:", field.value);
+                                        dateValue = null; // Evita quebrar a tela se a string for inválida
+                                    }
+                                    
+                                    return (
+                                        <DatePicker
+                                            label="Data"
+                                            isRequired={props.required}
+                                            variant="bordered"
+                                            radius="lg"
+                                            fullWidth
+                                            errorMessage={errorMessage}
+                                            classNames={{ base: "custom-input" }}
+                                            value={field.value}
+                                            onChange={(newDate) => {
+                                                field.onChange(newDate ? newDate.toString() : null);
+                                            }}
+                                            onBlur={field.onBlur}
+                                            isInvalid={!!errors[props.name]}
+                                        />
+                                    )
+                                }}
                             />
                         </div>
                     </div>

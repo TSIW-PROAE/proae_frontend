@@ -3,7 +3,7 @@ import { Edital, DocumentoEdital, EtapaEdital } from "../../types/edital";
 import { stepService } from "@/services/StepService/stepService";
 import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import { editalService } from "../../services/EditalService/editalService";
-import { dadoService, Dado } from "@/services/DadoService/dadoService";
+import { dadoService, Dado } from "@/services/DadoService/dado.service";
 import { toast } from "react-hot-toast";
 import "./ModalEditarEdital.css";
 
