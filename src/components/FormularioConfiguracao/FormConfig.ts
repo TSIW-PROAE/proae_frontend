@@ -201,6 +201,7 @@ export const formSections = [
         nome: "celular",
         titulo: "Celular",
         placeholder: "(00) 0 0000-0000",
+        formatacao: "phone",
       },
     ],
   },

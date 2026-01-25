@@ -1,10 +1,122 @@
 import "./ConfiguracaoProae.css";
+import ProaeForm from "../../../components/FormularioConfiguracao/ProaeForm";
+import { useState, useEffect } from "react";
+import { User, Settings, Shield, Edit3, UserCheck } from "lucide-react";
+import { useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
+import { LoadingSpin } from "@/components/Loading/LoadingScreen";
 
 export default function ConfiguracaoProae() {
+  const { userInfo } = useContext(AuthContext);
+  const [firstName, setFirstName] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (userInfo) {
+      setFirstName(userInfo.nome || "");
+    }
+  }, [userInfo]);
+
+  // Simular carregamento dos dados do formulário
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <LoadingSpin/>
+    );
+  }
+
   return (
-    <div>
-      <h1>Configurações PROAE</h1>
-      <p>Aqui você pode gerenciar as configurações do sistema.</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="config-container">
+        {/* Header Principal */}
+        <header className="config-header">
+          <div className="config-header-content">
+            <div className="config-welcome-section">
+              <div className="config-avatar">
+                <User className="w-6 h-6" />
+              </div>
+              <div className="config-welcome-text">
+                <h1 className="config-welcome-title">
+                  Olá, {firstName}! <span className="welcome-emoji">⚙️</span>
+                </h1>
+                <p className="config-welcome-subtitle">
+                  Gerencie suas informações pessoais
+                </p>
+              </div>
+            </div>
+
+            <div className="header-actions">
+              <div className="notification-icon">
+                <Settings className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Seção de Estatísticas - Compacta */}
+        <section className="config-stats-section">
+          <div className="config-stats-grid">
+            <div className="config-stat-card">
+              <div className="config-stat-icon">
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div className="config-stat-content">
+                <p className="config-stat-label">Status</p>
+                <p className="config-stat-value">Ativo</p>
+              </div>
+            </div>
+
+            <div className="config-stat-card">
+              <div className="config-stat-icon">
+                <Shield className="w-4 h-4" />
+              </div>
+              <div className="config-stat-content">
+                <p className="config-stat-label">Segurança</p>
+                <p className="config-stat-value">Protegido</p>
+              </div>
+            </div>
+
+            <div className="config-stat-card">
+              <div className="config-stat-icon">
+                <Edit3 className="w-4 h-4" />
+              </div>
+              <div className="config-stat-content">
+                <p className="config-stat-label">Última Edição</p>
+                <p className="config-stat-value">Hoje</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Conteúdo Principal */}
+        <main className="config-main-content">
+          <div className="config-form-section">
+            <div className="config-form-header">
+              <div className="config-form-title-section">
+                <Settings className="w-6 h-6" />
+                <h2 className="config-form-title">Informações Pessoais</h2>
+              </div>
+              <p className="config-form-subtitle">
+                Atualize seus dados pessoais e mantenha seu perfil sempre
+                atualizado
+              </p>
+            </div>
+
+            <div className="config-form-container">
+              <div className="config-form-wrapper">
+                <ProaeForm />
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
