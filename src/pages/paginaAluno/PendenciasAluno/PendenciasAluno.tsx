@@ -5,25 +5,8 @@ import PendenciasAlunoService from "@/services/PendenciasAluno.service/pendencia
 import { Pendencia } from "@/types/pendencias";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-
-function SetaEsquerda() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={3}
-      stroke="currentColor"
-      className="w-6 h-6 text-gray-700"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-    </svg>
-  );
-}
 
 const PendenciasAluno: React.FC = () => {
-  const navigate = useNavigate();
   const [pendencias, setPendencias] = useState<Pendencia[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +22,7 @@ const PendenciasAluno: React.FC = () => {
           throw new Error("Erro ao buscar pendências");
         }
         setPendencias(response.pendencias || []);
+        console.log(response.pendencias)
       } catch (error) {
         setPendencias([]);
         toast.error(
@@ -47,6 +31,8 @@ const PendenciasAluno: React.FC = () => {
               ? ` Detalhes: ${(error as Error).message}`
               : "")
         );
+      } finally{
+        setLoading(false);
       } finally{
         setLoading(false);
       }

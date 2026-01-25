@@ -16,16 +16,6 @@ import { InscricaoService } from "@/services/InscricaoService/inscricao.service"
 import { MinioService } from "@/services/MinioService/minio.service";
 import { useFormCache } from "./useFormCache";
 
-/**
- * Hook para gerenciar formulários dinâmicos baseados em Steps do backend.
- * 
- * Responsabilidades:
- * - Carrega configuração de steps/perguntas do backend
- * - Gerencia navegação entre páginas
- * - Valida campos por página
- * - Submeter respostas ao backend
- * 
- */
 export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn {
   const { editalId, initialData, onSubmit: backendOnSubmit } = props;
 
