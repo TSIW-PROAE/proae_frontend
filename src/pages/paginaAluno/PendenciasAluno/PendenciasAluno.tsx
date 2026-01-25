@@ -33,8 +33,6 @@ const PendenciasAluno: React.FC = () => {
         );
       } finally{
         setLoading(false);
-      } finally{
-        setLoading(false);
       }
     };
 

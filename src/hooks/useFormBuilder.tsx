@@ -211,7 +211,6 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     paginasVisiveis,
     isLoadingFromBackend,
     backendError,
-    // Cache
     saveProgress,
     loadFromCache,
     isSavingCache,
