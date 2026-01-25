@@ -1,4 +1,4 @@
-// AlunoForm.tsx
+// ProaeForm.tsx
 import { Button } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
@@ -11,10 +11,10 @@ import {
 } from "../../utils/validations";
 import { TipoFormatacao } from "../../utils/validations";
 import "./Form.css";
-import { formSections } from "./FormConfig";
+import { formSectionsProae } from "./FormConfigProae";
 import FormField, { FormFieldProps } from "./FormField";
 
-const AlunoForm = () => {
+const ProaeForm = () => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [originalFormData, setOriginalFormData] = useState<Record<string, any>>({});
   const [errosValidacao, setErrosValidacao] = useState<Record<string, string>>(
@@ -29,19 +29,15 @@ const AlunoForm = () => {
       try {
         const httpClient = new FetchAdapter();
         const service = new EditarPerfilService();
-        const data = (await service.getAlunoPerfil(httpClient)) as Record<
+        const data = (await service.getAdminPerfil(httpClient)) as Record<
           string,
           any
         >;
-        const aluno = data.dados.aluno || {};
-        const alunoFormatado = {
-          ...aluno,
-          matricula: aluno.matricula?.substring(2) || "",
-        };
-        setFormData(alunoFormatado);
-        setOriginalFormData(alunoFormatado);
+        const admin = data.dados?.admin || data.dados || {};
+        setFormData(admin);
+        setOriginalFormData(admin);
       } catch (error) {
-        console.error("Erro ao buscar perfil do aluno:", error);
+        console.error("Erro ao buscar perfil do admin:", error);
       }
     };
 
@@ -103,20 +99,12 @@ const AlunoForm = () => {
 
     const camposPermitidos = [
       "nome",
-      "sobrenome",
       "email",
-      "pronome",
+      "cargo",
       "data_nascimento",
-      "curso",
-      "campus",
-      "data_ingresso",
+      "cpf",
       "celular",
     ];
-
-    // Adiciona matrícula se válida e formata com prefixo "m-"
-    if (formData.matricula && formData.matricula !== "m-undefined" && formData.matricula.trim() !== "") {
-      camposPermitidos.push("matricula");
-    }
 
     let payload = Object.fromEntries(
       Object.entries(formData).filter(
@@ -124,21 +112,15 @@ const AlunoForm = () => {
           camposPermitidos.includes(key) &&
           value !== undefined &&
           value !== null &&
-          value !== "" &&
-          value !== "m-undefined"
+          value !== ""
       )
     );
-
-    // Formata matrícula com prefixo "m-" se presente
-    if (payload.matricula && !payload.matricula.startsWith("m-")) {
-      payload.matricula = `m-${payload.matricula}`;
-    }
 
     try {
       const httpClient = new FetchAdapter();
       const service = new EditarPerfilService();
       console.log("Payload being sent:", payload);
-      const response = await service.patchAlunoPerfil(httpClient, payload);
+      const response = await service.patchAdminPerfil(httpClient, payload);
       console.log("Atualização bem-sucedida:", response);
       setShowSuccessModal(true);
       // Limpar erros de validação após sucesso
@@ -146,7 +128,7 @@ const AlunoForm = () => {
       // Atualizar dados originais após sucesso
       setOriginalFormData(formData);
     } catch (error: any) {
-      console.error("Erro ao atualizar dados do aluno:", error);
+      console.error("Erro ao atualizar dados do admin:", error);
       const errorMsg = error?.response?.data?.message || error?.message || "Erro ao atualizar dados. Tente novamente.";
       setErrorMessage(errorMsg);
       setShowErrorModal(true);
@@ -156,7 +138,7 @@ const AlunoForm = () => {
   return (
     <>
       <form className="aluno-form-wrapper" onSubmit={handleSubmit}>
-        {formSections.map((section) => (
+        {formSectionsProae.map((section) => (
           <div className="form-section" key={section.title}>
             <h2>{section.title}</h2>
             <div className={`form-layout ${section.layout}`}>
@@ -236,4 +218,5 @@ const AlunoForm = () => {
   );
 };
 
-export default AlunoForm;
+export default ProaeForm;
+

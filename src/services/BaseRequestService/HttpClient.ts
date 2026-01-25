@@ -90,7 +90,9 @@ export class FetchAdapter implements IHttpClient {
 
   async patch<T>(url: string, data: unknown): Promise<T> {
     try {
-      const response = await this.axiosInstance.patch<T>(url, data);
+      const response = await this.axiosInstance.patch<T>(url, data, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error: any) {
       throw error.response.data;
