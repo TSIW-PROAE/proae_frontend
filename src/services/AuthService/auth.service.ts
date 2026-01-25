@@ -1,5 +1,5 @@
 import { extractCookieFromHeaders, setCookie } from "@/utils/utils";
-import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import { FetchAdapter } from "../api";
 import {
   UserLoginResponse,
   UserSignup,

@@ -1,5 +1,5 @@
 // services/EditarPerfilService.ts
-import IHttpClient from "../BaseRequestService/HttpClient";
+import IHttpClient from "../api";
 
 export default class EditarPerfilService {
   async getAlunoPerfil(httpClient: IHttpClient) {

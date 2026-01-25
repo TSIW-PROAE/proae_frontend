@@ -99,15 +99,21 @@ export interface UseFormBuilderReturn {
   isSubmitting: boolean;
   pageErrors: Record<number, string[]> | null;
   paginasVisiveis: PaginaConfig[];
-  // Propriedades específicas do modo backend
   isLoadingFromBackend?: boolean;
   backendError?: string | null;
+  saveProgress: () => Promise<void>;
+  loadFromCache: (vagaId: number) => Promise<boolean>;
+  isSavingCache: boolean;
+  lastSavedAt: Date | null;
+  hasUnsavedChanges: boolean;
+  setSelectedVagaId: (vagaId: number | null) => void;
 }
 
 export interface DynamicFieldProps {
   input: InputConfig;
   form: UseFormReturn<FormData>;
   formatValue?: (value: unknown) => unknown;
+  value?: unknown;
 }
 
 export type FormData = Record<string, unknown>;

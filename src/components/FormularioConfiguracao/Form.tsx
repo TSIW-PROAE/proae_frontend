@@ -2,7 +2,7 @@
 import { Button } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
-import { FetchAdapter } from "../../services/BaseRequestService/HttpClient";
+import { FetchAdapter } from "../../services/api";
 import EditarPerfilService from "../../services/EditarPerfil.service/editarPerfil.service";
 import {
   formatarTexto,

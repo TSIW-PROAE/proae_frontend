@@ -1,5 +1,18 @@
 import { PagesResponse, Answers } from "@/pages/Enrollment/Inscricao";
-import IHttpClient, { FetchAdapter } from "../BaseRequestService/HttpClient";
+import IHttpClient, { FetchAdapter } from "../api";
+
+export interface CacheRespostasResponse {
+  message: string;
+  respostas: Array<{
+    perguntaId: number;
+    valorTexto?: string;
+    valorOpcoes?: string[];
+    isFile?: boolean;
+    fileName?: string;
+    fileSize?: number;
+    fileType?: string;
+  }>;
+}
 
 export class InscricaoService {
   private static instance: InscricaoService;
@@ -34,4 +47,23 @@ export class InscricaoService {
     const response = await this.httpClient.post(url, data);
     return response.data;
   }
+
+  async salvarRespostas(vaga_id: number, respostas: any[]): Promise<{ message: string }> {
+    const url = this.url + `/inscricoes/cache/save/respostas`;
+    const response = await this.httpClient.post(url, { vaga_id, respostas });
+    return response.data;
+  }
+
+  async buscarRespostas(vagaId: number): Promise<CacheRespostasResponse> {
+    const url = this.url + `/inscricoes/cache/respostas/vaga/${vagaId}`;
+    const response = await this.httpClient.get<CacheRespostasResponse>(url);
+    return response; // get() returns data directly
+  }
+
+  async atualizarInscricao(id: number, answers: Answers) {
+    const url = this.url + `/inscricoes/${id}`;
+    const response: any = await this.httpClient.put(url, answers);
+    return response.data;
+  }
+
 }

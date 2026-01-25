@@ -1,4 +1,4 @@
-import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import { FetchAdapter } from "../api";
 import { Pergunta } from "@/types/step";
 
 const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/perguntas";
