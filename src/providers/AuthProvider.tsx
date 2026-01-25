@@ -62,17 +62,18 @@ function AuthProvider({children}: {children: React.ReactNode}){
             if (!response.valid) {
               throw new Error("Token inválido");
             }
+            console.log(response, "checkout response")
              const fillUserInfo: UserInfo = {
                 email: response.user.email,
                 id: response.user.usuario_id,
                 nome: response.user.nome,
                 roles: response.user.roles,
-                aprovado: response.user.admin.aprovado
+                aprovado: response.user.roles.includes("admin") ? response.user.aprovado : true
               }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);
-
         } catch (error) {
+          console.error("Auth check failed:", error);
           setIsAuthenticated(false);
           setUserInfo(null);
           authService.logout();
