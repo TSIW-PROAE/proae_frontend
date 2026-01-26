@@ -8,25 +8,48 @@ import { AlunoInscrito } from "@/types/inscricao";
 import { StepResponseDto } from "@/types/step";
 import "./InscricoesProae.css";
 
-interface PerguntaComResposta {
-  perguntaId: number;
+interface PerguntaPayload {
+  id: number;
   pergunta: string;
+  tipo_Pergunta: string;
   obrigatoriedade: boolean;
-  tipoPergunta: string;
   opcoes?: string[] | null;
-  respostaId: number | null;
+  tipo_formatacao?: string | null;
+  placeholder?: string | null;
+}
+
+interface RespostaPayload {
+  id: number;
+  texto: string | null;
   valorTexto: string | null;
   valorOpcoes: string[] | null;
+  urlArquivo: string | null;
   dataResposta: string | null;
-  validada: boolean | null;
+}
+
+interface PerguntaComResposta {
+  pergunta: PerguntaPayload;
+  resposta: RespostaPayload | null;
 }
 
 interface StepRespostas {
-  stepId: number;
-  stepTexto: string;
-  editalId: number;
-  alunoId: number;
-  inscricaoId: number;
+  edital: {
+    id: number;
+    titulo?: string;
+    titulo_edital?: string;
+    descricao?: string;
+    status?: string;
+  };
+  step: {
+    id: number;
+    texto: string;
+  };
+  aluno: {
+    aluno_id: number;
+    nome: string;
+    email: string;
+    matricula: string;
+  };
   perguntas: PerguntaComResposta[];
 }
 
@@ -172,7 +195,7 @@ export default function InscricoesProae() {
 
     try {
       setIsLoadingRespostas(true);
-      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/aluno/${inscricaoSelecionada.aluno_id}/step/${questionarioSelecionado}/edital/${editalSelecionado.id}`;
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/aluno/${inscricaoSelecionada.aluno_id}/edital/${editalSelecionado.id}/step/${questionarioSelecionado}/perguntas-com-respostas`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -183,8 +206,15 @@ export default function InscricoesProae() {
         throw new Error(`Erro ao carregar respostas: ${response.statusText}`);
       }
 
-      const dados = (await response.json()) as StepRespostas;
-      setStepRespostas(dados || null);
+      const payload = await response.json();
+      const dados = (payload?.dados || payload) as StepRespostas | null;
+
+      if (payload?.sucesso === false || !dados) {
+        setStepRespostas(null);
+        return;
+      }
+
+      setStepRespostas(dados);
     } catch (err: any) {
       console.error("Erro ao carregar respostas:", err);
       setStepRespostas(null);
@@ -568,16 +598,20 @@ export default function InscricoesProae() {
                               </div>
                             ) : stepRespostas?.perguntas?.length ? (
                               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                                {stepRespostas.perguntas.map((pergunta) => {
-                                  const tipo = pergunta.tipoPergunta || "N/D";
-                                  const obrigatoria = pergunta.obrigatoriedade ? "Sim" : "Não";
-                                  const valorOpcoes = pergunta.valorOpcoes?.length ? pergunta.valorOpcoes.join(", ") : null;
-                                  const valorTexto = pergunta.valorTexto && pergunta.valorTexto.trim().length > 0 ? pergunta.valorTexto : null;
+                                {stepRespostas.perguntas.map((item) => {
+                                  const perguntaInfo = item.pergunta;
+                                  const respostaInfo = item.resposta;
+                                  const tipo = perguntaInfo?.tipo_Pergunta || "N/D";
+                                  const obrigatoria = perguntaInfo?.obrigatoriedade ? "Sim" : "Não";
+                                  const valorOpcoes = respostaInfo?.valorOpcoes?.length ? respostaInfo.valorOpcoes.join(", ") : null;
+                                  const valorTexto =
+                                    (respostaInfo?.valorTexto && respostaInfo.valorTexto.trim().length > 0 ? respostaInfo.valorTexto : null) ||
+                                    (respostaInfo?.texto && respostaInfo.texto.trim().length > 0 ? respostaInfo.texto : null);
                                   const respostaConteudo = valorOpcoes || valorTexto;
 
                                   return (
                                     <div
-                                      key={pergunta.perguntaId}
+                                      key={perguntaInfo?.id || `${perguntaInfo?.pergunta}-${perguntaInfo?.tipo_Pergunta}`}
                                       style={{
                                         backgroundColor: "white",
                                         border: "1px solid #e2e8f0",
@@ -594,7 +628,7 @@ export default function InscricoesProae() {
                                           lineHeight: "1.5",
                                         }}
                                       >
-                                        {pergunta.pergunta}
+                                        {perguntaInfo?.pergunta || "Pergunta"}
                                       </h4>
 
                                       {/* Informações Adicionais */}
