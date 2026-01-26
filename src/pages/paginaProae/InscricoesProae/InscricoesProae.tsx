@@ -8,10 +8,26 @@ import { AlunoInscrito } from "@/types/inscricao";
 import { StepResponseDto } from "@/types/step";
 import "./InscricoesProae.css";
 
-interface RespostaAluno {
-  id: number;
-  texto: string;
-  pergunta_id: number;
+interface PerguntaComResposta {
+  perguntaId: number;
+  pergunta: string;
+  obrigatoriedade: boolean;
+  tipoPergunta: string;
+  opcoes?: string[] | null;
+  respostaId: number | null;
+  valorTexto: string | null;
+  valorOpcoes: string[] | null;
+  dataResposta: string | null;
+  validada: boolean | null;
+}
+
+interface StepRespostas {
+  stepId: number;
+  stepTexto: string;
+  editalId: number;
+  alunoId: number;
+  inscricaoId: number;
+  perguntas: PerguntaComResposta[];
 }
 
 export default function InscricoesProae() {
@@ -28,7 +44,7 @@ export default function InscricoesProae() {
   const [questionarios, setQuestionarios] = useState<StepResponseDto[]>([]);
   const [questionarioSelecionado, setQuestionarioSelecionado] = useState<number | null>(null);
   const [isLoadingQuestionarios, setIsLoadingQuestionarios] = useState(false);
-  const [respostas, setRespostas] = useState<RespostaAluno[]>([]);
+  const [stepRespostas, setStepRespostas] = useState<StepRespostas | null>(null);
   const [isLoadingRespostas, setIsLoadingRespostas] = useState(false);
 
   useEffect(() => {
@@ -44,8 +60,10 @@ export default function InscricoesProae() {
   useEffect(() => {
     if (questionarioSelecionado && inscricaoSelecionada?.aluno_id && editalSelecionado?.id) {
       carregarRespostas();
+    } else {
+      setStepRespostas(null);
     }
-  }, [questionarioSelecionado]);
+  }, [questionarioSelecionado, inscricaoSelecionada, editalSelecionado]);
 
   const carregarEditais = async () => {
     try {
@@ -64,8 +82,6 @@ export default function InscricoesProae() {
 
     try {
       setIsLoading(true);
-      // Buscar inscrições do primeiro step/questionário do edital
-      // Em uma implementação real, você pode querer listar todas as inscrições do edital
       const steps = await stepService.listarStepsPorEdital(editalSelecionado.id.toString());
       if (steps && steps.length > 0) {
         const dados = await inscricaoServiceManager.listarAlunosPorQuestionario(editalSelecionado.id, steps[0].id);
@@ -156,22 +172,22 @@ export default function InscricoesProae() {
 
     try {
       setIsLoadingRespostas(true);
-      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/aluno/${inscricaoSelecionada.aluno_id}/edital/${editalSelecionado.id}/step/${questionarioSelecionado}`;
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/aluno/${inscricaoSelecionada.aluno_id}/step/${questionarioSelecionado}/edital/${editalSelecionado.id}`;
       const response = await fetch(url);
 
       if (!response.ok) {
         if (response.status === 404) {
-          setRespostas([]);
+          setStepRespostas(null);
           return;
         }
         throw new Error(`Erro ao carregar respostas: ${response.statusText}`);
       }
 
-      const dados = await response.json();
-      setRespostas(dados || []);
+      const dados = (await response.json()) as StepRespostas;
+      setStepRespostas(dados || null);
     } catch (err: any) {
       console.error("Erro ao carregar respostas:", err);
-      setRespostas([]);
+      setStepRespostas(null);
     } finally {
       setIsLoadingRespostas(false);
     }
@@ -183,7 +199,7 @@ export default function InscricoesProae() {
     setAbaAtiva("questionarios");
     setQuestionarios([]);
     setQuestionarioSelecionado(null);
-    setRespostas([]);
+    setStepRespostas(null);
   };
 
   return (
@@ -544,96 +560,87 @@ export default function InscricoesProae() {
                         {questionarioSelecionado && (
                           <div style={{ marginBottom: "32px" }}>
                             <h3 style={{ marginBottom: "16px", color: "#1e293b", fontSize: "18px", fontWeight: "600" }}>Perguntas</h3>
-                            {questionarios
-                              .filter((q) => q.id === questionarioSelecionado)
-                              .map((questionario) => (
-                                <div key={questionario.id}>
-                                  {questionario.perguntas && questionario.perguntas.length > 0 ? (
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                                      {questionario.perguntas.map((pergunta) => {
-                                        const resposta = respostas.find((r) => r.pergunta_id === pergunta.id);
-                                        return (
-                                          <div
-                                            key={pergunta.id}
-                                            style={{
-                                              backgroundColor: "white",
-                                              border: "1px solid #e2e8f0",
-                                              borderRadius: "8px",
-                                              padding: "16px",
-                                            }}
-                                          >
-                                            <h4
-                                              style={{
-                                                margin: "0 0 8px 0",
-                                                color: "#1e293b",
-                                                fontSize: "15px",
-                                                fontWeight: "600",
-                                                lineHeight: "1.5",
-                                              }}
-                                            >
-                                              {pergunta.pergunta}
-                                            </h4>
 
-                                            {/* Informações Adicionais */}
-                                            <div style={{ fontSize: "13px", color: "#64748b", display: "flex", gap: "16px", marginBottom: "12px" }}>
-                                              <span>Tipo: {pergunta.tipo_Pergunta}</span>
-                                              <span>•</span>
-                                              <span>Obrigatória: {pergunta.obrigatoriedade ? "Sim" : "Não"}</span>
-                                            </div>
+                            {isLoadingRespostas ? (
+                              <div style={{ textAlign: "center", padding: "24px", color: "#64748b" }}>
+                                <div className="loading-spinner" style={{ margin: "0 auto 12px" }}></div>
+                                <p>Carregando respostas...</p>
+                              </div>
+                            ) : stepRespostas?.perguntas?.length ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                {stepRespostas.perguntas.map((pergunta) => {
+                                  const tipo = pergunta.tipoPergunta || "N/D";
+                                  const obrigatoria = pergunta.obrigatoriedade ? "Sim" : "Não";
+                                  const valorOpcoes = pergunta.valorOpcoes?.length ? pergunta.valorOpcoes.join(", ") : null;
+                                  const valorTexto = pergunta.valorTexto && pergunta.valorTexto.trim().length > 0 ? pergunta.valorTexto : null;
+                                  const respostaConteudo = valorOpcoes || valorTexto;
 
-                                            {/* Resposta */}
-                                            {isLoadingRespostas ? (
-                                              <div
-                                                style={{
-                                                  padding: "12px",
-                                                  backgroundColor: "#f8fafc",
-                                                  borderRadius: "6px",
-                                                  fontSize: "13px",
-                                                  color: "#64748b",
-                                                }}
-                                              >
-                                                Carregando resposta...
-                                              </div>
-                                            ) : resposta ? (
-                                              <div
-                                                style={{
-                                                  padding: "12px",
-                                                  backgroundColor: "#f0fdf4",
-                                                  border: "1px solid #bbf7d0",
-                                                  borderRadius: "6px",
-                                                  marginTop: "8px",
-                                                }}
-                                              >
-                                                <div style={{ fontSize: "12px", fontWeight: "600", color: "#166534", marginBottom: "4px" }}>
-                                                  Resposta:
-                                                </div>
-                                                <div style={{ fontSize: "14px", color: "#15803d" }}>{resposta.texto}</div>
-                                              </div>
-                                            ) : (
-                                              <div
-                                                style={{
-                                                  padding: "12px",
-                                                  backgroundColor: "#fef2f2",
-                                                  border: "1px solid #fecaca",
-                                                  borderRadius: "6px",
-                                                  marginTop: "8px",
-                                                }}
-                                              >
-                                                <div style={{ fontSize: "13px", color: "#991b1b", fontStyle: "italic" }}>Usuário não respondeu</div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
+                                  return (
+                                    <div
+                                      key={pergunta.perguntaId}
+                                      style={{
+                                        backgroundColor: "white",
+                                        border: "1px solid #e2e8f0",
+                                        borderRadius: "8px",
+                                        padding: "16px",
+                                      }}
+                                    >
+                                      <h4
+                                        style={{
+                                          margin: "0 0 8px 0",
+                                          color: "#1e293b",
+                                          fontSize: "15px",
+                                          fontWeight: "600",
+                                          lineHeight: "1.5",
+                                        }}
+                                      >
+                                        {pergunta.pergunta}
+                                      </h4>
+
+                                      {/* Informações Adicionais */}
+                                      <div style={{ fontSize: "13px", color: "#64748b", display: "flex", gap: "16px", marginBottom: "12px" }}>
+                                        <span>Tipo: {tipo}</span>
+                                        <span>•</span>
+                                        <span>Obrigatória: {obrigatoria}</span>
+                                      </div>
+
+                                      {/* Resposta */}
+                                      {respostaConteudo ? (
+                                        <div
+                                          style={{
+                                            padding: "12px",
+                                            backgroundColor: "#f0fdf4",
+                                            border: "1px solid #bbf7d0",
+                                            borderRadius: "6px",
+                                            marginTop: "8px",
+                                          }}
+                                        >
+                                          <div style={{ fontSize: "12px", fontWeight: "600", color: "#166534", marginBottom: "4px" }}>Resposta:</div>
+                                          <div style={{ fontSize: "14px", color: "#15803d" }}>{respostaConteudo}</div>
+                                        </div>
+                                      ) : (
+                                        <div
+                                          style={{
+                                            padding: "12px",
+                                            backgroundColor: "#fef2f2",
+                                            border: "1px solid #fecaca",
+                                            borderRadius: "6px",
+                                            marginTop: "8px",
+                                          }}
+                                        >
+                                          <div style={{ fontSize: "13px", color: "#991b1b", fontStyle: "italic" }}>Usuário não respondeu</div>
+                                        </div>
+                                      )}
                                     </div>
-                                  ) : (
-                                    <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
-                                      <FileText style={{ width: "48px", height: "48px", margin: "0 auto 16px", opacity: 0.5 }} />
-                                      <p>Nenhuma pergunta encontrada neste questionário.</p>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
+                                <FileText style={{ width: "48px", height: "48px", margin: "0 auto 16px", opacity: 0.5 }} />
+                                <p>Nenhuma pergunta encontrada neste questionário.</p>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
