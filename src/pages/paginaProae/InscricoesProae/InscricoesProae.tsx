@@ -25,6 +25,9 @@ interface RespostaPayload {
   valorOpcoes: string[] | null;
   urlArquivo: string | null;
   dataResposta: string | null;
+  validada?: boolean | null;
+  dataValidacao?: string | null;
+  dataValidade?: string | null;
 }
 
 interface PerguntaComResposta {
@@ -69,6 +72,8 @@ export default function InscricoesProae() {
   const [isLoadingQuestionarios, setIsLoadingQuestionarios] = useState(false);
   const [stepRespostas, setStepRespostas] = useState<StepRespostas | null>(null);
   const [isLoadingRespostas, setIsLoadingRespostas] = useState(false);
+  const [validandoRespostas, setValidandoRespostas] = useState<Record<number, boolean>>({});
+  const [validandoTodas, setValidandoTodas] = useState(false);
 
   useEffect(() => {
     carregarEditais();
@@ -220,6 +225,74 @@ export default function InscricoesProae() {
       setStepRespostas(null);
     } finally {
       setIsLoadingRespostas(false);
+    }
+  };
+
+  const gerarDataValidadePadrao = () => {
+    const now = new Date();
+    const validade = new Date(Date.UTC(now.getFullYear(), 11, 31, 23, 59, 59));
+    return validade.toISOString();
+  };
+
+  const validarResposta = async (respostaId: number, perguntaTitulo?: string) => {
+    const confirmMsg = `Confirmar validação ${perguntaTitulo ? `da pergunta "${perguntaTitulo}"?` : "desta resposta?"}`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setValidandoRespostas((prev) => ({ ...prev, [respostaId]: true }));
+    try {
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/${respostaId}/validate`;
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ validada: true, dataValidade: gerarDataValidadePadrao() }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao validar resposta: ${response.statusText}`);
+      }
+
+      await carregarRespostas();
+    } catch (err: any) {
+      console.error("Erro ao validar resposta:", err);
+      window.alert("Não foi possível validar a resposta. Tente novamente.");
+    } finally {
+      setValidandoRespostas((prev) => {
+        const clone = { ...prev };
+        delete clone[respostaId];
+        return clone;
+      });
+    }
+  };
+
+  const validarTodasRespostas = async () => {
+    const pendentes = stepRespostas?.perguntas?.filter((p) => p.resposta?.id && p.resposta.validada !== true) || [];
+    const ids = pendentes.map((p) => p.resposta!.id);
+
+    if (!ids.length) {
+      window.alert("Não há respostas pendentes para validar.");
+      return;
+    }
+
+    if (!window.confirm(`Validar ${ids.length} resposta${ids.length > 1 ? "s" : ""} deste questionário?`)) return;
+
+    setValidandoTodas(true);
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`${import.meta.env.VITE_API_URL_SERVICES}/respostas/${id}/validate`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ validada: true, dataValidade: gerarDataValidadePadrao() }),
+          }),
+        ),
+      );
+
+      await carregarRespostas();
+    } catch (err: any) {
+      console.error("Erro ao validar respostas:", err);
+      window.alert("Não foi possível validar todas as respostas. Tente novamente.");
+    } finally {
+      setValidandoTodas(false);
     }
   };
 
@@ -589,7 +662,29 @@ export default function InscricoesProae() {
                         {/* Lista de Perguntas do Questionário Selecionado */}
                         {questionarioSelecionado && (
                           <div style={{ marginBottom: "32px" }}>
-                            <h3 style={{ marginBottom: "16px", color: "#1e293b", fontSize: "18px", fontWeight: "600" }}>Perguntas</h3>
+                            <div
+                              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "16px" }}
+                            >
+                              <h3 style={{ margin: 0, color: "#1e293b", fontSize: "18px", fontWeight: "600" }}>Perguntas</h3>
+                              <button
+                                onClick={validarTodasRespostas}
+                                disabled={validandoTodas || !stepRespostas?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)}
+                                style={{
+                                  padding: "10px 14px",
+                                  backgroundColor: validandoTodas ? "#cbd5e1" : "#16a34a",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "8px",
+                                  cursor: validandoTodas ? "not-allowed" : "pointer",
+                                  fontWeight: 600,
+                                  fontSize: "13px",
+                                  transition: "background-color 0.2s, transform 0.1s",
+                                  boxShadow: "0 2px 6px rgba(22, 163, 74, 0.25)",
+                                }}
+                              >
+                                {validandoTodas ? "Validando..." : "Validar todas"}
+                              </button>
+                            </div>
 
                             {isLoadingRespostas ? (
                               <div style={{ textAlign: "center", padding: "24px", color: "#64748b" }}>
@@ -608,6 +703,26 @@ export default function InscricoesProae() {
                                     (respostaInfo?.valorTexto && respostaInfo.valorTexto.trim().length > 0 ? respostaInfo.valorTexto : null) ||
                                     (respostaInfo?.texto && respostaInfo.texto.trim().length > 0 ? respostaInfo.texto : null);
                                   const respostaConteudo = valorOpcoes || valorTexto;
+                                  const respostaValidada = respostaInfo?.validada === true;
+                                  const isValidandoResposta = respostaInfo?.id ? validandoRespostas[respostaInfo.id] : false;
+                                  const chipLabel = respostaInfo ? (respostaValidada ? "Validada" : "Não validada") : "Sem resposta";
+                                  const chipStyle = respostaInfo
+                                    ? respostaValidada
+                                      ? {
+                                          backgroundColor: "#dcfce7",
+                                          border: "1px solid #bbf7d0",
+                                          color: "#15803d",
+                                        }
+                                      : {
+                                          backgroundColor: "#fef3c7",
+                                          border: "1px solid #fef3c7",
+                                          color: "#92400e",
+                                        }
+                                    : {
+                                        backgroundColor: "#e2e8f0",
+                                        border: "1px solid #cbd5e1",
+                                        color: "#475569",
+                                      };
 
                                   return (
                                     <div
@@ -619,17 +734,33 @@ export default function InscricoesProae() {
                                         padding: "16px",
                                       }}
                                     >
-                                      <h4
-                                        style={{
-                                          margin: "0 0 8px 0",
-                                          color: "#1e293b",
-                                          fontSize: "15px",
-                                          fontWeight: "600",
-                                          lineHeight: "1.5",
-                                        }}
-                                      >
-                                        {perguntaInfo?.pergunta || "Pergunta"}
-                                      </h4>
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                                        <h4
+                                          style={{
+                                            margin: "0",
+                                            color: "#1e293b",
+                                            fontSize: "15px",
+                                            fontWeight: "600",
+                                            lineHeight: "1.5",
+                                            flex: 1,
+                                          }}
+                                        >
+                                          {perguntaInfo?.pergunta || "Pergunta"}
+                                        </h4>
+                                        <span
+                                          style={{
+                                            ...chipStyle,
+                                            padding: "6px 10px",
+                                            borderRadius: "999px",
+                                            fontSize: "12px",
+                                            fontWeight: 600,
+                                            whiteSpace: "nowrap",
+                                            lineHeight: 1.2,
+                                          }}
+                                        >
+                                          {chipLabel}
+                                        </span>
+                                      </div>
 
                                       {/* Informações Adicionais */}
                                       <div style={{ fontSize: "13px", color: "#64748b", display: "flex", gap: "16px", marginBottom: "12px" }}>
@@ -665,6 +796,34 @@ export default function InscricoesProae() {
                                           <div style={{ fontSize: "13px", color: "#991b1b", fontStyle: "italic" }}>Usuário não respondeu</div>
                                         </div>
                                       )}
+
+                                      {/* Ações de validação */}
+                                      <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end" }}>
+                                        <button
+                                          onClick={() => respostaInfo?.id && validarResposta(respostaInfo.id, perguntaInfo?.pergunta)}
+                                          disabled={!respostaInfo?.id || respostaValidada || isValidandoResposta}
+                                          style={{
+                                            padding: "8px 12px",
+                                            backgroundColor: !respostaInfo?.id || respostaValidada || isValidandoResposta ? "#cbd5e1" : "#2563eb",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "6px",
+                                            cursor: !respostaInfo?.id || respostaValidada || isValidandoResposta ? "not-allowed" : "pointer",
+                                            fontWeight: 600,
+                                            fontSize: "13px",
+                                            boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)",
+                                            transition: "background-color 0.2s, transform 0.1s",
+                                          }}
+                                        >
+                                          {respostaValidada
+                                            ? "Já validada"
+                                            : isValidandoResposta
+                                              ? "Validando..."
+                                              : respostaInfo?.id
+                                                ? "Validar resposta"
+                                                : "Sem resposta"}
+                                        </button>
+                                      </div>
                                     </div>
                                   );
                                 })}
