@@ -1,11 +1,60 @@
 import { useState, useEffect } from "react";
-import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin } from "lucide-react";
+import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { Edital } from "@/types/edital";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
 import { stepService } from "@/services/StepService/stepService";
 import { AlunoInscrito } from "@/types/inscricao";
+import { StepResponseDto } from "@/types/step";
 import "./InscricoesProae.css";
+
+interface PerguntaPayload {
+  id: number;
+  pergunta: string;
+  tipo_Pergunta: string;
+  obrigatoriedade: boolean;
+  opcoes?: string[] | null;
+  tipo_formatacao?: string | null;
+  placeholder?: string | null;
+}
+
+interface RespostaPayload {
+  id: number;
+  texto: string | null;
+  valorTexto: string | null;
+  valorOpcoes: string[] | null;
+  urlArquivo: string | null;
+  dataResposta: string | null;
+  validada?: boolean | null;
+  dataValidacao?: string | null;
+  dataValidade?: string | null;
+}
+
+interface PerguntaComResposta {
+  pergunta: PerguntaPayload;
+  resposta: RespostaPayload | null;
+}
+
+interface StepRespostas {
+  edital: {
+    id: number;
+    titulo?: string;
+    titulo_edital?: string;
+    descricao?: string;
+    status?: string;
+  };
+  step: {
+    id: number;
+    texto: string;
+  };
+  aluno: {
+    aluno_id: number;
+    nome: string;
+    email: string;
+    matricula: string;
+  };
+  perguntas: PerguntaComResposta[];
+}
 
 export default function InscricoesProae() {
   const [editais, setEditais] = useState<Edital[]>([]);
@@ -15,6 +64,16 @@ export default function InscricoesProae() {
   const [isLoadingEditais, setIsLoadingEditais] = useState(true);
   const [termoBusca, setTermoBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [inscricaoSelecionada, setInscricaoSelecionada] = useState<AlunoInscrito | null>(null);
+  const [abaAtiva, setAbaAtiva] = useState<"questionarios" | "informacoes">("questionarios");
+  const [questionarios, setQuestionarios] = useState<StepResponseDto[]>([]);
+  const [questionarioSelecionado, setQuestionarioSelecionado] = useState<number | null>(null);
+  const [isLoadingQuestionarios, setIsLoadingQuestionarios] = useState(false);
+  const [stepRespostas, setStepRespostas] = useState<StepRespostas | null>(null);
+  const [isLoadingRespostas, setIsLoadingRespostas] = useState(false);
+  const [validandoRespostas, setValidandoRespostas] = useState<Record<number, boolean>>({});
+  const [validandoTodas, setValidandoTodas] = useState(false);
 
   useEffect(() => {
     carregarEditais();
@@ -25,6 +84,14 @@ export default function InscricoesProae() {
       carregarInscricoes();
     }
   }, [editalSelecionado]);
+
+  useEffect(() => {
+    if (questionarioSelecionado && inscricaoSelecionada?.aluno_id && editalSelecionado?.id) {
+      carregarRespostas();
+    } else {
+      setStepRespostas(null);
+    }
+  }, [questionarioSelecionado, inscricaoSelecionada, editalSelecionado]);
 
   const carregarEditais = async () => {
     try {
@@ -43,14 +110,9 @@ export default function InscricoesProae() {
 
     try {
       setIsLoading(true);
-      // Buscar inscrições do primeiro step/questionário do edital
-      // Em uma implementação real, você pode querer listar todas as inscrições do edital
       const steps = await stepService.listarStepsPorEdital(editalSelecionado.id.toString());
       if (steps && steps.length > 0) {
-        const dados = await inscricaoServiceManager.listarAlunosPorQuestionario(
-          editalSelecionado.id,
-          steps[0].id
-        );
+        const dados = await inscricaoServiceManager.listarAlunosPorQuestionario(editalSelecionado.id, steps[0].id);
         setInscricoes(dados);
       } else {
         setInscricoes([]);
@@ -70,9 +132,7 @@ export default function InscricoesProae() {
       inscricao.email?.toLowerCase().includes(termoBusca.toLowerCase()) ||
       inscricao.matricula?.toLowerCase().includes(termoBusca.toLowerCase());
 
-    const matchStatus =
-      filtroStatus === "todos" ||
-      inscricao.status_inscricao?.toUpperCase() === filtroStatus.toUpperCase();
+    const matchStatus = filtroStatus === "todos" || inscricao.status_inscricao?.toUpperCase() === filtroStatus.toUpperCase();
 
     return matchTermo && matchStatus;
   });
@@ -109,6 +169,140 @@ export default function InscricoesProae() {
       default:
         return "Pendente";
     }
+  };
+
+  const handleVerDetalhes = async (inscricao: AlunoInscrito) => {
+    setInscricaoSelecionada(inscricao);
+    setIsModalOpen(true);
+    await carregarQuestionarios();
+  };
+
+  const carregarQuestionarios = async () => {
+    if (!editalSelecionado?.id) return;
+
+    try {
+      setIsLoadingQuestionarios(true);
+      const dados = await stepService.listarStepsPorEdital(editalSelecionado.id.toString());
+      setQuestionarios(dados);
+      if (dados.length > 0) {
+        setQuestionarioSelecionado(dados[0].id);
+      }
+    } catch (err: any) {
+      console.error("Erro ao carregar questionários:", err);
+      setQuestionarios([]);
+    } finally {
+      setIsLoadingQuestionarios(false);
+    }
+  };
+
+  const carregarRespostas = async () => {
+    if (!inscricaoSelecionada?.aluno_id || !editalSelecionado?.id || !questionarioSelecionado) return;
+
+    try {
+      setIsLoadingRespostas(true);
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/aluno/${inscricaoSelecionada.aluno_id}/edital/${editalSelecionado.id}/step/${questionarioSelecionado}/perguntas-com-respostas`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setStepRespostas(null);
+          return;
+        }
+        throw new Error(`Erro ao carregar respostas: ${response.statusText}`);
+      }
+
+      const payload = await response.json();
+      const dados = (payload?.dados || payload) as StepRespostas | null;
+
+      if (payload?.sucesso === false || !dados) {
+        setStepRespostas(null);
+        return;
+      }
+
+      setStepRespostas(dados);
+    } catch (err: any) {
+      console.error("Erro ao carregar respostas:", err);
+      setStepRespostas(null);
+    } finally {
+      setIsLoadingRespostas(false);
+    }
+  };
+
+  const gerarDataValidadePadrao = () => {
+    const now = new Date();
+    const validade = new Date(Date.UTC(now.getFullYear(), 11, 31, 23, 59, 59));
+    return validade.toISOString();
+  };
+
+  const validarResposta = async (respostaId: number, perguntaTitulo?: string) => {
+    const confirmMsg = `Confirmar validação ${perguntaTitulo ? `da pergunta "${perguntaTitulo}"?` : "desta resposta?"}`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setValidandoRespostas((prev) => ({ ...prev, [respostaId]: true }));
+    try {
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/${respostaId}/validate`;
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ validada: true, dataValidade: gerarDataValidadePadrao() }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao validar resposta: ${response.statusText}`);
+      }
+
+      await carregarRespostas();
+    } catch (err: any) {
+      console.error("Erro ao validar resposta:", err);
+      window.alert("Não foi possível validar a resposta. Tente novamente.");
+    } finally {
+      setValidandoRespostas((prev) => {
+        const clone = { ...prev };
+        delete clone[respostaId];
+        return clone;
+      });
+    }
+  };
+
+  const validarTodasRespostas = async () => {
+    const pendentes = stepRespostas?.perguntas?.filter((p) => p.resposta?.id && p.resposta.validada !== true) || [];
+    const ids = pendentes.map((p) => p.resposta!.id);
+
+    if (!ids.length) {
+      window.alert("Não há respostas pendentes para validar.");
+      return;
+    }
+
+    if (!window.confirm(`Validar ${ids.length} resposta${ids.length > 1 ? "s" : ""} deste questionário?`)) return;
+
+    setValidandoTodas(true);
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`${import.meta.env.VITE_API_URL_SERVICES}/respostas/${id}/validate`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ validada: true, dataValidade: gerarDataValidadePadrao() }),
+          }),
+        ),
+      );
+
+      await carregarRespostas();
+    } catch (err: any) {
+      console.error("Erro ao validar respostas:", err);
+      window.alert("Não foi possível validar todas as respostas. Tente novamente.");
+    } finally {
+      setValidandoTodas(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setInscricaoSelecionada(null);
+    setAbaAtiva("questionarios");
+    setQuestionarios([]);
+    setQuestionarioSelecionado(null);
+    setStepRespostas(null);
   };
 
   return (
@@ -174,11 +368,7 @@ export default function InscricoesProae() {
                 </div>
                 <div className="filter-container">
                   <Filter className="w-4 h-4 filter-icon" />
-                  <select
-                    className="status-filter"
-                    value={filtroStatus}
-                    onChange={(e) => setFiltroStatus(e.target.value)}
-                  >
+                  <select className="status-filter" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
                     <option value="todos">Todos os status</option>
                     <option value="pendente">Pendente</option>
                     <option value="em_analise">Em Análise</option>
@@ -221,11 +411,17 @@ export default function InscricoesProae() {
                         <th>Campus</th>
                         <th>Data Inscrição</th>
                         <th>Status</th>
+                        <th style={{ width: "20px" }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {inscricoesFiltradas.map((inscricao, index) => (
-                        <tr key={inscricao.inscricao_id || index}>
+                        <tr
+                          key={inscricao.inscricao_id || index}
+                          onClick={() => handleVerDetalhes(inscricao)}
+                          style={{ cursor: "pointer" }}
+                          className="table-row-clickable"
+                        >
                           <td>{inscricao.aluno_id || "N/A"}</td>
                           <td>
                             <span className="matricula-badge">{inscricao.matricula || "N/A"}</span>
@@ -257,17 +453,16 @@ export default function InscricoesProae() {
                           <td>
                             <div className="data-cell">
                               <Calendar className="w-4 h-4" />
-                              <span>
-                                {inscricao.data_inscricao
-                                  ? new Date(inscricao.data_inscricao).toLocaleDateString("pt-BR")
-                                  : "N/A"}
-                              </span>
+                              <span>{inscricao.data_inscricao ? new Date(inscricao.data_inscricao).toLocaleDateString("pt-BR") : "N/A"}</span>
                             </div>
                           </td>
                           <td>
                             <div className={getStatusBadgeClass(inscricao.status_inscricao || "PENDENTE")}>
                               {getStatusLabel(inscricao.status_inscricao || "PENDENTE")}
                             </div>
+                          </td>
+                          <td>
+                            <ChevronRight className="w-5 h-5" style={{ color: "#64748b" }} />
                           </td>
                         </tr>
                       ))}
@@ -285,6 +480,377 @@ export default function InscricoesProae() {
           )}
         </main>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={handleCloseModal}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              width: "90%",
+              maxWidth: "1200px",
+              height: "85vh",
+              position: "relative",
+              padding: "24px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Botão Fechar */}
+            <button
+              onClick={handleCloseModal}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                backgroundColor: "transparent",
+                border: "none",
+                fontSize: "24px",
+                cursor: "pointer",
+                color: "#64748b",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "6px",
+                transition: "background-color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f1f5f9")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            >
+              ✕
+            </button>
+
+            {/* Conteúdo do Modal */}
+            <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <h2 style={{ marginTop: 0, marginBottom: "16px", color: "#1e293b" }}>Detalhes da Inscrição</h2>
+
+              {/* Abas */}
+              <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: "2px solid #e2e8f0" }}>
+                <button
+                  onClick={() => setAbaAtiva("questionarios")}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderBottom: abaAtiva === "questionarios" ? "3px solid #3b82f6" : "3px solid transparent",
+                    color: abaAtiva === "questionarios" ? "#3b82f6" : "#64748b",
+                    fontWeight: abaAtiva === "questionarios" ? "600" : "400",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  Questionários
+                </button>
+                <button
+                  onClick={() => setAbaAtiva("informacoes")}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderBottom: abaAtiva === "informacoes" ? "3px solid #3b82f6" : "3px solid transparent",
+                    color: abaAtiva === "informacoes" ? "#3b82f6" : "#64748b",
+                    fontWeight: abaAtiva === "informacoes" ? "600" : "400",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  Informações Gerais
+                </button>
+              </div>
+
+              {/* Conteúdo das Abas */}
+              <div style={{ flex: 1, overflow: "auto", paddingRight: "8px" }}>
+                {abaAtiva === "questionarios" ? (
+                  <div>
+                    {/* Grid de Questionários */}
+                    {isLoadingQuestionarios ? (
+                      <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
+                        <div className="loading-spinner" style={{ margin: "0 auto 16px" }}></div>
+                        <p>Carregando questionários...</p>
+                      </div>
+                    ) : questionarios.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
+                        <FileText style={{ width: "48px", height: "48px", margin: "0 auto 16px", opacity: 0.5 }} />
+                        <p>Nenhum questionário disponível.</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <div
+                          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", marginBottom: "32px" }}
+                        >
+                          {questionarios.map((questionario, index) => (
+                            <div
+                              key={questionario.id}
+                              onClick={() => setQuestionarioSelecionado(questionario.id)}
+                              style={{
+                                backgroundColor: "white",
+                                border: questionarioSelecionado === questionario.id ? "2px solid #3b82f6" : "1px solid #e2e8f0",
+                                borderRadius: "12px",
+                                padding: "16px",
+                                cursor: "pointer",
+                                boxShadow:
+                                  questionarioSelecionado === questionario.id ? "0 4px 6px rgba(59, 130, 246, 0.2)" : "0 1px 3px rgba(0, 0, 0, 0.1)",
+                                transition: "all 0.2s",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (questionarioSelecionado !== questionario.id) {
+                                  e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (questionarioSelecionado !== questionario.id) {
+                                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
+                                }
+                              }}
+                            >
+                              {/* Chip de Status */}
+                              <div style={{ marginBottom: "12px" }}>
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "4px 12px",
+                                    borderRadius: "12px",
+                                    fontSize: "12px",
+                                    fontWeight: "500",
+                                    backgroundColor: index % 2 === 0 ? "#fef3c7" : "#dbeafe",
+                                    color: index % 2 === 0 ? "#92400e" : "#1e40af",
+                                  }}
+                                >
+                                  {index % 2 === 0 ? "Em Análise" : "Concluído"}
+                                </span>
+                              </div>
+
+                              {/* Título do Questionário */}
+                              <h4
+                                style={{
+                                  margin: "0 0 8px 0",
+                                  color: "#1e293b",
+                                  fontSize: "15px",
+                                  fontWeight: "600",
+                                  lineHeight: "1.4",
+                                }}
+                              >
+                                {questionario.texto || `Questionário ${questionario.id}`}
+                              </h4>
+
+                              {/* Info */}
+                              <div style={{ fontSize: "12px", color: "#64748b" }}>
+                                {questionario.perguntas?.length || 0} pergunta{questionario.perguntas?.length !== 1 ? "s" : ""}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Lista de Perguntas do Questionário Selecionado */}
+                        {questionarioSelecionado && (
+                          <div style={{ marginBottom: "32px" }}>
+                            <div
+                              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "16px" }}
+                            >
+                              <h3 style={{ margin: 0, color: "#1e293b", fontSize: "18px", fontWeight: "600" }}>Perguntas</h3>
+                              <button
+                                onClick={validarTodasRespostas}
+                                disabled={validandoTodas || !stepRespostas?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)}
+                                style={{
+                                  padding: "10px 14px",
+                                  backgroundColor: validandoTodas ? "#cbd5e1" : "#16a34a",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "8px",
+                                  cursor: validandoTodas ? "not-allowed" : "pointer",
+                                  fontWeight: 600,
+                                  fontSize: "13px",
+                                  transition: "background-color 0.2s, transform 0.1s",
+                                  boxShadow: "0 2px 6px rgba(22, 163, 74, 0.25)",
+                                }}
+                              >
+                                {validandoTodas ? "Validando..." : "Validar todas"}
+                              </button>
+                            </div>
+
+                            {isLoadingRespostas ? (
+                              <div style={{ textAlign: "center", padding: "24px", color: "#64748b" }}>
+                                <div className="loading-spinner" style={{ margin: "0 auto 12px" }}></div>
+                                <p>Carregando respostas...</p>
+                              </div>
+                            ) : stepRespostas?.perguntas?.length ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                {stepRespostas.perguntas.map((item) => {
+                                  const perguntaInfo = item.pergunta;
+                                  const respostaInfo = item.resposta;
+                                  const tipo = perguntaInfo?.tipo_Pergunta || "N/D";
+                                  const obrigatoria = perguntaInfo?.obrigatoriedade ? "Sim" : "Não";
+                                  const valorOpcoes = respostaInfo?.valorOpcoes?.length ? respostaInfo.valorOpcoes.join(", ") : null;
+                                  const valorTexto =
+                                    (respostaInfo?.valorTexto && respostaInfo.valorTexto.trim().length > 0 ? respostaInfo.valorTexto : null) ||
+                                    (respostaInfo?.texto && respostaInfo.texto.trim().length > 0 ? respostaInfo.texto : null);
+                                  const respostaConteudo = valorOpcoes || valorTexto;
+                                  const respostaValidada = respostaInfo?.validada === true;
+                                  const isValidandoResposta = respostaInfo?.id ? validandoRespostas[respostaInfo.id] : false;
+                                  const chipLabel = respostaInfo ? (respostaValidada ? "Validada" : "Não validada") : "Sem resposta";
+                                  const chipStyle = respostaInfo
+                                    ? respostaValidada
+                                      ? {
+                                          backgroundColor: "#dcfce7",
+                                          border: "1px solid #bbf7d0",
+                                          color: "#15803d",
+                                        }
+                                      : {
+                                          backgroundColor: "#fef3c7",
+                                          border: "1px solid #fef3c7",
+                                          color: "#92400e",
+                                        }
+                                    : {
+                                        backgroundColor: "#e2e8f0",
+                                        border: "1px solid #cbd5e1",
+                                        color: "#475569",
+                                      };
+
+                                  return (
+                                    <div
+                                      key={perguntaInfo?.id || `${perguntaInfo?.pergunta}-${perguntaInfo?.tipo_Pergunta}`}
+                                      style={{
+                                        backgroundColor: "white",
+                                        border: "1px solid #e2e8f0",
+                                        borderRadius: "8px",
+                                        padding: "16px",
+                                      }}
+                                    >
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                                        <h4
+                                          style={{
+                                            margin: "0",
+                                            color: "#1e293b",
+                                            fontSize: "15px",
+                                            fontWeight: "600",
+                                            lineHeight: "1.5",
+                                            flex: 1,
+                                          }}
+                                        >
+                                          {perguntaInfo?.pergunta || "Pergunta"}
+                                        </h4>
+                                        <span
+                                          style={{
+                                            ...chipStyle,
+                                            padding: "6px 10px",
+                                            borderRadius: "999px",
+                                            fontSize: "12px",
+                                            fontWeight: 600,
+                                            whiteSpace: "nowrap",
+                                            lineHeight: 1.2,
+                                          }}
+                                        >
+                                          {chipLabel}
+                                        </span>
+                                      </div>
+
+                                      {/* Informações Adicionais */}
+                                      <div style={{ fontSize: "13px", color: "#64748b", display: "flex", gap: "16px", marginBottom: "12px" }}>
+                                        <span>Tipo: {tipo}</span>
+                                        <span>•</span>
+                                        <span>Obrigatória: {obrigatoria}</span>
+                                      </div>
+
+                                      {/* Resposta */}
+                                      {respostaConteudo ? (
+                                        <div
+                                          style={{
+                                            padding: "12px",
+                                            backgroundColor: "#f0fdf4",
+                                            border: "1px solid #bbf7d0",
+                                            borderRadius: "6px",
+                                            marginTop: "8px",
+                                          }}
+                                        >
+                                          <div style={{ fontSize: "12px", fontWeight: "600", color: "#166534", marginBottom: "4px" }}>Resposta:</div>
+                                          <div style={{ fontSize: "14px", color: "#15803d" }}>{respostaConteudo}</div>
+                                        </div>
+                                      ) : (
+                                        <div
+                                          style={{
+                                            padding: "12px",
+                                            backgroundColor: "#fef2f2",
+                                            border: "1px solid #fecaca",
+                                            borderRadius: "6px",
+                                            marginTop: "8px",
+                                          }}
+                                        >
+                                          <div style={{ fontSize: "13px", color: "#991b1b", fontStyle: "italic" }}>Usuário não respondeu</div>
+                                        </div>
+                                      )}
+
+                                      {/* Ações de validação */}
+                                      <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end" }}>
+                                        <button
+                                          onClick={() => respostaInfo?.id && validarResposta(respostaInfo.id, perguntaInfo?.pergunta)}
+                                          disabled={!respostaInfo?.id || respostaValidada || isValidandoResposta}
+                                          style={{
+                                            padding: "8px 12px",
+                                            backgroundColor: !respostaInfo?.id || respostaValidada || isValidandoResposta ? "#cbd5e1" : "#2563eb",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "6px",
+                                            cursor: !respostaInfo?.id || respostaValidada || isValidandoResposta ? "not-allowed" : "pointer",
+                                            fontWeight: 600,
+                                            fontSize: "13px",
+                                            boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)",
+                                            transition: "background-color 0.2s, transform 0.1s",
+                                          }}
+                                        >
+                                          {respostaValidada
+                                            ? "Já validada"
+                                            : isValidandoResposta
+                                              ? "Validando..."
+                                              : respostaInfo?.id
+                                                ? "Validar resposta"
+                                                : "Sem resposta"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
+                                <FileText style={{ width: "48px", height: "48px", margin: "0 auto 16px", opacity: 0.5 }} />
+                                <p>Nenhuma pergunta encontrada neste questionário.</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
+                    <FileText style={{ width: "64px", height: "64px", margin: "0 auto 16px", opacity: 0.3 }} />
+                    <h3 style={{ color: "#64748b", marginBottom: "8px" }}>Informações Gerais</h3>
+                    <p>Seção em desenvolvimento. Informações adicionais serão exibidas aqui.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

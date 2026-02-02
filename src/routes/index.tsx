@@ -61,7 +61,7 @@ const routes = [
       {
         element: <ProtectedProaeRoute />,
         children: [
-          { path: "portal-proae/inscricoes-gerenciar", element: <GerenciarInscricoes /> },
+          // { path: "portal-proae/inscricoes-gerenciar", element: <GerenciarInscricoes /> },
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/ranqueamento", element: <RanqueamentoProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
