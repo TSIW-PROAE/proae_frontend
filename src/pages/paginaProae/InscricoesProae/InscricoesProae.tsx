@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight } from "lucide-react";
+import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { Edital } from "@/types/edital";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
@@ -76,6 +76,7 @@ export default function InscricoesProae() {
   const [isLoadingModal, setIsLoadingModal] = useState(false);
   const [validandoRespostas, setValidandoRespostas] = useState<Record<number, boolean>>({});
   const [validandoTodas, setValidandoTodas] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     carregarEditais();
@@ -270,6 +271,38 @@ export default function InscricoesProae() {
     }
   };
 
+  const desvalidarResposta = async (respostaId: number, perguntaTitulo?: string) => {
+    const confirmMsg = `Solicitar correção ${perguntaTitulo ? `da pergunta "${perguntaTitulo}"?` : "desta resposta?"} Isso irá desvalidar a resposta atual.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setValidandoRespostas((prev) => ({ ...prev, [respostaId]: true }));
+    try {
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/${respostaId}/validate`;
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ validada: false, dataValidade: null }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao solicitar correção: ${response.statusText}`);
+      }
+
+      if (inscricaoSelecionada?.aluno_id) {
+        await carregarStepsCompletos(inscricaoSelecionada.aluno_id);
+      }
+    } catch (err: any) {
+      console.error("Erro ao solicitar correção:", err);
+      window.alert("Não foi possível solicitar correção. Tente novamente.");
+    } finally {
+      setValidandoRespostas((prev) => {
+        const clone = { ...prev };
+        delete clone[respostaId];
+        return clone;
+      });
+    }
+  };
+
   const validarTodasRespostas = async () => {
     const stepAtual = stepsCompletos?.steps?.find((s) => s.step.id === questionarioSelecionado);
     const pendentes = stepAtual?.perguntas?.filter((p) => p.resposta?.id && p.resposta.validada !== true) || [];
@@ -305,12 +338,56 @@ export default function InscricoesProae() {
     }
   };
 
-  const handleCloseModal = () => {
+  const baixarPdfAprovados = async () => {
+    if (!editalSelecionado?.id) {
+      window.alert("Selecione um edital primeiro.");
+      return;
+    }
+
+    setDownloadingPdf(true);
+    try {
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/inscricoes/aprovados/pdf?editalId=${editalSelecionado.id}`;
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Sessão expirada. Faça login novamente.");
+        }
+        if (response.status === 404) {
+          throw new Error("Nenhum estudante aprovado encontrado para este edital.");
+        }
+        throw new Error(`Erro ao baixar PDF: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `estudantes-aprovados-edital-${editalSelecionado.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err: any) {
+      console.error("Erro ao baixar PDF:", err);
+      window.alert(err.message || "Não foi possível baixar o PDF. Tente novamente.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleCloseModal = async () => {
     setIsModalOpen(false);
     setInscricaoSelecionada(null);
     setAbaAtiva("questionarios");
     setStepsCompletos(null);
     setQuestionarioSelecionado(null);
+
+    // Atualiza a tabela de inscrições ao fechar o modal
+    await carregarInscricoes();
   };
 
   const getStatusStepLabel = (status: string) => {
@@ -415,6 +492,10 @@ export default function InscricoesProae() {
                     <option value="negada">Negada</option>
                   </select>
                 </div>
+                <button onClick={baixarPdfAprovados} disabled={downloadingPdf} className="download-pdf-button" title="Baixar PDF dos aprovados">
+                  <Download className="w-4 h-4" />
+                  <span>{downloadingPdf ? "Baixando..." : "PDF Aprovados"}</span>
+                </button>
               </div>
             </section>
           )}
@@ -718,18 +799,33 @@ export default function InscricoesProae() {
                                     disabled={validandoTodas || !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)}
                                     style={{
                                       padding: "10px 14px",
-                                      backgroundColor: validandoTodas ? "#cbd5e1" : "#16a34a",
-                                      color: "white",
-                                      border: "none",
+                                      backgroundColor: validandoTodas
+                                        ? "#cbd5e1"
+                                        : !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
+                                          ? "#dcfce7"
+                                          : "#16a34a",
+                                      color: !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true) ? "#166534" : "white",
+                                      border: !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
+                                        ? "1px solid #bbf7d0"
+                                        : "none",
                                       borderRadius: "8px",
-                                      cursor: validandoTodas ? "not-allowed" : "pointer",
+                                      cursor:
+                                        validandoTodas || !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
+                                          ? "default"
+                                          : "pointer",
                                       fontWeight: 600,
                                       fontSize: "13px",
                                       transition: "background-color 0.2s, transform 0.1s",
-                                      boxShadow: "0 2px 6px rgba(22, 163, 74, 0.25)",
+                                      boxShadow: !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
+                                        ? "none"
+                                        : "0 2px 6px rgba(22, 163, 74, 0.25)",
                                     }}
                                   >
-                                    {validandoTodas ? "Validando..." : "Validar todas"}
+                                    {validandoTodas
+                                      ? "Validando..."
+                                      : !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
+                                        ? "✓ Todas validadas"
+                                        : "Validar todas"}
                                   </button>
                                 </div>
 
@@ -842,31 +938,45 @@ export default function InscricoesProae() {
                                           )}
 
                                           {/* Ações de validação */}
-                                          <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end" }}>
-                                            <button
-                                              onClick={() => respostaInfo?.id && validarResposta(respostaInfo.id, perguntaInfo?.pergunta)}
-                                              disabled={!respostaInfo?.id || respostaValidada || isValidandoResposta}
-                                              style={{
-                                                padding: "8px 12px",
-                                                backgroundColor: !respostaInfo?.id || respostaValidada || isValidandoResposta ? "#cbd5e1" : "#2563eb",
-                                                color: "white",
-                                                border: "none",
-                                                borderRadius: "6px",
-                                                cursor: !respostaInfo?.id || respostaValidada || isValidandoResposta ? "not-allowed" : "pointer",
-                                                fontWeight: 600,
-                                                fontSize: "13px",
-                                                boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)",
-                                                transition: "background-color 0.2s, transform 0.1s",
-                                              }}
-                                            >
-                                              {respostaValidada
-                                                ? "Já validada"
-                                                : isValidandoResposta
-                                                  ? "Validando..."
-                                                  : respostaInfo?.id
-                                                    ? "Validar resposta"
-                                                    : "Sem resposta"}
-                                            </button>
+                                          <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                                            {respostaValidada ? (
+                                              <button
+                                                onClick={() => respostaInfo?.id && desvalidarResposta(respostaInfo.id, perguntaInfo?.pergunta)}
+                                                disabled={isValidandoResposta}
+                                                style={{
+                                                  padding: "8px 12px",
+                                                  backgroundColor: isValidandoResposta ? "#cbd5e1" : "#fef3c7",
+                                                  color: isValidandoResposta ? "#64748b" : "#92400e",
+                                                  border: "1px solid #fcd34d",
+                                                  borderRadius: "6px",
+                                                  cursor: isValidandoResposta ? "not-allowed" : "pointer",
+                                                  fontWeight: 600,
+                                                  fontSize: "13px",
+                                                  transition: "background-color 0.2s, transform 0.1s",
+                                                }}
+                                              >
+                                                {isValidandoResposta ? "Processando..." : "Solicitar correção"}
+                                              </button>
+                                            ) : (
+                                              <button
+                                                onClick={() => respostaInfo?.id && validarResposta(respostaInfo.id, perguntaInfo?.pergunta)}
+                                                disabled={!respostaInfo?.id || isValidandoResposta}
+                                                style={{
+                                                  padding: "8px 12px",
+                                                  backgroundColor: !respostaInfo?.id || isValidandoResposta ? "#cbd5e1" : "#2563eb",
+                                                  color: "white",
+                                                  border: "none",
+                                                  borderRadius: "6px",
+                                                  cursor: !respostaInfo?.id || isValidandoResposta ? "not-allowed" : "pointer",
+                                                  fontWeight: 600,
+                                                  fontSize: "13px",
+                                                  boxShadow: !respostaInfo?.id || isValidandoResposta ? "none" : "0 2px 6px rgba(37, 99, 235, 0.25)",
+                                                  transition: "background-color 0.2s, transform 0.1s",
+                                                }}
+                                              >
+                                                {isValidandoResposta ? "Validando..." : respostaInfo?.id ? "Validar resposta" : "Sem resposta"}
+                                              </button>
+                                            )}
                                           </div>
                                         </div>
                                       );
