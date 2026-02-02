@@ -238,7 +238,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
         </div>
 
         {/* Parecer Final e Nota */}
-        {notaAluno && (
+        {/* {notaAluno && (
           <div className="parecer-section">
             <div className="parecer-header">
               <Award className="w-5 h-5 text-purple-600" />
@@ -281,7 +281,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {isLoadingNota && (
           <div className="loading-nota">

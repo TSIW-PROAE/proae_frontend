@@ -1,15 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Calendar,
-  ExternalLink,
-  Clock,
-  Users,
-  ArrowRight,
-  FileText,
-  AlertCircle,
-  BookOpen,
-} from "lucide-react";
+import { Calendar, ExternalLink, Clock, Users, ArrowRight, FileText, AlertCircle, BookOpen, CheckCircle } from "lucide-react";
 
 interface Edital {
   id: number;
@@ -22,17 +13,25 @@ interface Edital {
   etapas: any[];
 }
 
-interface OpenSelectionsProps {
-  editais: Edital[];
+interface InscricaoAluno {
+  id: number;
+  edital_id?: number;
+  [key: string]: any;
 }
 
-const OpenSelectionCard: React.FC<Edital> = ({
+interface OpenSelectionsProps {
+  editais: Edital[];
+  inscricoesAluno?: InscricaoAluno[];
+}
+
+const OpenSelectionCard: React.FC<Edital & { jaInscrito?: boolean }> = ({
   id,
   titulo_edital,
   status_edital,
   edital_url,
   descricao,
   quantidade_bolsas,
+  jaInscrito = false,
 }) => {
   const navigate = useNavigate();
   const statusLower = status_edital ? status_edital.toLowerCase() : "";
@@ -69,9 +68,7 @@ const OpenSelectionCard: React.FC<Edital> = ({
       <div className="selection-card-header">
         <div className="card-status-indicator">
           {getStatusIcon()}
-          <span className={`status-badge-small ${getBadgeStyles()}`}>
-            {isOpen ? "Aberto" : isClosed ? "Fechado" : "Em Breve"}
-          </span>
+          <span className={`status-badge-small ${getBadgeStyles()}`}>{isOpen ? "Aberto" : isClosed ? "Fechado" : "Em Breve"}</span>
         </div>
         <a
           href={edital_url && edital_url[0] ? edital_url[0] : "#"}
@@ -98,28 +95,23 @@ const OpenSelectionCard: React.FC<Edital> = ({
 
         <h3 className="selection-card-title">{titulo_edital || "Título não informado"}</h3>
         <p className="selection-card-description">
-          {descricao && descricao.length > 90
-            ? `${descricao.substring(0, 90)}...`
-            : descricao || "Descrição não disponível"}
+          {descricao && descricao.length > 90 ? `${descricao.substring(0, 90)}...` : descricao || "Descrição não disponível"}
         </p>
       </div>
 
       <div className="selection-card-footer">
-        {isOpen ? (
-          <button
-            onClick={() => navigate(`/questionario/${id}`)}
-            className="selection-action-button primary"
-            title="Realizar Inscrição"
-          >
+        {jaInscrito ? (
+          <button className="selection-action-button enrolled" disabled title="Você já está inscrito neste edital">
+            <CheckCircle className="w-3 h-3" />
+            <span>Já Inscrito</span>
+          </button>
+        ) : isOpen ? (
+          <button onClick={() => navigate(`/questionario/${id}`)} className="selection-action-button primary" title="Realizar Inscrição">
             <span>Inscrever-se</span>
             <ArrowRight className="w-3 h-3" />
           </button>
         ) : (
-          <button
-            className="selection-action-button disabled"
-            disabled
-            title="Inscrições não disponíveis"
-          >
+          <button className="selection-action-button disabled" disabled title="Inscrições não disponíveis">
             <span>Indisponível</span>
           </button>
         )}
@@ -128,21 +120,20 @@ const OpenSelectionCard: React.FC<Edital> = ({
   );
 };
 
-const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
-  const openEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase().includes("aberto")
-  ) || [];
+const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais, inscricoesAluno = [] }) => {
+  // Cria um Set com os IDs dos editais em que o aluno já está inscrito
+  const editaisInscritos = new Set(inscricoesAluno.map((insc) => insc.edital_id || insc.id));
 
-  const closedEditais = editais?.filter((edital) =>
-    edital.status_edital?.toLowerCase().includes("fechado")
-  ) || [];
+  const openEditais = editais?.filter((edital) => edital.status_edital?.toLowerCase().includes("aberto")) || [];
+
+  const closedEditais = editais?.filter((edital) => edital.status_edital?.toLowerCase().includes("fechado")) || [];
 
   return (
     <div className="bg-white border-2 p-[1.25rem] shadow-md border-solid rounded-[1.25rem] flex flex-col h-full overflow-hidden overflow-y-auto">
       <div className="selections-header">
         <div className="flex justify-start items-center gap-2 mb-4">
-        <BookOpen className="w-5 h-5 text-blue-600" />
-        <h2 className="text-2xl font-semibold text-gray-900 m-0">Seleções Abertas</h2>
+          <BookOpen className="w-5 h-5 text-blue-600" />
+          <h2 className="text-2xl font-semibold text-gray-900 m-0">Seleções Abertas</h2>
         </div>
         <div className="selections-stats">
           <div className="stat-item">
@@ -168,12 +159,12 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
         <div className="selections-grid">
           {/* Primeiro mostrar os editais abertos */}
           {openEditais.map((edital) => (
-            <OpenSelectionCard key={`open-${edital.id}`} {...edital} />
+            <OpenSelectionCard key={`open-${edital.id}`} {...edital} jaInscrito={editaisInscritos.has(edital.id)} />
           ))}
 
           {/* Depois mostrar os editais fechados */}
           {closedEditais.map((edital) => (
-            <OpenSelectionCard key={`closed-${edital.id}`} {...edital} />
+            <OpenSelectionCard key={`closed-${edital.id}`} {...edital} jaInscrito={editaisInscritos.has(edital.id)} />
           ))}
         </div>
       )}

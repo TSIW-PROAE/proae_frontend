@@ -230,7 +230,7 @@
 }
 
 /* Ajustar o componente de benefícios para ter altura controlada */
-.portal-container .card-container > div {
+.portal-container .card-container>div {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -437,7 +437,9 @@
   color: #6b7280;
   margin: 0;
 }
+
 url(PortalAluno.css)
+
 /* Estilos para OpenSelections - Cards Quadráticos */
 .open-selections-container {
   background: white;
@@ -649,6 +651,18 @@ url(PortalAluno.css)
   background: #f3f4f6;
   color: #9ca3af;
   cursor: not-allowed;
+}
+
+.selection-action-button.enrolled {
+  background: #dcfce7;
+  color: #166534;
+  cursor: default;
+  border: 1px solid #bbf7d0;
+}
+
+.selection-action-button.enrolled:hover {
+  background: #dcfce7;
+  transform: none;
 }
 
 .empty-selections {
@@ -1316,6 +1330,7 @@ url(PortalAluno.css)
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
