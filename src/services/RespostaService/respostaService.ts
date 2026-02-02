@@ -1,4 +1,5 @@
 import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import { RespostaStep } from "../../types/inscricao";
 
 const BASE_URL = import.meta.env.VITE_API_URL_SERVICES;
 
@@ -20,6 +21,68 @@ export interface ValidateRespostaResponse {
   mensagem?: string;
 }
 
+export interface CreateRespostaDto {
+  pergunta_id: number;
+  inscricao_id: number;
+  valor_texto?: string;
+  valor_opcoes?: string[];
+  url_arquivo?: string;
+}
+
+export interface UpdateRespostaDto {
+  valor_texto?: string;
+  valor_opcoes?: string[];
+  url_arquivo?: string;
+  validada?: boolean;
+}
+
+export interface Resposta {
+  id: number;
+  pergunta_id: number;
+  inscricao_id: number;
+  valor_texto?: string | null;
+  valor_opcoes?: string[] | null;
+  url_arquivo?: string | null;
+  validada: boolean;
+  data_validacao?: string;
+  data_resposta: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PerguntaComResposta {
+  pergunta_id: number;
+  pergunta_texto: string;
+  tipo_pergunta: string;
+  obrigatoria: boolean;
+  resposta?: {
+    resposta_id: number;
+    valor_texto?: string | null;
+    valor_opcoes?: string[] | null;
+    url_arquivo?: string | null;
+    validada: boolean;
+    data_validacao?: string;
+    data_resposta: string;
+  } | null;
+}
+
+interface ListaRespostasResponse {
+  sucesso: boolean;
+  dados: Resposta[];
+}
+
+interface RespostaUnicaResponse {
+  sucesso: boolean;
+  dados: Resposta;
+}
+
+interface PerguntasComRespostasResponse {
+  sucesso: boolean;
+  dados: {
+    perguntas: PerguntaComResposta[];
+  };
+}
+
 class RespostaService {
   private httpClient: FetchAdapter;
 
@@ -27,6 +90,147 @@ class RespostaService {
     this.httpClient = new FetchAdapter();
   }
 
+  // POST /respostas - Criar resposta (pergunta + inscrição)
+  async criarResposta(dto: CreateRespostaDto): Promise<Resposta> {
+    try {
+      const response = await this.httpClient.post<RespostaUnicaResponse>(`${BASE_URL}/respostas`, dto);
+      return response.data.dados;
+    } catch (error: any) {
+      console.error("Erro ao criar resposta:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // GET /respostas - Listar todas as respostas
+  async listarRespostas(): Promise<Resposta[]> {
+    try {
+      const response = await this.httpClient.get<ListaRespostasResponse>(`${BASE_URL}/respostas`);
+      if (response.sucesso && Array.isArray(response.dados)) {
+        return response.dados;
+      }
+      return [];
+    } catch (error: any) {
+      console.error("Erro ao listar respostas:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // GET /respostas/:id - Resposta por ID
+  async buscarRespostaPorId(id: number): Promise<Resposta | null> {
+    try {
+      const response = await this.httpClient.get<RespostaUnicaResponse>(`${BASE_URL}/respostas/${id}`);
+      if (response.sucesso && response.dados) {
+        return response.dados;
+      }
+      return null;
+    } catch (error: any) {
+      if (error?.status === 404 || error?.response?.status === 404) {
+        return null;
+      }
+      console.error("Erro ao buscar resposta:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // PATCH /respostas/:id - Atualizar resposta
+  async atualizarResposta(id: number, dto: UpdateRespostaDto): Promise<Resposta> {
+    try {
+      const response = await this.httpClient.patch<RespostaUnicaResponse>(`${BASE_URL}/respostas/${id}`, dto);
+      return response.dados;
+    } catch (error: any) {
+      console.error("Erro ao atualizar resposta:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // DELETE /respostas/:id - Remover resposta
+  async deletarResposta(id: number): Promise<void> {
+    try {
+      await this.httpClient.delete(`${BASE_URL}/respostas/${id}`);
+    } catch (error: any) {
+      console.error("Erro ao deletar resposta:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // GET /respostas/aluno/:alunoId/edital/:editalId - Respostas do aluno em um edital
+  async buscarRespostasDoAlunoNoEdital(alunoId: number, editalId: number): Promise<Resposta[]> {
+    try {
+      const response = await this.httpClient.get<ListaRespostasResponse>(
+        `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}`
+      );
+      if (response.sucesso && Array.isArray(response.dados)) {
+        return response.dados;
+      }
+      return [];
+    } catch (error: any) {
+      if (error?.status === 404 || error?.response?.status === 404) {
+        return [];
+      }
+      console.error("Erro ao buscar respostas do aluno no edital:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // GET /respostas/aluno/:alunoId/edital/:editalId/step/:stepId - Respostas do aluno em um step do edital
+  async buscarRespostasDoAlunoNoStep(alunoId: number, editalId: number, stepId: number): Promise<RespostaStep[]> {
+    try {
+      const response = await this.httpClient.get<{ sucesso: boolean; dados: { respostas: RespostaStep[] } }>(
+        `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}/step/${stepId}`
+      );
+      if (response.sucesso && response.dados?.respostas) {
+        return response.dados.respostas;
+      }
+      return [];
+    } catch (error: any) {
+      if (error?.status === 404 || error?.response?.status === 404) {
+        return [];
+      }
+      console.error("Erro ao buscar respostas do aluno no step:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // GET /respostas/aluno/:alunoId/edital/:editalId/step/:stepId/perguntas-com-respostas
+  // Perguntas do step com respostas do aluno
+  async buscarPerguntasComRespostas(alunoId: number, editalId: number, stepId: number): Promise<PerguntaComResposta[]> {
+    try {
+      const response = await this.httpClient.get<PerguntasComRespostasResponse>(
+        `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}/step/${stepId}/perguntas-com-respostas`
+      );
+      if (response.sucesso && response.dados?.perguntas) {
+        return response.dados.perguntas;
+      }
+      return [];
+    } catch (error: any) {
+      if (error?.status === 404 || error?.response?.status === 404) {
+        return [];
+      }
+      console.error("Erro ao buscar perguntas com respostas:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // GET /respostas/pergunta/:perguntaId/edital/:editalId - Respostas de uma pergunta em um edital
+  async buscarRespostasDaPerguntaNoEdital(perguntaId: number, editalId: number): Promise<Resposta[]> {
+    try {
+      const response = await this.httpClient.get<ListaRespostasResponse>(
+        `${BASE_URL}/respostas/pergunta/${perguntaId}/edital/${editalId}`
+      );
+      if (response.sucesso && Array.isArray(response.dados)) {
+        return response.dados;
+      }
+      return [];
+    } catch (error: any) {
+      if (error?.status === 404 || error?.response?.status === 404) {
+        return [];
+      }
+      console.error("Erro ao buscar respostas da pergunta no edital:", error);
+      throw new Error(this.extrairMensagemErro(error));
+    }
+  }
+
+  // PATCH /respostas/:id/validate - Validar uma resposta
   async validarResposta(respostaId: number, dto: ValidateRespostaDto): Promise<ValidateRespostaResponse> {
     const respostaIdStr = String(respostaId);
     const pluralUrl = `${BASE_URL}/respostas/${respostaIdStr}/validate`;
@@ -69,7 +273,7 @@ class RespostaService {
         ? (erro as any).mensagem
         : undefined) ||
       this.extrairMensagemGenerica(erro) ||
-      "Erro ao validar resposta"
+      "Erro ao processar resposta"
     );
   }
 

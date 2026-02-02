@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   FileText,
   Mail,
@@ -13,9 +13,15 @@ import {
   ChevronDown,
   ClipboardList,
   Download,
+  Search,
+  Filter,
+  Users,
+  CheckSquare,
+  XSquare,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@heroui/button";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
 import { AlunoInscrito } from "../../../types/inscricao";
 import { Edital } from "../../../types/edital";
 import { StepResponseDto } from "../../../types/step";
@@ -26,6 +32,8 @@ import ModalSelecionarEdital from "../../../components/ModalSelecionarEdital/Mod
 import ModalSelecionarQuestionario from "../../../components/ModalSelecionarQuestionario/ModalSelecionarQuestionario";
 import ModalRespostaAluno from "../../../components/ModalRespostaAluno/ModalRespostaAluno";
 import "./GerenciarInscricoes.css";
+
+type StatusFilter = "TODOS" | "PENDENTE" | "APROVADA" | "REPROVADA" | "EM_ANALISE";
 
 export default function GerenciarInscricoes() {
   const [inscricoes, setInscricoes] = useState<AlunoInscrito[]>([]);
@@ -42,6 +50,10 @@ export default function GerenciarInscricoes() {
   const [selectedAluno, setSelectedAluno] = useState<AlunoInscrito | null>(null);
   const [showModalRespostas, setShowModalRespostas] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  
+  // Filtros
+  const [termoBusca, setTermoBusca] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState<StatusFilter>("TODOS");
 
   // Carregar edital e questionário salvos no sessionStorage ao montar
   useEffect(() => {
@@ -182,6 +194,82 @@ export default function GerenciarInscricoes() {
     }
   };
 
+  // Filtragem das inscrições
+  const inscricoesFiltradas = useMemo(() => {
+    return inscricoes.filter((inscricao) => {
+      // Filtro de busca
+      const matchBusca =
+        termoBusca === "" ||
+        inscricao.nome?.toLowerCase().includes(termoBusca.toLowerCase()) ||
+        inscricao.email?.toLowerCase().includes(termoBusca.toLowerCase()) ||
+        inscricao.matricula?.toLowerCase().includes(termoBusca.toLowerCase()) ||
+        inscricao.curso?.toLowerCase().includes(termoBusca.toLowerCase()) ||
+        inscricao.campus?.toLowerCase().includes(termoBusca.toLowerCase());
+
+      // Filtro de status
+      const normalizedStatus = inscricao.status_inscricao?.toUpperCase().replace(" ", "_") || "PENDENTE";
+      const matchStatus =
+        filtroStatus === "TODOS" ||
+        normalizedStatus === filtroStatus ||
+        (filtroStatus === "APROVADA" && (normalizedStatus === "APROVADA" || normalizedStatus === "APROVADO")) ||
+        (filtroStatus === "REPROVADA" && (normalizedStatus === "REPROVADA" || normalizedStatus === "REPROVADO")) ||
+        (filtroStatus === "EM_ANALISE" && (normalizedStatus === "EM_ANALISE" || normalizedStatus === "EM ANÁLISE"));
+
+      return matchBusca && matchStatus;
+    });
+  }, [inscricoes, termoBusca, filtroStatus]);
+
+  // Estatísticas
+  const estatisticas = useMemo(() => {
+    const stats = {
+      total: inscricoes.length,
+      aprovadas: 0,
+      reprovadas: 0,
+      pendentes: 0,
+      emAnalise: 0,
+    };
+
+    inscricoes.forEach((inscricao) => {
+      const normalizedStatus = inscricao.status_inscricao?.toUpperCase().replace(" ", "_") || "PENDENTE";
+      if (normalizedStatus === "APROVADA" || normalizedStatus === "APROVADO") {
+        stats.aprovadas++;
+      } else if (normalizedStatus === "REPROVADA" || normalizedStatus === "REPROVADO") {
+        stats.reprovadas++;
+      } else if (normalizedStatus === "EM_ANALISE" || normalizedStatus === "EM ANÁLISE") {
+        stats.emAnalise++;
+      } else {
+        stats.pendentes++;
+      }
+    });
+
+    return stats;
+  }, [inscricoes]);
+
+  // Download PDF dos aprovados
+  const handleDownloadPdf = async () => {
+    if (!editalSelecionado?.id) {
+      toast.error("Selecione um edital para baixar o PDF dos aprovados");
+      return;
+    }
+
+    try {
+      setIsDownloadingPdf(true);
+      await inscricaoServiceManager.downloadPdfAprovados(editalSelecionado.id);
+      toast.success("PDF dos aprovados baixado com sucesso!");
+    } catch (err: any) {
+      console.error("Erro ao baixar PDF:", err);
+      toast.error(err.message || "Erro ao baixar PDF dos aprovados");
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
+  // Limpar filtros
+  const limparFiltros = () => {
+    setTermoBusca("");
+    setFiltroStatus("TODOS");
+  };
+
   if (isLoadingEditais) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -303,14 +391,92 @@ export default function GerenciarInscricoes() {
                   <Button
                     color="primary"
                     variant="solid"
-                    startContent={<Download className="w-4 h-4" />}
+                    startContent={isDownloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     onPress={handleDownloadPdf}
                     isLoading={isDownloadingPdf}
+                    isDisabled={estatisticas.aprovadas === 0}
                   >
-                    Baixar PDF Aprovados
+                    Baixar PDF Aprovados ({estatisticas.aprovadas})
                   </Button>
                 </div>
               </div>
+
+              {/* Estatísticas resumidas */}
+              {inscricoes.length > 0 && (
+                <div className="estatisticas-container">
+                  <div className="estatistica-card estatistica-total">
+                    <Users className="w-5 h-5" />
+                    <div className="estatistica-info">
+                      <span className="estatistica-valor">{estatisticas.total}</span>
+                      <span className="estatistica-label">Total</span>
+                    </div>
+                  </div>
+                  <div className="estatistica-card estatistica-aprovadas">
+                    <CheckSquare className="w-5 h-5" />
+                    <div className="estatistica-info">
+                      <span className="estatistica-valor">{estatisticas.aprovadas}</span>
+                      <span className="estatistica-label">Aprovadas</span>
+                    </div>
+                  </div>
+                  <div className="estatistica-card estatistica-reprovadas">
+                    <XSquare className="w-5 h-5" />
+                    <div className="estatistica-info">
+                      <span className="estatistica-valor">{estatisticas.reprovadas}</span>
+                      <span className="estatistica-label">Reprovadas</span>
+                    </div>
+                  </div>
+                  <div className="estatistica-card estatistica-analise">
+                    <Clock className="w-5 h-5" />
+                    <div className="estatistica-info">
+                      <span className="estatistica-valor">{estatisticas.emAnalise}</span>
+                      <span className="estatistica-label">Em Análise</span>
+                    </div>
+                  </div>
+                  <div className="estatistica-card estatistica-pendentes">
+                    <AlertCircle className="w-5 h-5" />
+                    <div className="estatistica-info">
+                      <span className="estatistica-valor">{estatisticas.pendentes}</span>
+                      <span className="estatistica-label">Pendentes</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Filtros */}
+              {inscricoes.length > 0 && (
+                <div className="filtros-container">
+                  <div className="filtro-busca">
+                    <Search className="w-4 h-4 filtro-icon" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nome, email, matrícula, curso ou campus..."
+                      value={termoBusca}
+                      onChange={(e) => setTermoBusca(e.target.value)}
+                      className="filtro-input"
+                    />
+                  </div>
+                  <div className="filtro-status">
+                    <Filter className="w-4 h-4 filtro-icon" />
+                    <select
+                      value={filtroStatus}
+                      onChange={(e) => setFiltroStatus(e.target.value as StatusFilter)}
+                      className="filtro-select"
+                    >
+                      <option value="TODOS">Todos os status</option>
+                      <option value="PENDENTE">Pendente</option>
+                      <option value="EM_ANALISE">Em Análise</option>
+                      <option value="APROVADA">Aprovada</option>
+                      <option value="REPROVADA">Reprovada</option>
+                    </select>
+                  </div>
+                  {(termoBusca || filtroStatus !== "TODOS") && (
+                    <button onClick={limparFiltros} className="btn-limpar-filtros">
+                      <XCircle className="w-4 h-4" />
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+              )}
 
               <div className="lista-inscricoes-container">
                 {isLoading ? (
@@ -325,6 +491,20 @@ export default function GerenciarInscricoes() {
                     </div>
                     <h3 className="empty-title">Nenhuma inscrição encontrada</h3>
                     <p className="empty-description">Não há inscrições para este edital no momento.</p>
+                  </div>
+                ) : inscricoesFiltradas.length === 0 ? (
+                  <div className="empty-inscricoes">
+                    <div className="empty-icon">
+                      <Search className="w-12 h-12 text-gray-400" />
+                    </div>
+                    <h3 className="empty-title">Nenhum resultado encontrado</h3>
+                    <p className="empty-description">
+                      Nenhuma inscrição corresponde aos filtros aplicados.
+                    </p>
+                    <button onClick={limparFiltros} className="btn-selecionar-edital" style={{ marginTop: "1rem" }}>
+                      <XCircle className="w-5 h-5" />
+                      Limpar filtros
+                    </button>
                   </div>
                 ) : (
                   <>
@@ -350,7 +530,7 @@ export default function GerenciarInscricoes() {
                       <div className="table-container">
                         <table className="inscricoes-table">
                           <tbody className="table-body">
-                            {inscricoes.map((aluno, index) => (
+                            {inscricoesFiltradas.map((aluno, index) => (
                               <tr
                                 key={aluno.inscricao_id || aluno.aluno_id || index}
                                 className="table-row"
@@ -412,8 +592,9 @@ export default function GerenciarInscricoes() {
                     <div className="inscricoes-footer">
                       <div className="footer-info">
                         <span className="total-count">
-                          {inscricoes.length} inscrição
-                          {inscricoes.length !== 1 ? "ões" : ""} total
+                          {inscricoesFiltradas.length === inscricoes.length
+                            ? `${inscricoes.length} inscrição${inscricoes.length !== 1 ? "ões" : ""} total`
+                            : `${inscricoesFiltradas.length} de ${inscricoes.length} inscrição${inscricoes.length !== 1 ? "ões" : ""}`}
                         </span>
                         <span className="last-updated">Atualizado agora</span>
                       </div>

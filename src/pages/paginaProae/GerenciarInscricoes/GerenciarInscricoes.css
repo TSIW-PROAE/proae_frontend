@@ -613,7 +613,244 @@
   box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
 }
 
-/* Responsive */
+/* ====================================
+   ESTATÍSTICAS
+   ==================================== */
+.estatisticas-container {
+  display: flex;
+  gap: 1rem;
+  padding: 0 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.estatistica-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.estatistica-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.estatistica-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.estatistica-valor {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.estatistica-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.estatistica-total {
+  border-left: 3px solid #3b82f6;
+}
+.estatistica-total svg {
+  color: #3b82f6;
+}
+.estatistica-total .estatistica-valor {
+  color: #1e40af;
+}
+
+.estatistica-aprovadas {
+  border-left: 3px solid #22c55e;
+}
+.estatistica-aprovadas svg {
+  color: #22c55e;
+}
+.estatistica-aprovadas .estatistica-valor {
+  color: #166534;
+}
+
+.estatistica-reprovadas {
+  border-left: 3px solid #ef4444;
+}
+.estatistica-reprovadas svg {
+  color: #ef4444;
+}
+.estatistica-reprovadas .estatistica-valor {
+  color: #991b1b;
+}
+
+.estatistica-analise {
+  border-left: 3px solid #3b82f6;
+}
+.estatistica-analise svg {
+  color: #3b82f6;
+}
+.estatistica-analise .estatistica-valor {
+  color: #1e40af;
+}
+
+.estatistica-pendentes {
+  border-left: 3px solid #f59e0b;
+}
+.estatistica-pendentes svg {
+  color: #f59e0b;
+}
+.estatistica-pendentes .estatistica-valor {
+  color: #92400e;
+}
+
+/* ====================================
+   FILTROS
+   ==================================== */
+.filtros-container {
+  display: flex;
+  gap: 1rem;
+  padding: 0 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filtro-busca {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.filtro-busca .filtro-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.filtro-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.filtro-input:focus {
+  outline: none;
+  border-color: #4285f4;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+}
+
+.filtro-input::placeholder {
+  color: #9ca3af;
+}
+
+.filtro-status {
+  position: relative;
+  min-width: 180px;
+}
+
+.filtro-status .filtro-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.filtro-select {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  transition: all 0.2s ease;
+  background: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.filtro-select:focus {
+  outline: none;
+  border-color: #4285f4;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+}
+
+.btn-limpar-filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family:
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+.btn-limpar-filtros:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* Animação de spin para loading */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ====================================
+   RESPONSIVE
+   ==================================== */
 @media (max-width: 1200px) {
   .inscricoes-container {
     padding: 0.75rem;
@@ -621,6 +858,15 @@
 
   .inscricoes-page-header {
     padding: 1.5rem 0;
+  }
+
+  .estatisticas-container {
+    gap: 0.75rem;
+  }
+
+  .estatistica-card {
+    min-width: 100px;
+    padding: 0.75rem 1rem;
   }
 }
 
@@ -655,6 +901,41 @@
   }
 
   .btn-trocar-edital {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .estatisticas-container {
+    gap: 0.5rem;
+  }
+
+  .estatistica-card {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .estatistica-valor {
+    font-size: 1rem;
+  }
+
+  .estatistica-label {
+    font-size: 0.6875rem;
+  }
+
+  .filtros-container {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .filtro-busca,
+  .filtro-status {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .btn-limpar-filtros {
     width: 100%;
     justify-content: center;
   }
