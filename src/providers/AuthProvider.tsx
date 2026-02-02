@@ -68,7 +68,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
                 id: response.user.usuario_id,
                 nome: response.user.nome,
                 roles: response.user.roles,
-                aprovado: response.user.roles.includes("admin") ? response.user.aprovado : false
+                aprovado: response.user.admin.aprovado
               }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);
