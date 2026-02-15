@@ -25,8 +25,12 @@ interface RespostaPayload {
   urlArquivo: string | null;
   dataResposta: string | null;
   validada?: boolean | null;
+  invalidada?: boolean | null;
   dataValidacao?: string | null;
   dataValidade?: string | null;
+  requerReenvio?: boolean | null;
+  parecer?: string | null;
+  prazoReenvio?: string | null;
 }
 
 interface PerguntaComResposta {
@@ -77,6 +81,20 @@ export default function InscricoesProae() {
   const [validandoRespostas, setValidandoRespostas] = useState<Record<number, boolean>>({});
   const [validandoTodas, setValidandoTodas] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  // Estado do modal de confirmação de validação
+  const [modalValidarOpen, setModalValidarOpen] = useState(false);
+  const [validarRespostaId, setValidarRespostaId] = useState<number | null>(null);
+  const [validarPerguntaTitulo, setValidarPerguntaTitulo] = useState<string>("");
+
+  // Estado do modal de invalidação
+  const [modalInvalidarOpen, setModalInvalidarOpen] = useState(false);
+  const [invalidarRespostaId, setInvalidarRespostaId] = useState<number | null>(null);
+  const [invalidarPerguntaTitulo, setInvalidarPerguntaTitulo] = useState<string>("");
+  const [invalidarParecer, setInvalidarParecer] = useState("");
+  const [invalidarPrazo, setInvalidarPrazo] = useState("");
+  const [apenasInvalidar, setApenasInvalidar] = useState(false);
+  const [enviandoInvalidacao, setEnviandoInvalidacao] = useState(false);
 
   useEffect(() => {
     carregarEditais();
@@ -132,13 +150,25 @@ export default function InscricoesProae() {
       const statusNorm = inscricao.status_inscricao?.toUpperCase() || "";
       switch (filtroStatus) {
         case "aprovada":
-          matchStatus = statusNorm.includes("APROVADA");
+          matchStatus = statusNorm === "APROVADA";
           break;
-        case "negada":
-          matchStatus = statusNorm.includes("NEGADA") || statusNorm.includes("REPROVADA");
+        case "rejeitada":
+          matchStatus = statusNorm === "REJEITADA";
+          break;
+        case "em_analise":
+          matchStatus = statusNorm === "EM ANÁLISE" || statusNorm === "EM_ANALISE";
+          break;
+        case "selecionada":
+          matchStatus = statusNorm === "SELECIONADA";
+          break;
+        case "nao_selecionada":
+          matchStatus = statusNorm === "NÃO SELECIONADA" || statusNorm === "NAO_SELECIONADA";
+          break;
+        case "pendente_regularizacao":
+          matchStatus = statusNorm === "PENDENTE DE REGULARIZAÇÃO" || statusNorm === "PENDENTE_REGULARIZACAO";
           break;
         case "pendente":
-          matchStatus = statusNorm.includes("PENDENTE");
+          matchStatus = statusNorm === "PENDENTE";
           break;
         default:
           matchStatus = statusNorm === filtroStatus.toUpperCase();
@@ -149,42 +179,48 @@ export default function InscricoesProae() {
   });
 
   const getStatusBadgeClass = (status: string) => {
-    const normalizedStatus = status?.toUpperCase();
-    switch (normalizedStatus) {
+    const s = status?.toUpperCase();
+    switch (s) {
       case "APROVADA":
-      case "APROVADO":
-      case "INSCRIÇÃO APROVADA":
         return "status-badge status-aprovada";
-      case "REPROVADA":
-      case "REPROVADO":
-      case "INSCRIÇÃO NEGADA":
-        return "status-badge status-reprovada";
-      case "EM_ANALISE":
+      case "REJEITADA":
+        return "status-badge status-rejeitada";
       case "EM ANÁLISE":
+      case "EM_ANALISE":
         return "status-badge status-analise";
+      case "SELECIONADA":
+        return "status-badge status-selecionada";
+      case "NÃO SELECIONADA":
+      case "NAO_SELECIONADA":
+        return "status-badge status-nao-selecionada";
+      case "PENDENTE DE REGULARIZAÇÃO":
+      case "PENDENTE_REGULARIZACAO":
+        return "status-badge status-pendente-regularizacao";
       case "PENDENTE":
-      case "INSCRIÇÃO PENDENTE":
       default:
         return "status-badge status-pendente";
     }
   };
 
   const getStatusLabel = (status: string) => {
-    const normalizedStatus = status?.toUpperCase();
-    switch (normalizedStatus) {
+    const s = status?.toUpperCase();
+    switch (s) {
       case "APROVADA":
-      case "APROVADO":
-      case "INSCRIÇÃO APROVADA":
         return "Aprovada";
-      case "REPROVADA":
-      case "REPROVADO":
-      case "INSCRIÇÃO NEGADA":
-        return "Negada";
-      case "EM_ANALISE":
+      case "REJEITADA":
+        return "Rejeitada";
       case "EM ANÁLISE":
+      case "EM_ANALISE":
         return "Em Análise";
+      case "SELECIONADA":
+        return "Selecionada";
+      case "NÃO SELECIONADA":
+      case "NAO_SELECIONADA":
+        return "Não Selecionada";
+      case "PENDENTE DE REGULARIZAÇÃO":
+      case "PENDENTE_REGULARIZACAO":
+        return "Pendente de Regularização";
       case "PENDENTE":
-      case "INSCRIÇÃO PENDENTE":
       default:
         return "Pendente";
     }
@@ -233,23 +269,29 @@ export default function InscricoesProae() {
     }
   };
 
-  const gerarDataValidadePadrao = () => {
-    const now = new Date();
-    const validade = new Date(Date.UTC(now.getFullYear(), 11, 31, 23, 59, 59));
-    return validade.toISOString();
+  const abrirModalValidar = (respostaId: number, perguntaTitulo?: string) => {
+    setValidarRespostaId(respostaId);
+    setValidarPerguntaTitulo(perguntaTitulo || "");
+    setModalValidarOpen(true);
   };
 
-  const validarResposta = async (respostaId: number, perguntaTitulo?: string) => {
-    const confirmMsg = `Confirmar validação ${perguntaTitulo ? `da pergunta "${perguntaTitulo}"?` : "desta resposta?"}`;
-    if (!window.confirm(confirmMsg)) return;
+  const fecharModalValidar = () => {
+    setModalValidarOpen(false);
+    setValidarRespostaId(null);
+    setValidarPerguntaTitulo("");
+  };
 
-    setValidandoRespostas((prev) => ({ ...prev, [respostaId]: true }));
+  const confirmarValidacao = async () => {
+    if (!validarRespostaId) return;
+
+    fecharModalValidar();
+    setValidandoRespostas((prev) => ({ ...prev, [validarRespostaId]: true }));
     try {
-      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/${respostaId}/validate`;
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/${validarRespostaId}/validate`;
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ validada: true, dataValidade: gerarDataValidadePadrao() }),
+        body: JSON.stringify({ validada: true }),
       });
 
       if (!response.ok) {
@@ -265,35 +307,117 @@ export default function InscricoesProae() {
     } finally {
       setValidandoRespostas((prev) => {
         const clone = { ...prev };
-        delete clone[respostaId];
+        if (validarRespostaId) delete clone[validarRespostaId];
         return clone;
       });
     }
   };
 
-  const desvalidarResposta = async (respostaId: number, perguntaTitulo?: string) => {
-    const confirmMsg = `Solicitar correção ${perguntaTitulo ? `da pergunta "${perguntaTitulo}"?` : "desta resposta?"} Isso irá desvalidar a resposta atual.`;
-    if (!window.confirm(confirmMsg)) return;
+  const abrirModalInvalidar = (respostaId: number, perguntaTitulo?: string) => {
+    setInvalidarRespostaId(respostaId);
+    setInvalidarPerguntaTitulo(perguntaTitulo || "");
+    setInvalidarParecer("");
+    setInvalidarPrazo("");
+    setApenasInvalidar(false);
+    setModalInvalidarOpen(true);
+  };
 
+  const fecharModalInvalidar = () => {
+    setModalInvalidarOpen(false);
+    setInvalidarRespostaId(null);
+    setInvalidarPerguntaTitulo("");
+    setInvalidarParecer("");
+    setInvalidarPrazo("");
+    setApenasInvalidar(false);
+  };
+
+  const confirmarInvalidacao = async () => {
+    if (!invalidarRespostaId) return;
+
+    // Validações
+    if (!apenasInvalidar) {
+      if (!invalidarParecer.trim()) {
+        window.alert("Informe o motivo/instrução de correção.");
+        return;
+      }
+      if (!invalidarPrazo) {
+        window.alert("Informe o prazo para reenvio.");
+        return;
+      }
+    }
+
+    setEnviandoInvalidacao(true);
+    setValidandoRespostas((prev) => ({ ...prev, [invalidarRespostaId]: true }));
+
+    try {
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/${invalidarRespostaId}/validate`;
+
+      let body: Record<string, unknown>;
+      if (apenasInvalidar) {
+        body = { invalidada: true };
+      } else {
+        const prazoDate = new Date(invalidarPrazo + "T23:59:59.000Z");
+        body = {
+          invalidada: true,
+          requerReenvio: true,
+          parecer: invalidarParecer.trim(),
+          prazoReenvio: prazoDate.toISOString(),
+        };
+      }
+
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao invalidar resposta: ${response.statusText}`);
+      }
+
+      fecharModalInvalidar();
+
+      if (inscricaoSelecionada?.aluno_id) {
+        await carregarStepsCompletos(inscricaoSelecionada.aluno_id);
+      }
+    } catch (err: any) {
+      console.error("Erro ao invalidar resposta:", err);
+      window.alert("Não foi possível invalidar a resposta. Tente novamente.");
+    } finally {
+      setEnviandoInvalidacao(false);
+      setValidandoRespostas((prev) => {
+        const clone = { ...prev };
+        if (invalidarRespostaId) delete clone[invalidarRespostaId];
+        return clone;
+      });
+    }
+  };
+
+  const alterarPrazoReenvio = async (respostaId: number, novoPrazo: string) => {
     setValidandoRespostas((prev) => ({ ...prev, [respostaId]: true }));
     try {
+      const prazoDate = new Date(novoPrazo + "T23:59:59.000Z");
       const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/${respostaId}/validate`;
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ validada: false, dataValidade: null }),
+        body: JSON.stringify({
+          invalidada: true,
+          requerReenvio: true,
+          prazoReenvio: prazoDate.toISOString(),
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`Erro ao solicitar correção: ${response.statusText}`);
+        throw new Error(`Erro ao alterar prazo: ${response.statusText}`);
       }
 
       if (inscricaoSelecionada?.aluno_id) {
         await carregarStepsCompletos(inscricaoSelecionada.aluno_id);
       }
     } catch (err: any) {
-      console.error("Erro ao solicitar correção:", err);
-      window.alert("Não foi possível solicitar correção. Tente novamente.");
+      console.error("Erro ao alterar prazo de reenvio:", err);
+      window.alert("Não foi possível alterar o prazo. Tente novamente.");
     } finally {
       setValidandoRespostas((prev) => {
         const clone = { ...prev };
@@ -322,7 +446,7 @@ export default function InscricoesProae() {
           fetch(`${import.meta.env.VITE_API_URL_SERVICES}/respostas/${id}/validate`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ validada: true, dataValidade: gerarDataValidadePadrao() }),
+            body: JSON.stringify({ validada: true }),
           }),
         ),
       );
@@ -488,8 +612,12 @@ export default function InscricoesProae() {
                   <select className="status-filter" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
                     <option value="todos">Todos os status</option>
                     <option value="pendente">Pendente</option>
+                    <option value="em_analise">Em Análise</option>
                     <option value="aprovada">Aprovada</option>
-                    <option value="negada">Negada</option>
+                    <option value="rejeitada">Rejeitada</option>
+                    <option value="selecionada">Selecionada</option>
+                    <option value="nao_selecionada">Não Selecionada</option>
+                    <option value="pendente_regularizacao">Pendente de Regularização</option>
                   </select>
                 </div>
                 <button onClick={baixarPdfAprovados} disabled={downloadingPdf} className="download-pdf-button" title="Baixar PDF dos aprovados">
@@ -841,26 +969,33 @@ export default function InscricoesProae() {
                                         (respostaInfo?.valorTexto && respostaInfo.valorTexto.trim().length > 0 ? respostaInfo.valorTexto : null) ||
                                         (respostaInfo?.texto && respostaInfo.texto.trim().length > 0 ? respostaInfo.texto : null);
                                       const respostaConteudo = valorOpcoes || valorTexto;
-                                      const respostaValidada = respostaInfo?.validada === true;
                                       const isValidandoResposta = respostaInfo?.id ? validandoRespostas[respostaInfo.id] : false;
-                                      const chipLabel = respostaInfo ? (respostaValidada ? "Validada" : "Não validada") : "Sem resposta";
-                                      const chipStyle = respostaInfo
-                                        ? respostaValidada
-                                          ? {
-                                              backgroundColor: "#dcfce7",
-                                              border: "1px solid #bbf7d0",
-                                              color: "#15803d",
-                                            }
-                                          : {
-                                              backgroundColor: "#fef3c7",
-                                              border: "1px solid #fef3c7",
-                                              color: "#92400e",
-                                            }
-                                        : {
-                                            backgroundColor: "#e2e8f0",
-                                            border: "1px solid #cbd5e1",
-                                            color: "#475569",
-                                          };
+
+                                      // Determinar status detalhado da resposta
+                                      const respostaValidada = respostaInfo?.validada === true;
+                                      const respostaInvalidadaComReenvio = respostaInfo?.invalidada === true && respostaInfo?.requerReenvio === true;
+                                      const respostaInvalidadaSemReenvio = respostaInfo?.invalidada === true && !respostaInfo?.requerReenvio;
+                                      const respostaInvalidada = respostaInvalidadaComReenvio || respostaInvalidadaSemReenvio;
+
+                                      let chipLabel: string;
+                                      let chipStyle: React.CSSProperties;
+
+                                      if (!respostaInfo) {
+                                        chipLabel = "Sem resposta";
+                                        chipStyle = { backgroundColor: "#e2e8f0", border: "1px solid #cbd5e1", color: "#475569" };
+                                      } else if (respostaValidada) {
+                                        chipLabel = "✓ Validada";
+                                        chipStyle = { backgroundColor: "#dcfce7", border: "1px solid #bbf7d0", color: "#15803d" };
+                                      } else if (respostaInvalidadaComReenvio) {
+                                        chipLabel = "Correção solicitada";
+                                        chipStyle = { backgroundColor: "#fff7ed", border: "1px solid #fed7aa", color: "#c2410c" };
+                                      } else if (respostaInvalidadaSemReenvio) {
+                                        chipLabel = "✗ Invalidada";
+                                        chipStyle = { backgroundColor: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c" };
+                                      } else {
+                                        chipLabel = "Pendente";
+                                        chipStyle = { backgroundColor: "#fef3c7", border: "1px solid #fde68a", color: "#92400e" };
+                                      }
 
                                       return (
                                         <div
@@ -912,16 +1047,25 @@ export default function InscricoesProae() {
                                             <div
                                               style={{
                                                 padding: "12px",
-                                                backgroundColor: "#f0fdf4",
-                                                border: "1px solid #bbf7d0",
+                                                backgroundColor: respostaInvalidada ? "#fefce8" : "#f0fdf4",
+                                                border: respostaInvalidada ? "1px solid #fde68a" : "1px solid #bbf7d0",
                                                 borderRadius: "6px",
                                                 marginTop: "8px",
                                               }}
                                             >
-                                              <div style={{ fontSize: "12px", fontWeight: "600", color: "#166534", marginBottom: "4px" }}>
+                                              <div
+                                                style={{
+                                                  fontSize: "12px",
+                                                  fontWeight: "600",
+                                                  color: respostaInvalidada ? "#854d0e" : "#166534",
+                                                  marginBottom: "4px",
+                                                }}
+                                              >
                                                 Resposta:
                                               </div>
-                                              <div style={{ fontSize: "14px", color: "#15803d" }}>{respostaConteudo}</div>
+                                              <div style={{ fontSize: "14px", color: respostaInvalidada ? "#713f12" : "#15803d" }}>
+                                                {respostaConteudo}
+                                              </div>
                                             </div>
                                           ) : (
                                             <div
@@ -937,45 +1081,156 @@ export default function InscricoesProae() {
                                             </div>
                                           )}
 
+                                          {/* Parecer e prazo (quando invalidado com solicitação de reenvio) */}
+                                          {respostaInvalidadaComReenvio && respostaInfo?.parecer && (
+                                            <div
+                                              style={{
+                                                padding: "12px",
+                                                backgroundColor: "#fff7ed",
+                                                border: "1px solid #fed7aa",
+                                                borderRadius: "6px",
+                                                marginTop: "8px",
+                                              }}
+                                            >
+                                              <div style={{ fontSize: "12px", fontWeight: "600", color: "#c2410c", marginBottom: "4px" }}>
+                                                Parecer da avaliação:
+                                              </div>
+                                              <div style={{ fontSize: "14px", color: "#9a3412", marginBottom: "8px" }}>{respostaInfo.parecer}</div>
+                                              {respostaInfo.prazoReenvio && (
+                                                <div
+                                                  style={{ fontSize: "12px", color: "#c2410c", display: "flex", alignItems: "center", gap: "4px" }}
+                                                >
+                                                  <Calendar style={{ width: "14px", height: "14px" }} />
+                                                  Prazo para reenvio: {new Date(respostaInfo.prazoReenvio).toLocaleDateString("pt-BR")}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {/* Info de invalidação sem reenvio */}
+                                          {respostaInvalidadaSemReenvio && (
+                                            <div
+                                              style={{
+                                                padding: "12px",
+                                                backgroundColor: "#fef2f2",
+                                                border: "1px solid #fecaca",
+                                                borderRadius: "6px",
+                                                marginTop: "8px",
+                                              }}
+                                            >
+                                              <div style={{ fontSize: "13px", color: "#991b1b", fontWeight: "500" }}>
+                                                Resposta invalidada definitivamente — reenvio não permitido.
+                                              </div>
+                                            </div>
+                                          )}
+
                                           {/* Ações de validação */}
-                                          <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-                                            {respostaValidada ? (
-                                              <button
-                                                onClick={() => respostaInfo?.id && desvalidarResposta(respostaInfo.id, perguntaInfo?.pergunta)}
-                                                disabled={isValidandoResposta}
-                                                style={{
-                                                  padding: "8px 12px",
-                                                  backgroundColor: isValidandoResposta ? "#cbd5e1" : "#fef3c7",
-                                                  color: isValidandoResposta ? "#64748b" : "#92400e",
-                                                  border: "1px solid #fcd34d",
-                                                  borderRadius: "6px",
-                                                  cursor: isValidandoResposta ? "not-allowed" : "pointer",
-                                                  fontWeight: 600,
-                                                  fontSize: "13px",
-                                                  transition: "background-color 0.2s, transform 0.1s",
-                                                }}
-                                              >
-                                                {isValidandoResposta ? "Processando..." : "Solicitar correção"}
-                                              </button>
-                                            ) : (
-                                              <button
-                                                onClick={() => respostaInfo?.id && validarResposta(respostaInfo.id, perguntaInfo?.pergunta)}
-                                                disabled={!respostaInfo?.id || isValidandoResposta}
-                                                style={{
-                                                  padding: "8px 12px",
-                                                  backgroundColor: !respostaInfo?.id || isValidandoResposta ? "#cbd5e1" : "#2563eb",
-                                                  color: "white",
-                                                  border: "none",
-                                                  borderRadius: "6px",
-                                                  cursor: !respostaInfo?.id || isValidandoResposta ? "not-allowed" : "pointer",
-                                                  fontWeight: 600,
-                                                  fontSize: "13px",
-                                                  boxShadow: !respostaInfo?.id || isValidandoResposta ? "none" : "0 2px 6px rgba(37, 99, 235, 0.25)",
-                                                  transition: "background-color 0.2s, transform 0.1s",
-                                                }}
-                                              >
-                                                {isValidandoResposta ? "Validando..." : respostaInfo?.id ? "Validar resposta" : "Sem resposta"}
-                                              </button>
+                                          <div
+                                            style={{
+                                              marginTop: "12px",
+                                              display: "flex",
+                                              justifyContent: "flex-end",
+                                              alignItems: "center",
+                                              gap: "8px",
+                                            }}
+                                          >
+                                            {respostaInfo?.id && (
+                                              <>
+                                                {respostaInvalidadaComReenvio ? (
+                                                  /* Quando já está aguardando reenvio: campo para alterar prazo */
+                                                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginRight: "auto" }}>
+                                                    <label style={{ fontSize: "12px", color: "#64748b", whiteSpace: "nowrap", fontWeight: 500 }}>
+                                                      Alterar prazo:
+                                                    </label>
+                                                    <input
+                                                      type="date"
+                                                      defaultValue={respostaInfo.prazoReenvio ? respostaInfo.prazoReenvio.split("T")[0] : ""}
+                                                      min={new Date().toISOString().split("T")[0]}
+                                                      onChange={(e) => {
+                                                        if (e.target.value && respostaInfo.id) {
+                                                          alterarPrazoReenvio(respostaInfo.id, e.target.value);
+                                                        }
+                                                      }}
+                                                      disabled={isValidandoResposta}
+                                                      style={{
+                                                        padding: "6px 10px",
+                                                        border: "1px solid #d1d5db",
+                                                        borderRadius: "6px",
+                                                        fontSize: "13px",
+                                                        fontFamily: "inherit",
+                                                        outline: "none",
+                                                        cursor: isValidandoResposta ? "not-allowed" : "pointer",
+                                                        opacity: isValidandoResposta ? 0.6 : 1,
+                                                      }}
+                                                    />
+                                                  </div>
+                                                ) : respostaInvalidadaSemReenvio ? (
+                                                  /* Invalidada sem reenvio: botão para solicitar correção (laranja) */
+                                                  <button
+                                                    onClick={() => respostaInfo.id && abrirModalInvalidar(respostaInfo.id, perguntaInfo?.pergunta)}
+                                                    disabled={isValidandoResposta}
+                                                    style={{
+                                                      padding: "8px 12px",
+                                                      backgroundColor: isValidandoResposta ? "#cbd5e1" : "#ea580c",
+                                                      color: isValidandoResposta ? "#64748b" : "#ffffff",
+                                                      border: "none",
+                                                      borderRadius: "6px",
+                                                      cursor: isValidandoResposta ? "not-allowed" : "pointer",
+                                                      fontWeight: 600,
+                                                      fontSize: "13px",
+                                                      boxShadow: isValidandoResposta ? "none" : "0 2px 6px rgba(234, 88, 12, 0.3)",
+                                                      transition: "background-color 0.2s, transform 0.1s",
+                                                    }}
+                                                  >
+                                                    {isValidandoResposta ? "Processando..." : "Solicitar correção"}
+                                                  </button>
+                                                ) : (
+                                                  /* Botão Invalidar - fundo vermelho forte, texto claro */
+                                                  <button
+                                                    onClick={() => respostaInfo.id && abrirModalInvalidar(respostaInfo.id, perguntaInfo?.pergunta)}
+                                                    disabled={isValidandoResposta}
+                                                    style={{
+                                                      padding: "8px 12px",
+                                                      backgroundColor: isValidandoResposta ? "#cbd5e1" : "#dc2626",
+                                                      color: isValidandoResposta ? "#64748b" : "#ffffff",
+                                                      border: "none",
+                                                      borderRadius: "6px",
+                                                      cursor: isValidandoResposta ? "not-allowed" : "pointer",
+                                                      fontWeight: 600,
+                                                      fontSize: "13px",
+                                                      boxShadow: isValidandoResposta ? "none" : "0 2px 6px rgba(220, 38, 38, 0.3)",
+                                                      transition: "background-color 0.2s, transform 0.1s",
+                                                    }}
+                                                  >
+                                                    {isValidandoResposta ? "Processando..." : "Invalidar"}
+                                                  </button>
+                                                )}
+                                                {!respostaValidada && (
+                                                  <button
+                                                    onClick={() => respostaInfo.id && abrirModalValidar(respostaInfo.id, perguntaInfo?.pergunta)}
+                                                    disabled={isValidandoResposta}
+                                                    style={{
+                                                      padding: "8px 12px",
+                                                      backgroundColor: isValidandoResposta ? "#cbd5e1" : "#2563eb",
+                                                      color: "white",
+                                                      border: "none",
+                                                      borderRadius: "6px",
+                                                      cursor: isValidandoResposta ? "not-allowed" : "pointer",
+                                                      fontWeight: 600,
+                                                      fontSize: "13px",
+                                                      boxShadow: isValidandoResposta ? "none" : "0 2px 6px rgba(37, 99, 235, 0.25)",
+                                                      transition: "background-color 0.2s, transform 0.1s",
+                                                    }}
+                                                  >
+                                                    {isValidandoResposta ? "Validando..." : "Validar"}
+                                                  </button>
+                                                )}
+                                              </>
+                                            )}
+                                            {!respostaInfo?.id && (
+                                              <span style={{ fontSize: "13px", color: "#94a3b8", fontStyle: "italic" }}>
+                                                Sem resposta para avaliar
+                                              </span>
                                             )}
                                           </div>
                                         </div>
@@ -1002,6 +1257,242 @@ export default function InscricoesProae() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Invalidação */}
+      {modalInvalidarOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+          onClick={fecharModalInvalidar}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              width: "90%",
+              maxWidth: "520px",
+              padding: "28px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: "0 0 4px 0", color: "#1e293b", fontSize: "18px", fontWeight: "700" }}>Invalidar resposta</h3>
+            {invalidarPerguntaTitulo && (
+              <p style={{ margin: "0 0 20px 0", color: "#64748b", fontSize: "14px", lineHeight: "1.4" }}>{invalidarPerguntaTitulo}</p>
+            )}
+
+            {/* Checkbox - apenas invalidar */}
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "20px",
+                cursor: "pointer",
+                padding: "12px",
+                backgroundColor: apenasInvalidar ? "#fef2f2" : "#f8fafc",
+                border: apenasInvalidar ? "1px solid #fecaca" : "1px solid #e2e8f0",
+                borderRadius: "8px",
+                transition: "all 0.2s",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={apenasInvalidar}
+                onChange={(e) => setApenasInvalidar(e.target.checked)}
+                style={{ width: "18px", height: "18px", accentColor: "#dc2626", cursor: "pointer" }}
+              />
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "#1e293b" }}>Apenas invalidar</div>
+                <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>Não permitir que o aluno reenvie uma nova resposta</div>
+              </div>
+            </label>
+
+            {/* Campos condicionais - parecer e prazo */}
+            {!apenasInvalidar && (
+              <>
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
+                    Motivo / Instrução de correção <span style={{ color: "#dc2626" }}>*</span>
+                  </label>
+                  <textarea
+                    value={invalidarParecer}
+                    onChange={(e) => setInvalidarParecer(e.target.value)}
+                    placeholder="Ex: Documento está ilegível, favor reenviar com melhor qualidade"
+                    rows={3}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      resize: "vertical",
+                      fontFamily: "inherit",
+                      outline: "none",
+                      transition: "border-color 0.2s",
+                      boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "#3b82f6")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "#d1d5db")}
+                  />
+                </div>
+
+                <div style={{ marginBottom: "20px" }}>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
+                    Prazo para reenvio <span style={{ color: "#dc2626" }}>*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={invalidarPrazo}
+                    onChange={(e) => setInvalidarPrazo(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontFamily: "inherit",
+                      outline: "none",
+                      transition: "border-color 0.2s",
+                      boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "#3b82f6")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "#d1d5db")}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Botões de ação */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "4px" }}>
+              <button
+                onClick={fecharModalInvalidar}
+                disabled={enviandoInvalidacao}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "white",
+                  color: "#374151",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  cursor: enviandoInvalidacao ? "not-allowed" : "pointer",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  transition: "background-color 0.2s",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarInvalidacao}
+                disabled={enviandoInvalidacao}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: enviandoInvalidacao ? "#cbd5e1" : "#dc2626",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: enviandoInvalidacao ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  boxShadow: enviandoInvalidacao ? "none" : "0 2px 6px rgba(220, 38, 38, 0.3)",
+                  transition: "background-color 0.2s",
+                }}
+              >
+                {enviandoInvalidacao ? "Enviando..." : apenasInvalidar ? "Confirmar invalidação" : "Invalidar e solicitar correção"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Validação */}
+      {modalValidarOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+          onClick={fecharModalValidar}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              width: "90%",
+              maxWidth: "420px",
+              padding: "28px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: "0 0 8px 0", color: "#1e293b", fontSize: "18px", fontWeight: "700" }}>Confirmar validação</h3>
+            <p style={{ margin: "0 0 24px 0", color: "#64748b", fontSize: "14px", lineHeight: "1.5" }}>
+              {validarPerguntaTitulo ? (
+                <>
+                  Deseja validar a resposta da pergunta <strong style={{ color: "#1e293b" }}>"{validarPerguntaTitulo}"</strong>?
+                </>
+              ) : (
+                "Deseja validar esta resposta?"
+              )}
+            </p>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                onClick={fecharModalValidar}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "white",
+                  color: "#374151",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  transition: "background-color 0.2s",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarValidacao}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#2563eb",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
+                  transition: "background-color 0.2s",
+                }}
+              >
+                Confirmar
+              </button>
             </div>
           </div>
         </div>

@@ -340,7 +340,7 @@
   color: #065f46;
 }
 
-.status-reprovada {
+.status-rejeitada {
   background: #fee2e2;
   color: #991b1b;
 }
@@ -348,6 +348,21 @@
 .status-analise {
   background: #dbeafe;
   color: #1e40af;
+}
+
+.status-selecionada {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-nao-selecionada {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.status-pendente-regularizacao {
+  background: #fff7ed;
+  color: #c2410c;
 }
 
 .status-pendente {
