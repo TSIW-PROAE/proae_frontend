@@ -22,17 +22,17 @@ export interface ValidateRespostaResponse {
 }
 
 export interface CreateRespostaDto {
-  pergunta_id: number;
-  inscricao_id: number;
-  valor_texto?: string;
-  valor_opcoes?: string[];
-  url_arquivo?: string;
+  perguntaId: number;
+  inscricaoId: number;
+  valorTexto?: string;
+  valorOpcoes?: string[];
+  urlArquivo?: string;
 }
 
 export interface UpdateRespostaDto {
-  valor_texto?: string;
-  valor_opcoes?: string[];
-  url_arquivo?: string;
+  valorTexto?: string;
+  valorOpcoes?: string[];
+  urlArquivo?: string;
   validada?: boolean;
 }
 
@@ -156,9 +156,7 @@ class RespostaService {
   // GET /respostas/aluno/:alunoId/edital/:editalId - Respostas do aluno em um edital
   async buscarRespostasDoAlunoNoEdital(alunoId: number, editalId: number): Promise<Resposta[]> {
     try {
-      const response = await this.httpClient.get<ListaRespostasResponse>(
-        `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}`
-      );
+      const response = await this.httpClient.get<ListaRespostasResponse>(`${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}`);
       if (response.sucesso && Array.isArray(response.dados)) {
         return response.dados;
       }
@@ -176,7 +174,7 @@ class RespostaService {
   async buscarRespostasDoAlunoNoStep(alunoId: number, editalId: number, stepId: number): Promise<RespostaStep[]> {
     try {
       const response = await this.httpClient.get<{ sucesso: boolean; dados: { respostas: RespostaStep[] } }>(
-        `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}/step/${stepId}`
+        `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}/step/${stepId}`,
       );
       if (response.sucesso && response.dados?.respostas) {
         return response.dados.respostas;
@@ -196,7 +194,7 @@ class RespostaService {
   async buscarPerguntasComRespostas(alunoId: number, editalId: number, stepId: number): Promise<PerguntaComResposta[]> {
     try {
       const response = await this.httpClient.get<PerguntasComRespostasResponse>(
-        `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}/step/${stepId}/perguntas-com-respostas`
+        `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}/step/${stepId}/perguntas-com-respostas`,
       );
       if (response.sucesso && response.dados?.perguntas) {
         return response.dados.perguntas;
@@ -214,9 +212,7 @@ class RespostaService {
   // GET /respostas/pergunta/:perguntaId/edital/:editalId - Respostas de uma pergunta em um edital
   async buscarRespostasDaPerguntaNoEdital(perguntaId: number, editalId: number): Promise<Resposta[]> {
     try {
-      const response = await this.httpClient.get<ListaRespostasResponse>(
-        `${BASE_URL}/respostas/pergunta/${perguntaId}/edital/${editalId}`
-      );
+      const response = await this.httpClient.get<ListaRespostasResponse>(`${BASE_URL}/respostas/pergunta/${perguntaId}/edital/${editalId}`);
       if (response.sucesso && Array.isArray(response.dados)) {
         return response.dados;
       }

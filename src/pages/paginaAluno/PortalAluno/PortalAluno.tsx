@@ -201,7 +201,7 @@ export default function PortalAluno() {
                 <div className="inscriptions-grid">
                   {inscriptions.map((edital, index) => (
                     <div key={edital.id || index} className="inscription-card">
-                      <CandidateStatus edital={edital} />
+                      <CandidateStatus edital={edital} onReload={() => getInscriptions()} />
                     </div>
                   ))}
                 </div>

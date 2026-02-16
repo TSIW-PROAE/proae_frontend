@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download } from "lucide-react";
+import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { Edital } from "@/types/edital";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
-import { stepService } from "@/services/StepService/stepService";
 import { AlunoInscrito } from "@/types/inscricao";
+import { respostaService } from "@/services/RespostaService/respostaService";
 import "./InscricoesProae.css";
 
 interface PerguntaPayload {
@@ -96,6 +96,16 @@ export default function InscricoesProae() {
   const [apenasInvalidar, setApenasInvalidar] = useState(false);
   const [enviandoInvalidacao, setEnviandoInvalidacao] = useState(false);
 
+  // Estado para edição de resposta pela PROAE
+  const [confirmarEdicaoOpen, setConfirmarEdicaoOpen] = useState(false);
+  const [editarRespostaId, setEditarRespostaId] = useState<number | null>(null);
+  const [editarPerguntaInfo, setEditarPerguntaInfo] = useState<PerguntaPayload | null>(null);
+  const [editarRespostaAtual, setEditarRespostaAtual] = useState<string>("");
+  const [modalEditarOpen, setModalEditarOpen] = useState(false);
+  const [editarValorTexto, setEditarValorTexto] = useState("");
+  const [editarValorOpcoes, setEditarValorOpcoes] = useState<string[]>([]);
+  const [enviandoEdicao, setEnviandoEdicao] = useState(false);
+
   useEffect(() => {
     carregarEditais();
   }, []);
@@ -123,13 +133,8 @@ export default function InscricoesProae() {
 
     try {
       setIsLoading(true);
-      const steps = await stepService.listarStepsPorEdital(editalSelecionado.id.toString());
-      if (steps && steps.length > 0) {
-        const dados = await inscricaoServiceManager.listarAlunosPorQuestionario(editalSelecionado.id, steps[0].id);
-        setInscricoes(dados);
-      } else {
-        setInscricoes([]);
-      }
+      const dados = await inscricaoServiceManager.listarInscritosPorEdital(editalSelecionado.id);
+      setInscricoes(dados);
     } catch (err: any) {
       console.error("Erro ao carregar inscrições:", err);
       setInscricoes([]);
@@ -331,6 +336,82 @@ export default function InscricoesProae() {
     setApenasInvalidar(false);
   };
 
+  // ── Edição de resposta pela PROAE ──
+  const abrirConfirmacaoEdicao = (respostaId: number, pergunta: PerguntaPayload, respostaAtual: string) => {
+    setEditarRespostaId(respostaId);
+    setEditarPerguntaInfo(pergunta);
+    setEditarRespostaAtual(respostaAtual);
+    setConfirmarEdicaoOpen(true);
+  };
+
+  const fecharConfirmacaoEdicao = () => {
+    setConfirmarEdicaoOpen(false);
+    setEditarRespostaId(null);
+    setEditarPerguntaInfo(null);
+    setEditarRespostaAtual("");
+  };
+
+  const abrirModalEditar = () => {
+    setConfirmarEdicaoOpen(false);
+    // Inicializar campo de edição com o valor atual
+    if (
+      editarPerguntaInfo?.tipo_Pergunta?.toLowerCase().includes("selecao") ||
+      editarPerguntaInfo?.tipo_Pergunta?.toLowerCase().includes("checkbox") ||
+      editarPerguntaInfo?.tipo_Pergunta?.toLowerCase().includes("radio") ||
+      editarPerguntaInfo?.tipo_Pergunta?.toLowerCase().includes("select")
+    ) {
+      setEditarValorOpcoes(editarRespostaAtual ? editarRespostaAtual.split(", ") : []);
+      setEditarValorTexto("");
+    } else {
+      setEditarValorTexto(editarRespostaAtual || "");
+      setEditarValorOpcoes([]);
+    }
+    setModalEditarOpen(true);
+  };
+
+  const fecharModalEditar = () => {
+    setModalEditarOpen(false);
+    setEditarRespostaId(null);
+    setEditarPerguntaInfo(null);
+    setEditarRespostaAtual("");
+    setEditarValorTexto("");
+    setEditarValorOpcoes([]);
+  };
+
+  const isTipoOpcoes = (tipo?: string) => {
+    if (!tipo) return false;
+    const t = tipo.toLowerCase();
+    return t.includes("selecao") || t.includes("checkbox") || t.includes("radio") || t.includes("select");
+  };
+
+  const toggleOpcao = (opcao: string) => {
+    setEditarValorOpcoes((prev) => (prev.includes(opcao) ? prev.filter((o) => o !== opcao) : [...prev, opcao]));
+  };
+
+  const confirmarEdicaoResposta = async () => {
+    if (!editarRespostaId) return;
+
+    setEnviandoEdicao(true);
+    try {
+      const dto: Record<string, unknown> = {};
+      if (isTipoOpcoes(editarPerguntaInfo?.tipo_Pergunta)) {
+        dto.valorOpcoes = editarValorOpcoes;
+      } else {
+        dto.valorTexto = editarValorTexto;
+      }
+      await respostaService.atualizarResposta(editarRespostaId, dto as any);
+      // Recarregar dados do modal
+      if (inscricaoSelecionada?.aluno_id) {
+        await carregarStepsCompletos(inscricaoSelecionada.aluno_id);
+      }
+      fecharModalEditar();
+    } catch (err: any) {
+      window.alert(err?.message || "Erro ao editar resposta.");
+    } finally {
+      setEnviandoEdicao(false);
+    }
+  };
+
   const confirmarInvalidacao = async () => {
     if (!invalidarRespostaId) return;
 
@@ -393,7 +474,7 @@ export default function InscricoesProae() {
     }
   };
 
-  const alterarPrazoReenvio = async (respostaId: number, novoPrazo: string) => {
+  const alterarPrazoReenvio = async (respostaId: number, novoPrazo: string, parecerExistente?: string) => {
     setValidandoRespostas((prev) => ({ ...prev, [respostaId]: true }));
     try {
       const prazoDate = new Date(novoPrazo + "T23:59:59.000Z");
@@ -405,6 +486,7 @@ export default function InscricoesProae() {
           invalidada: true,
           requerReenvio: true,
           prazoReenvio: prazoDate.toISOString(),
+          parecer: parecerExistente || "Prazo de reenvio alterado",
         }),
       });
 
@@ -670,7 +752,7 @@ export default function InscricoesProae() {
                           style={{ cursor: "pointer" }}
                           className="table-row-clickable"
                         >
-                          <td>{inscricao.aluno_id || "N/A"}</td>
+                          <td>{inscricao.inscricao_id || "N/A"}</td>
                           <td>
                             <span className="matricula-badge">{inscricao.matricula || "N/A"}</span>
                           </td>
@@ -975,6 +1057,12 @@ export default function InscricoesProae() {
                                       const respostaValidada = respostaInfo?.validada === true;
                                       const respostaInvalidadaComReenvio = respostaInfo?.invalidada === true && respostaInfo?.requerReenvio === true;
                                       const respostaInvalidadaSemReenvio = respostaInfo?.invalidada === true && !respostaInfo?.requerReenvio;
+                                      // Prazo vencido: invalidada sem requerReenvio, MAS com parecer e prazoReenvio preenchidos
+                                      const respostaInvalidadaPrazoVencido =
+                                        respostaInvalidadaSemReenvio && !!respostaInfo?.parecer && !!respostaInfo?.prazoReenvio;
+                                      // Definitivamente invalidada: invalidada sem requerReenvio, sem parecer e sem prazo
+                                      const respostaInvalidadaDefinitiva =
+                                        respostaInvalidadaSemReenvio && !respostaInfo?.parecer && !respostaInfo?.prazoReenvio;
                                       const respostaInvalidada = respostaInvalidadaComReenvio || respostaInvalidadaSemReenvio;
 
                                       let chipLabel: string;
@@ -989,7 +1077,10 @@ export default function InscricoesProae() {
                                       } else if (respostaInvalidadaComReenvio) {
                                         chipLabel = "Correção solicitada";
                                         chipStyle = { backgroundColor: "#fff7ed", border: "1px solid #fed7aa", color: "#c2410c" };
-                                      } else if (respostaInvalidadaSemReenvio) {
+                                      } else if (respostaInvalidadaPrazoVencido) {
+                                        chipLabel = "⚠ Prazo vencido";
+                                        chipStyle = { backgroundColor: "#fef2f2", border: "1px solid #fca5a5", color: "#991b1b" };
+                                      } else if (respostaInvalidadaDefinitiva) {
                                         chipLabel = "✗ Invalidada";
                                         chipStyle = { backgroundColor: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c" };
                                       } else {
@@ -1055,13 +1146,48 @@ export default function InscricoesProae() {
                                             >
                                               <div
                                                 style={{
-                                                  fontSize: "12px",
-                                                  fontWeight: "600",
-                                                  color: respostaInvalidada ? "#854d0e" : "#166534",
+                                                  display: "flex",
+                                                  justifyContent: "space-between",
+                                                  alignItems: "center",
                                                   marginBottom: "4px",
                                                 }}
                                               >
-                                                Resposta:
+                                                <div
+                                                  style={{
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    color: respostaInvalidada ? "#854d0e" : "#166534",
+                                                  }}
+                                                >
+                                                  Resposta:
+                                                </div>
+                                                {respostaInfo?.id && (
+                                                  <button
+                                                    onClick={() => abrirConfirmacaoEdicao(respostaInfo.id!, perguntaInfo!, respostaConteudo || "")}
+                                                    title="Editar resposta"
+                                                    style={{
+                                                      background: "none",
+                                                      border: "none",
+                                                      cursor: "pointer",
+                                                      padding: "2px 4px",
+                                                      borderRadius: "4px",
+                                                      display: "flex",
+                                                      alignItems: "center",
+                                                      color: "#64748b",
+                                                      transition: "color 0.2s, background-color 0.2s",
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                      e.currentTarget.style.color = "#2563eb";
+                                                      e.currentTarget.style.backgroundColor = "#eff6ff";
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                      e.currentTarget.style.color = "#64748b";
+                                                      e.currentTarget.style.backgroundColor = "transparent";
+                                                    }}
+                                                  >
+                                                    <Pencil style={{ width: "14px", height: "14px" }} />
+                                                  </button>
+                                                )}
                                               </div>
                                               <div style={{ fontSize: "14px", color: respostaInvalidada ? "#713f12" : "#15803d" }}>
                                                 {respostaConteudo}
@@ -1107,8 +1233,40 @@ export default function InscricoesProae() {
                                             </div>
                                           )}
 
-                                          {/* Info de invalidação sem reenvio */}
-                                          {respostaInvalidadaSemReenvio && (
+                                          {/* Info de invalidação por prazo vencido */}
+                                          {respostaInvalidadaPrazoVencido && (
+                                            <div
+                                              style={{
+                                                padding: "12px",
+                                                backgroundColor: "#fef2f2",
+                                                border: "1px solid #fca5a5",
+                                                borderRadius: "8px",
+                                                marginTop: "8px",
+                                              }}
+                                            >
+                                              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                                                <span style={{ fontSize: "14px" }}>⚠️</span>
+                                                <div style={{ fontSize: "13px", color: "#991b1b", fontWeight: "600" }}>
+                                                  Invalidada — prazo de correção vencido
+                                                </div>
+                                              </div>
+                                              <div style={{ fontSize: "12px", color: "#b91c1c", marginBottom: "4px" }}>
+                                                O aluno não reenviou a resposta dentro do prazo estipulado.
+                                              </div>
+                                              <div style={{ fontSize: "12px", color: "#dc2626", display: "flex", alignItems: "center", gap: "4px" }}>
+                                                <Calendar style={{ width: "13px", height: "13px" }} />
+                                                Prazo vencido em: {new Date(respostaInfo.prazoReenvio!).toLocaleDateString("pt-BR")}
+                                              </div>
+                                              {respostaInfo.parecer && (
+                                                <div style={{ fontSize: "12px", color: "#9a3412", marginTop: "6px", fontStyle: "italic" }}>
+                                                  Parecer: {respostaInfo.parecer}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {/* Info de invalidação definitiva (sem parecer/prazo) */}
+                                          {respostaInvalidadaDefinitiva && (
                                             <div
                                               style={{
                                                 padding: "12px",
@@ -1148,7 +1306,7 @@ export default function InscricoesProae() {
                                                       min={new Date().toISOString().split("T")[0]}
                                                       onChange={(e) => {
                                                         if (e.target.value && respostaInfo.id) {
-                                                          alterarPrazoReenvio(respostaInfo.id, e.target.value);
+                                                          alterarPrazoReenvio(respostaInfo.id, e.target.value, respostaInfo.parecer || undefined);
                                                         }
                                                       }}
                                                       disabled={isValidandoResposta}
@@ -1164,8 +1322,28 @@ export default function InscricoesProae() {
                                                       }}
                                                     />
                                                   </div>
-                                                ) : respostaInvalidadaSemReenvio ? (
-                                                  /* Invalidada sem reenvio: botão para solicitar correção (laranja) */
+                                                ) : respostaInvalidadaPrazoVencido ? (
+                                                  /* Prazo vencido: botão para RE-solicitar correção */
+                                                  <button
+                                                    onClick={() => respostaInfo.id && abrirModalInvalidar(respostaInfo.id, perguntaInfo?.pergunta)}
+                                                    disabled={isValidandoResposta}
+                                                    style={{
+                                                      padding: "8px 12px",
+                                                      backgroundColor: isValidandoResposta ? "#cbd5e1" : "#ea580c",
+                                                      color: isValidandoResposta ? "#64748b" : "#ffffff",
+                                                      border: "none",
+                                                      borderRadius: "6px",
+                                                      cursor: isValidandoResposta ? "not-allowed" : "pointer",
+                                                      fontWeight: 600,
+                                                      fontSize: "13px",
+                                                      boxShadow: isValidandoResposta ? "none" : "0 2px 6px rgba(234, 88, 12, 0.3)",
+                                                      transition: "background-color 0.2s, transform 0.1s",
+                                                    }}
+                                                  >
+                                                    {isValidandoResposta ? "Processando..." : "Resolicitar correção"}
+                                                  </button>
+                                                ) : respostaInvalidadaDefinitiva ? (
+                                                  /* Invalidada definitiva: botão para solicitar correção (laranja) */
                                                   <button
                                                     onClick={() => respostaInfo.id && abrirModalInvalidar(respostaInfo.id, perguntaInfo?.pergunta)}
                                                     disabled={isValidandoResposta}
@@ -1492,6 +1670,262 @@ export default function InscricoesProae() {
                 }}
               >
                 Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Confirmação antes de editar resposta ── */}
+      {confirmarEdicaoOpen && (
+        <div
+          onClick={fecharConfirmacaoEdicao}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10001,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              width: "90%",
+              maxWidth: "460px",
+              padding: "28px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  backgroundColor: "#fef3c7",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "20px",
+                }}
+              >
+                ⚠️
+              </div>
+              <h3 style={{ margin: 0, color: "#1e293b", fontSize: "18px", fontWeight: "700" }}>Atenção — Dado sensível</h3>
+            </div>
+            <p style={{ margin: "0 0 8px 0", color: "#64748b", fontSize: "14px", lineHeight: "1.6" }}>
+              Você está prestes a <strong style={{ color: "#dc2626" }}>editar a resposta de um aluno</strong>. Esta é uma operação sensível pois
+              altera diretamente os dados fornecidos pelo estudante.
+            </p>
+            <p style={{ margin: "0 0 24px 0", color: "#64748b", fontSize: "14px", lineHeight: "1.6" }}>Tem certeza de que deseja prosseguir?</p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                onClick={fecharConfirmacaoEdicao}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "white",
+                  color: "#374151",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  transition: "background-color 0.2s",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={abrirModalEditar}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#ea580c",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  boxShadow: "0 2px 6px rgba(234, 88, 12, 0.3)",
+                  transition: "background-color 0.2s",
+                }}
+              >
+                Sim, editar resposta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Editar resposta ── */}
+      {modalEditarOpen && (
+        <div
+          onClick={fecharModalEditar}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10002,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              width: "90%",
+              maxWidth: "520px",
+              padding: "28px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15)",
+              maxHeight: "80vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: "0 0 4px 0", color: "#1e293b", fontSize: "18px", fontWeight: "700" }}>Editar resposta</h3>
+            <p style={{ margin: "0 0 20px 0", color: "#64748b", fontSize: "13px", lineHeight: "1.5" }}>
+              Pergunta: <strong style={{ color: "#1e293b" }}>{editarPerguntaInfo?.pergunta}</strong>
+            </p>
+
+            {/* Valor atual */}
+            {editarRespostaAtual && (
+              <div
+                style={{
+                  padding: "10px 14px",
+                  backgroundColor: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  marginBottom: "16px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#94a3b8",
+                    fontWeight: 600,
+                    marginBottom: "4px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  Valor atual
+                </div>
+                <div style={{ fontSize: "14px", color: "#475569" }}>{editarRespostaAtual}</div>
+              </div>
+            )}
+
+            {/* Campo de edição baseado no tipo */}
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px" }}>Novo valor:</label>
+
+              {isTipoOpcoes(editarPerguntaInfo?.tipo_Pergunta) ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {(editarPerguntaInfo?.opcoes || []).map((opcao, idx) => {
+                    const selecionada = editarValorOpcoes.includes(opcao);
+                    return (
+                      <label
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "10px 14px",
+                          borderRadius: "8px",
+                          border: selecionada ? "2px solid #2563eb" : "1px solid #e2e8f0",
+                          backgroundColor: selecionada ? "#eff6ff" : "#ffffff",
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                          fontSize: "14px",
+                          color: "#1e293b",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selecionada}
+                          onChange={() => toggleOpcao(opcao)}
+                          style={{ accentColor: "#2563eb", width: "16px", height: "16px" }}
+                        />
+                        {opcao}
+                      </label>
+                    );
+                  })}
+                  {(!editarPerguntaInfo?.opcoes || editarPerguntaInfo.opcoes.length === 0) && (
+                    <p style={{ fontSize: "13px", color: "#94a3b8", fontStyle: "italic" }}>Nenhuma opção disponível para esta pergunta.</p>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  value={editarValorTexto}
+                  onChange={(e) => setEditarValorTexto(e.target.value)}
+                  rows={4}
+                  placeholder="Digite o novo valor da resposta..."
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontFamily: "inherit",
+                    resize: "vertical",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    transition: "border-color 0.2s",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#2563eb")}
+                  onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                />
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                onClick={fecharModalEditar}
+                disabled={enviandoEdicao}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "white",
+                  color: "#374151",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  cursor: enviandoEdicao ? "not-allowed" : "pointer",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  opacity: enviandoEdicao ? 0.6 : 1,
+                  transition: "background-color 0.2s",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEdicaoResposta}
+                disabled={enviandoEdicao}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: enviandoEdicao ? "#94a3b8" : "#2563eb",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: enviandoEdicao ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  boxShadow: enviandoEdicao ? "none" : "0 2px 6px rgba(37, 99, 235, 0.3)",
+                  transition: "background-color 0.2s",
+                }}
+              >
+                {enviandoEdicao ? "Salvando..." : "Salvar alteração"}
               </button>
             </div>
           </div>

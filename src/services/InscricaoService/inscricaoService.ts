@@ -73,12 +73,33 @@ export class InscricaoServiceManager {
     }
   }
 
+  async listarInscritosPorEdital(editalId: number): Promise<AlunoInscrito[]> {
+    try {
+      const response = await this.httpClient.get<AlunoInscrito[]>(`${BASE_URL}/editais/${editalId}/inscritos`);
+
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      // Caso a API retorne com wrapper { sucesso, dados }
+      const wrapped = response as unknown as { sucesso?: boolean; dados?: AlunoInscrito[] };
+      if (wrapped?.dados && Array.isArray(wrapped.dados)) {
+        return wrapped.dados;
+      }
+
+      console.warn("Formato de resposta inesperado em listarInscritosPorEdital:", response);
+      return [];
+    } catch (error: any) {
+      console.error("Erro ao buscar inscritos do edital:", error);
+      if (error.response?.status === 404) return [];
+      throw new Error(error.response?.data?.message || error.message || "Erro ao carregar inscritos");
+    }
+  }
+
   async downloadPdfAprovados(editalId?: number): Promise<void> {
     try {
-      const url = editalId 
-        ? `${BASE_URL}/inscricoes/aprovados/pdf?editalId=${editalId}`
-        : `${BASE_URL}/inscricoes/aprovados/pdf`;
-      
+      const url = editalId ? `${BASE_URL}/inscricoes/aprovados/pdf?editalId=${editalId}` : `${BASE_URL}/inscricoes/aprovados/pdf`;
+
       // Usa axios diretamente para fazer download de arquivo
       const axios = (await import("axios")).default;
       const response = await axios.get(url, {
@@ -91,7 +112,7 @@ export class InscricaoServiceManager {
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      
+
       // Define o nome do arquivo
       const contentDisposition = response.headers["content-disposition"];
       let filename = "aprovados.pdf";
@@ -101,7 +122,7 @@ export class InscricaoServiceManager {
           filename = filenameMatch[1].replace(/['"]/g, "");
         }
       }
-      
+
       link.download = filename;
       document.body.appendChild(link);
       link.click();

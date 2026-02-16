@@ -24,7 +24,7 @@ export interface AlunoInscrito {
   data_nascimento: string;
   data_ingresso: string;
   inscricao_id: number;
-  status_inscricao: "PENDENTE" | "APROVADA" | "REPROVADA" | "EM_ANALISE" | "Pendente" | "Aprovada" | "Reprovada" | "Em Análise";
+  status_inscricao: string;
   data_inscricao: string;
   respostas_step?: RespostaStep[];
 }
