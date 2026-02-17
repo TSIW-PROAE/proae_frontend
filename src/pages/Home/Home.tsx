@@ -15,7 +15,7 @@ import "./Home.css";
 import { AuthContext } from "@/context/AuthContext";
 
 export default function Home() {
-  const {isAuthenticated, userInfo, loading: authLoading } = useContext(AuthContext);
+  const { isAuthenticated, userInfo, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const hasNavigated = useRef(false);
@@ -24,10 +24,10 @@ export default function Home() {
 
   // Create stable values for role checking to prevent unnecessary re-renders
   const userRoleInfo = useMemo(() => {
-    if (!userInfo) return { isAdmin: false, isAprovado: false, rolesString: '' };
-    const isAdmin = userInfo.roles?.includes('admin') ?? false;
+    if (!userInfo) return { isAdmin: false, isAprovado: false, rolesString: "" };
+    const isAdmin = userInfo.roles?.includes("admin") ?? false;
     const isAprovado = userInfo.aprovado ?? false;
-    const rolesString = Array.isArray(userInfo.roles) ? userInfo.roles.join(',') : '';
+    const rolesString = Array.isArray(userInfo.roles) ? userInfo.roles.join(",") : "";
     return { isAdmin, isAprovado, rolesString };
   }, [userInfo?.roles, userInfo?.aprovado]);
 
@@ -51,17 +51,17 @@ export default function Home() {
     // Only redirect if auth check is complete and user is authenticated
     // Don't redirect if not authenticated - let them stay on the home page
     // Also prevent multiple navigations with a ref and check current location
-    const isOnHomePage = location.pathname === '/';
-    const isOnPortalRoute = location.pathname.startsWith('/portal-') || location.pathname.startsWith('/tela-de-espera');
-    
+    const isOnHomePage = location.pathname === "/";
+    const isOnPortalRoute = location.pathname.startsWith("/portal-") || location.pathname.startsWith("/tela-de-espera");
+
     if (!authLoading && isAuthenticated && !hasNavigated.current && isOnHomePage && !isOnPortalRoute) {
       hasNavigated.current = true;
-      
-      if(userRoleInfo.isAdmin && userRoleInfo.isAprovado){
+
+      if (userRoleInfo.isAdmin && userRoleInfo.isAprovado) {
         navigate("/portal-proae/inscricoes", { replace: true });
-      } else if(!userRoleInfo.isAprovado && userRoleInfo.isAdmin){
+      } else if (!userRoleInfo.isAprovado && userRoleInfo.isAdmin) {
         navigate("/tela-de-espera", { replace: true });
-      } else{
+      } else {
         navigate("/portal-aluno", { replace: true });
       }
     }
@@ -73,13 +73,13 @@ export default function Home() {
 
   const handleAccessPortal = () => {
     if (isAuthenticated) {
-      if(userInfo?.roles.includes('admin') && userInfo?.aprovado){
-            navigate("/portal-proae/inscricoes");
-      } else{
-        navigate('/portal-aluno')
+      if (userInfo?.roles.includes("admin") && userInfo?.aprovado) {
+        navigate("/portal-proae/inscricoes");
+      } else {
+        navigate("/portal-aluno");
       }
     } else {
-      navigate("/login") ;
+      navigate("/login");
     }
   };
 
@@ -90,21 +90,15 @@ export default function Home() {
           <h1>PROAE</h1>
         </div>
         <div className="header-actions ">
-            <Button
-              radius="full"
-              onPress={handleAccessPortal}
-              className="n-button-dash bg-[#183b4e] text-white"
-            >
-              {isAuthenticated ? "Acessar Portal" : "Entrar"}
-            </Button>
+          <Button radius="full" onPress={handleAccessPortal} className="n-button-dash bg-[#183b4e] text-white">
+            {isAuthenticated ? "Acessar Portal" : "Entrar"}
+          </Button>
         </div>
       </header>
       <main className="home-content">
         <div className="home-title-container">
           <h2 className="home-title">Seu Portal de Benefícios Estudantis</h2>
-          <p className="home-subtitle">
-            Acesse seus benefícios e acompanhe suas solicitações
-          </p>
+          <p className="home-subtitle">Acesse seus benefícios e acompanhe suas solicitações</p>
           <div className="about-section">
             <div className="processos-seletivos-section">
               <div className="processos-seletivos-header">
@@ -124,23 +118,21 @@ export default function Home() {
                       status={
                         edital.status_edital?.toLowerCase().includes("aberto")
                           ? "aberto"
-                          : edital.status_edital
-                                ?.toLowerCase()
-                                .includes("fechado")
+                          : edital.status_edital?.toLowerCase().includes("fechado")
                             ? "fechado"
                             : "default"
                       }
-                      inscricoesAbertas={edital.status_edital
-                        ?.toLowerCase()
-                        .includes("aberto")}
+                      inscricoesAbertas={edital.status_edital?.toLowerCase().includes("aberto")}
                       tema={idx % 2 === 0 ? "dourado" : "azul"}
                       etapas={
                         Array.isArray(edital.etapas)
-                          ? edital.etapas.map((etapa: any) => ({
-                              titulo: etapa.nome,
-                              dataInicio: etapa.data_inicio,
-                              dataFim: etapa.data_fim,
-                            }))
+                          ? [...edital.etapas]
+                              .sort((a: any, b: any) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
+                              .map((etapa: any) => ({
+                                titulo: etapa.nome,
+                                dataInicio: etapa.data_inicio,
+                                dataFim: etapa.data_fim,
+                              }))
                           : []
                       }
                       documentos={
@@ -163,12 +155,9 @@ export default function Home() {
       <div className="about-section">
         <h2 className="about-title">Sobre o PROAE</h2>
         <p className="about-text">
-          O PROAE - Pró-Reitoria de Ações Afirmativas e Assistência Estudantil -
-          tem como missão garantir a permanência e o sucesso dos estudantes da
-          UFBA, por meio de auxílios financeiros, apoio pedagógico, ações
-          afirmativas e acompanhamento individualizado. Acreditamos que todos
-          merecem igualdade de oportunidades para alcançar seus sonhos
-          acadêmicos.
+          O PROAE - Pró-Reitoria de Ações Afirmativas e Assistência Estudantil - tem como missão garantir a permanência e o sucesso dos estudantes da
+          UFBA, por meio de auxílios financeiros, apoio pedagógico, ações afirmativas e acompanhamento individualizado. Acreditamos que todos merecem
+          igualdade de oportunidades para alcançar seus sonhos acadêmicos.
         </p>
 
         <div className="info-cards-grid">
@@ -225,14 +214,8 @@ export default function Home() {
       <footer className="home-footer">
         <div className="footer-content">
           <div className="footer-info">
-            <h3>
-              Pró-Reitoria de Ações Afirmativas e Assistência Estudantil | UFBA
-              - Universidade Federal da Bahia
-            </h3>
-            <p>
-              Rua Caetano Moura nº 140 - Federação, Salvador - Bahia - Brasil -
-              CEP: 40210-905
-            </p>
+            <h3>Pró-Reitoria de Ações Afirmativas e Assistência Estudantil | UFBA - Universidade Federal da Bahia</h3>
+            <p>Rua Caetano Moura nº 140 - Federação, Salvador - Bahia - Brasil - CEP: 40210-905</p>
             <p>Tel: 3283-5700 - 3283-5704 | E-mail: proae@ufba.br</p>
           </div>
           <div className="footer-links">
@@ -246,12 +229,7 @@ export default function Home() {
             >
               Site Oficial
             </Button>
-            <Button
-              radius="full"
-              className="footer-button secondary-button"
-              as={Link}
-              to="/login-funcionario"
-            >
+            <Button radius="full" className="footer-button secondary-button" as={Link} to="/login-funcionario">
               Portal do Servidor
             </Button>
           </div>

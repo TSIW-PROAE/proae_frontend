@@ -13,10 +13,14 @@ interface EtapasProgressoProps {
   tema?: "dourado" | "azul";
 }
 
-const EtapasProgresso: React.FC<EtapasProgressoProps> = ({
-  etapas,
-  tema = "dourado",
-}) => {
+const EtapasProgresso: React.FC<EtapasProgressoProps> = ({ etapas: etapasOriginal, tema = "dourado" }) => {
+  // Ordenar etapas por data de início automaticamente
+  const etapas = [...etapasOriginal].sort((a, b) => {
+    const dateA = new Date(a.dataInicio).getTime();
+    const dateB = new Date(b.dataInicio).getTime();
+    return dateA - dateB;
+  });
+
   const [etapaAtual, setEtapaAtual] = useState<number | null>(null);
 
   useEffect(() => {
@@ -67,8 +71,7 @@ const EtapasProgresso: React.FC<EtapasProgressoProps> = ({
       return "etapa-futura";
     }
   };
-  const cor =
-    tema === "dourado" ? "var(--cor-azul-escuro)" : "var(--cor-creme-escuro)";
+  const cor = tema === "dourado" ? "var(--cor-azul-escuro)" : "var(--cor-creme-escuro)";
 
   return (
     <div className="etapas-progresso">

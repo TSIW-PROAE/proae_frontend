@@ -103,8 +103,12 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
     rejeitada_por_prazo,
   } = edital;
 
-  // Ordenar etapas
-  const etapasOrdenadas = [...etapa_edital].sort((a, b) => a.ordem_elemento - b.ordem_elemento);
+  // Ordenar etapas por data de início (e não pela ordem que vem do backend)
+  const etapasOrdenadas = [...etapa_edital].sort((a, b) => {
+    const dateA = new Date(a.data_inicio).getTime();
+    const dateB = new Date(b.data_inicio).getTime();
+    return dateA - dateB;
+  });
 
   // Normalizar data para comparar apenas ano/mês/dia (ignora horário)
   const normalizarData = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
