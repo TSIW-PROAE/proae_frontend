@@ -22,7 +22,7 @@ export class AlunoService {
     }
   }
 
-  async buscarAlunoPorId(id: number): Promise<Aluno> {
+  async buscarAlunoPorId(id: string): Promise<Aluno> {
     return this.httpClient.get<Aluno>(`${BASE_URL}/${id}`);
   }
 }

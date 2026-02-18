@@ -7,6 +7,7 @@ interface CronogramaSectionProps {
   openCronograma: boolean;
   onEtapasChange: (etapas: EditableEtapa[]) => void;
   onToggleOpen: () => void;
+  onPersist?: (etapas: EditableEtapa[]) => void;
 }
 
 /**
@@ -43,7 +44,7 @@ const hasDateOverlap = (etapas: EditableEtapa[], currentIndex: number, dataInici
   });
 };
 
-const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCronograma, onEtapasChange, onToggleOpen }) => {
+const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCronograma, onEtapasChange, onToggleOpen, onPersist }) => {
   const [overlapWarning, setOverlapWarning] = React.useState<string | null>(null);
 
   const updateEtapa = (index: number, field: keyof EditableEtapa["value"], value: any) => {
@@ -76,7 +77,9 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
   const deleteEtapa = (index: number) => {
     const newEtapas = etapas.filter((_, i) => i !== index);
     // Reordenar automaticamente após exclusão
-    onEtapasChange(sortAndReindex(newEtapas));
+    const sorted = sortAndReindex(newEtapas);
+    onEtapasChange(sorted);
+    onPersist?.(sorted);
     setOverlapWarning(null);
   };
 
@@ -108,7 +111,9 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
     // Salva (sai do modo edição) e reordena todas as etapas por data
     const newEtapas = [...etapas];
     newEtapas[index] = { ...newEtapas[index], isEditing: false };
-    onEtapasChange(sortAndReindex(newEtapas));
+    const sorted = sortAndReindex(newEtapas);
+    onEtapasChange(sorted);
+    onPersist?.(sorted);
   };
 
   return (

@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, ExternalLink, Clock, Users, ArrowRight, FileText, AlertCircle, BookOpen, CheckCircle } from "lucide-react";
+import { Calendar, ExternalLink, Clock, Users, ArrowRight, AlertCircle, BookOpen, CheckCircle } from "lucide-react";
 
 interface Edital {
-  id: number;
+  id: string;
   tipo_edital: string;
   descricao: string;
   edital_url: string[];
@@ -14,8 +14,8 @@ interface Edital {
 }
 
 interface InscricaoAluno {
-  id: number;
-  edital_id?: number;
+  id: string;
+  edital_id?: string;
   [key: string]: any;
 }
 
@@ -83,10 +83,6 @@ const OpenSelectionCard: React.FC<Edital & { jaInscrito?: boolean }> = ({
 
       <div className="selection-card-body">
         <div className="selection-card-meta">
-          <div className="meta-item">
-            <FileText className="w-3 h-3" />
-            <span>Nº {id || 0}</span>
-          </div>
           <div className="meta-item">
             <Users className="w-3 h-3" />
             <span>{quantidade_bolsas || 0} vagas</span>

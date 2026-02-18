@@ -12,7 +12,7 @@ export interface ValidateRespostaResponse {
   sucesso: boolean;
   dados: {
     resposta: {
-      id: number;
+      id: string;
       validada: boolean;
       dataValidacao: string;
       dataValidade?: string;
@@ -22,8 +22,8 @@ export interface ValidateRespostaResponse {
 }
 
 export interface CreateRespostaDto {
-  perguntaId: number;
-  inscricaoId: number;
+  perguntaId: string;
+  inscricaoId: string;
   valorTexto?: string;
   valorOpcoes?: string[];
   urlArquivo?: string;
@@ -37,9 +37,9 @@ export interface UpdateRespostaDto {
 }
 
 export interface Resposta {
-  id: number;
-  pergunta_id: number;
-  inscricao_id: number;
+  id: string;
+  pergunta_id: string;
+  inscricao_id: string;
   valor_texto?: string | null;
   valor_opcoes?: string[] | null;
   url_arquivo?: string | null;
@@ -51,18 +51,22 @@ export interface Resposta {
 }
 
 export interface PerguntaComResposta {
-  pergunta_id: number;
+  pergunta_id: string;
   pergunta_texto: string;
   tipo_pergunta: string;
   obrigatoria: boolean;
+  aguardandoRespostaNovaPergunta?: boolean;
+  prazoRespostaNovaPergunta?: string | null;
   resposta?: {
-    resposta_id: number;
+    resposta_id: string;
     valor_texto?: string | null;
     valor_opcoes?: string[] | null;
     url_arquivo?: string | null;
     validada: boolean;
     data_validacao?: string;
     data_resposta: string;
+    aguardandoRespostaNovaPergunta?: boolean;
+    prazoRespostaNovaPergunta?: string | null;
   } | null;
 }
 
@@ -116,7 +120,7 @@ class RespostaService {
   }
 
   // GET /respostas/:id - Resposta por ID
-  async buscarRespostaPorId(id: number): Promise<Resposta | null> {
+  async buscarRespostaPorId(id: string): Promise<Resposta | null> {
     try {
       const response = await this.httpClient.get<RespostaUnicaResponse>(`${BASE_URL}/respostas/${id}`);
       if (response.sucesso && response.dados) {
@@ -133,7 +137,7 @@ class RespostaService {
   }
 
   // PATCH /respostas/:id - Atualizar resposta
-  async atualizarResposta(id: number, dto: UpdateRespostaDto): Promise<Resposta> {
+  async atualizarResposta(id: string, dto: UpdateRespostaDto): Promise<Resposta> {
     try {
       const response = await this.httpClient.patch<RespostaUnicaResponse>(`${BASE_URL}/respostas/${id}`, dto);
       return response.dados;
@@ -144,7 +148,7 @@ class RespostaService {
   }
 
   // DELETE /respostas/:id - Remover resposta
-  async deletarResposta(id: number): Promise<void> {
+  async deletarResposta(id: string): Promise<void> {
     try {
       await this.httpClient.delete(`${BASE_URL}/respostas/${id}`);
     } catch (error: any) {
@@ -154,7 +158,7 @@ class RespostaService {
   }
 
   // GET /respostas/aluno/:alunoId/edital/:editalId - Respostas do aluno em um edital
-  async buscarRespostasDoAlunoNoEdital(alunoId: number, editalId: number): Promise<Resposta[]> {
+  async buscarRespostasDoAlunoNoEdital(alunoId: string, editalId: string): Promise<Resposta[]> {
     try {
       const response = await this.httpClient.get<ListaRespostasResponse>(`${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}`);
       if (response.sucesso && Array.isArray(response.dados)) {
@@ -171,7 +175,7 @@ class RespostaService {
   }
 
   // GET /respostas/aluno/:alunoId/edital/:editalId/step/:stepId - Respostas do aluno em um step do edital
-  async buscarRespostasDoAlunoNoStep(alunoId: number, editalId: number, stepId: number): Promise<RespostaStep[]> {
+  async buscarRespostasDoAlunoNoStep(alunoId: string, editalId: string, stepId: string): Promise<RespostaStep[]> {
     try {
       const response = await this.httpClient.get<{ sucesso: boolean; dados: { respostas: RespostaStep[] } }>(
         `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}/step/${stepId}`,
@@ -191,7 +195,7 @@ class RespostaService {
 
   // GET /respostas/aluno/:alunoId/edital/:editalId/step/:stepId/perguntas-com-respostas
   // Perguntas do step com respostas do aluno
-  async buscarPerguntasComRespostas(alunoId: number, editalId: number, stepId: number): Promise<PerguntaComResposta[]> {
+  async buscarPerguntasComRespostas(alunoId: string, editalId: string, stepId: string): Promise<PerguntaComResposta[]> {
     try {
       const response = await this.httpClient.get<PerguntasComRespostasResponse>(
         `${BASE_URL}/respostas/aluno/${alunoId}/edital/${editalId}/step/${stepId}/perguntas-com-respostas`,
@@ -210,7 +214,7 @@ class RespostaService {
   }
 
   // GET /respostas/pergunta/:perguntaId/edital/:editalId - Respostas de uma pergunta em um edital
-  async buscarRespostasDaPerguntaNoEdital(perguntaId: number, editalId: number): Promise<Resposta[]> {
+  async buscarRespostasDaPerguntaNoEdital(perguntaId: string, editalId: string): Promise<Resposta[]> {
     try {
       const response = await this.httpClient.get<ListaRespostasResponse>(`${BASE_URL}/respostas/pergunta/${perguntaId}/edital/${editalId}`);
       if (response.sucesso && Array.isArray(response.dados)) {
@@ -227,7 +231,7 @@ class RespostaService {
   }
 
   // PATCH /respostas/:id/validate - Validar uma resposta
-  async validarResposta(respostaId: number, dto: ValidateRespostaDto): Promise<ValidateRespostaResponse> {
+  async validarResposta(respostaId: string, dto: ValidateRespostaDto): Promise<ValidateRespostaResponse> {
     const respostaIdStr = String(respostaId);
     const pluralUrl = `${BASE_URL}/respostas/${respostaIdStr}/validate`;
     const singularUrl = `${BASE_URL}/resposta/${respostaIdStr}/validate`;

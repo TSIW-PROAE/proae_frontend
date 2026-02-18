@@ -5,7 +5,6 @@ import {
   BookOpen,
   MapPin,
   Calendar,
-  Hash,
   CheckCircle2,
   XCircle,
   Clock,
@@ -93,11 +92,11 @@ export default function GerenciarInscricoes() {
     }
   };
 
-  const carregarQuestionarios = async (editalId: number) => {
+  const carregarQuestionarios = async (editalId: string) => {
     try {
       setIsLoadingQuestionarios(true);
       setError(null);
-      const dados = await stepService.listarStepsPorEdital(editalId.toString());
+      const dados = await stepService.listarStepsPorEdital(editalId);
       setQuestionarios(dados);
     } catch (err: any) {
       console.error("Erro ao carregar questionários:", err);
@@ -107,7 +106,7 @@ export default function GerenciarInscricoes() {
     }
   };
 
-  const carregarInscricoes = async (editalId: number, stepId: number) => {
+  const carregarInscricoes = async (editalId: string, stepId: string) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -384,7 +383,7 @@ export default function GerenciarInscricoes() {
                 </button>
                 <button onClick={() => setShowModalQuestionarios(true)} className="btn-trocar-edital">
                   <ClipboardList className="w-4 h-4" />
-                  <span>{questionarioSelecionado.texto || questionarioSelecionado.titulo || `Questionário ${questionarioSelecionado.id}`}</span>
+                  <span>{questionarioSelecionado.texto || questionarioSelecionado.titulo || "Questionário"}</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div style={{ marginLeft: "auto" }}>
@@ -514,7 +513,6 @@ export default function GerenciarInscricoes() {
                         <table className="inscricoes-table-header">
                           <thead>
                             <tr>
-                              <th className="table-header-cell">ID</th>
                               <th className="table-header-cell">Matrícula</th>
                               <th className="table-header-cell">Nome/Email</th>
                               <th className="table-header-cell">Curso</th>
@@ -540,12 +538,6 @@ export default function GerenciarInscricoes() {
                                 }}
                                 tabIndex={0}
                               >
-                                <td className="table-cell id-cell">
-                                  <div className="cell-content">
-                                    <Hash className="w-3 h-3 text-gray-400" />
-                                    <span>{aluno.aluno_id || "N/A"}</span>
-                                  </div>
-                                </td>
                                 <td className="table-cell matricula-cell">
                                   <span className="matricula-badge">{aluno.matricula || "N/A"}</span>
                                 </td>

@@ -50,19 +50,19 @@ export default function ParecerQuestionarios() {
       
       const questionariosData: QuestionarioComValidacao[] = [
         {
-          id: 1,
+          id: "1",
           titulo: "Questionário de Documentação",
           texto: "Questionário para validação de documentos",
           perguntas: []
         },
         {
-          id: 2,
+          id: "2",
           titulo: "Questionário Socioeconômico",
           texto: "Avaliação da situação socioeconômica do candidato",
           perguntas: []
         },
         {
-          id: 3,
+          id: "3",
           titulo: "Questionário de Residência",
           texto: "Questionário para candidatos à residência universitária",
           perguntas: []

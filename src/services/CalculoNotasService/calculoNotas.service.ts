@@ -5,8 +5,8 @@ import { Validacao } from "../ValidacaoService/validacaoService";
 const BASE_URL = import.meta.env.VITE_API_URL_SERVICES;
 
 export interface NotaCalculada {
-  aluno_id: number;
-  inscricao_id: number;
+  aluno_id: string;
+  inscricao_id: string;
   nome: string;
   matricula: string;
   email: string;
@@ -26,8 +26,8 @@ export interface NotaCalculada {
 }
 
 export interface CalculoNotasRequest {
-  edital_id: number;
-  step_id?: number;
+  edital_id: string;
+  step_id?: string;
 }
 
 export class CalculoNotasService {
@@ -45,8 +45,8 @@ export class CalculoNotasService {
    * - Pareceres aprovados (30% da nota)
    */
   async calcularNotasEdital(
-    editalId: number,
-    stepId?: number
+    editalId: string,
+    stepId?: string
   ): Promise<NotaCalculada[]> {
     try {
       // Buscar todas as inscrições do edital
@@ -81,7 +81,7 @@ export class CalculoNotasService {
    */
   private async calcularNotaAluno(
     aluno: AlunoInscrito,
-    editalId: number
+    editalId: string
   ): Promise<NotaCalculada> {
     // Buscar documentos do aluno
     const documentos = await this.buscarDocumentosAluno(
@@ -149,8 +149,8 @@ export class CalculoNotasService {
    * Busca alunos inscritos em um edital
    */
   private async buscarAlunosInscritos(
-    editalId: number,
-    stepId?: number
+    editalId: string,
+    stepId?: string
   ): Promise<AlunoInscrito[]> {
     try {
       if (stepId) {
@@ -189,15 +189,15 @@ export class CalculoNotasService {
    * Busca documentos de uma inscrição
    */
   private async buscarDocumentosAluno(
-    inscricaoId: number,
-    editalId: number
-  ): Promise<Array<{ id: number; validado: boolean }>> {
+    inscricaoId: string,
+    editalId: string
+  ): Promise<Array<{ id: string; validado: boolean }>> {
     try {
       // Em uma implementação real, você teria um endpoint específico para isso
       // Por enquanto, vamos simular ou buscar de uma API
       const response = await this.httpClient.get<{
         sucesso: boolean;
-        dados: Array<{ id: number; validado: boolean }>;
+        dados: Array<{ id: string; validado: boolean }>;
       }>(`${BASE_URL}/inscricoes/${inscricaoId}/documentos`);
 
       if (response.sucesso && response.dados) {
@@ -216,8 +216,8 @@ export class CalculoNotasService {
    * Busca pareceres/validações de uma inscrição
    */
   private async buscarPareceresAluno(
-    inscricaoId: number,
-    editalId: number
+    inscricaoId: string,
+    editalId: string
   ): Promise<Validacao[]> {
     try {
       const { validacaoService } = await import(

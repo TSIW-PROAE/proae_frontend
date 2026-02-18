@@ -365,6 +365,16 @@
   color: #c2410c;
 }
 
+.status-aguardando-complemento {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.status-rejeitada-prazo-complemento {
+  background: #fef2f2;
+  color: #be123c;
+}
+
 .status-pendente {
   background: #fef3c7;
   color: #92400e;

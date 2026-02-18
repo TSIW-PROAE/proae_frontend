@@ -2,7 +2,7 @@ import { PaginaConfig, InputConfig } from "@/types/dynamicForm";
 import { MinioService } from "@/services/MinioService/minio.service";
 
 export interface RespostaPayload {
-  perguntaId: number;
+  perguntaId: string;
   valorTexto?: string;
   valorOpcoes?: string[];
   urlArquivo?: string;
@@ -29,7 +29,7 @@ export function dateValueToString(value: any): string {
 export async function prepareRespostasForSubmit(
   formData: Record<string, any>,
   paginas: PaginaConfig[],
-  vagaId: number,
+  vagaId: string,
   minioService: MinioService
 ): Promise<RespostaPayload[]> {
   const allInputs = paginas.flatMap(p => p.inputs);
@@ -38,7 +38,7 @@ export async function prepareRespostasForSubmit(
     Object.entries(formData)
       .filter(([key]) => key.startsWith('pergunta_'))
       .map(async ([key, value]) => {
-        const perguntaId = parseInt(key.replace('pergunta_', ''));
+        const perguntaId = key.replace('pergunta_', '');
         const inputConfig = allInputs.find((input: InputConfig) => input.nome === key);
         const tipo = inputConfig?.tipo;
 

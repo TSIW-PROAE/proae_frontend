@@ -1,21 +1,21 @@
 import { FetchAdapter } from "../api";
 
 export interface Validacao {
-  id?: number;
+  id?: string;
   parecer: string;
   status: "pendente" | "aprovado" | "reprovado";
   data_validacao?: string;
-  responsavel_id: number;
-  questionario_id?: number;
-  documento_id?: number;
-  resposta_id?: number;
+  responsavel_id: string;
+  questionario_id?: string;
+  documento_id?: string;
+  resposta_id?: string;
   responsavel?: {
     usuario_id: number;
     nome: string;
     email: string;
   };
   questionario?: {
-    id: number;
+    id: string;
     texto: string;
   };
   created_at?: string;
@@ -26,20 +26,20 @@ export interface CreateValidacaoRequest {
   parecer: string;
   status?: "pendente" | "aprovado" | "reprovado";
   data_validacao?: string;
-  responsavel_id: number;
-  questionario_id?: number;
-  documento_id?: number;
-  resposta_id?: number;
+  responsavel_id: string;
+  questionario_id?: string;
+  documento_id?: string;
+  resposta_id?: string;
 }
 
 export interface UpdateValidacaoRequest {
   parecer?: string;
   status?: "pendente" | "aprovado" | "reprovado";
   data_validacao?: string;
-  responsavel_id?: number;
-  questionario_id?: number;
-  documento_id?: number;
-  resposta_id?: number;
+  responsavel_id?: string;
+  questionario_id?: string;
+  documento_id?: string;
+  resposta_id?: string;
 }
 
 interface ValidacaoResponse {
@@ -99,7 +99,7 @@ export class ValidacaoService {
   }
 
   // GET /validacao/:id - Validação por ID
-  async buscarValidacaoPorId(id: number): Promise<Validacao | null> {
+  async buscarValidacaoPorId(id: string): Promise<Validacao | null> {
     try {
       const response = await this.httpClient.get<ValidacaoResponse | Validacao>(`${BASE_URL}/${id}`);
       if ((response as ValidacaoResponse)?.dados) {
@@ -116,7 +116,7 @@ export class ValidacaoService {
   }
 
   // PATCH /validacao/:id - Atualizar validação
-  async atualizarValidacao(id: number, data: UpdateValidacaoRequest): Promise<Validacao> {
+  async atualizarValidacao(id: string, data: UpdateValidacaoRequest): Promise<Validacao> {
     try {
       const response = await this.httpClient.patch<ValidacaoResponse | Validacao>(`${BASE_URL}/${id}`, data);
       if ((response as ValidacaoResponse)?.dados) {
@@ -130,7 +130,7 @@ export class ValidacaoService {
   }
 
   // DELETE /validacao/:id - Remover validação
-  async deletarValidacao(id: number): Promise<{ message: string }> {
+  async deletarValidacao(id: string): Promise<{ message: string }> {
     try {
       const response = await this.httpClient.delete<{ message: string }>(`${BASE_URL}/${id}`);
       return response;
@@ -141,7 +141,7 @@ export class ValidacaoService {
   }
 
   // Métodos de conveniência
-  async aprovarValidacao(id: number, parecer?: string): Promise<Validacao> {
+  async aprovarValidacao(id: string, parecer?: string): Promise<Validacao> {
     return this.atualizarValidacao(id, {
       status: "aprovado",
       parecer: parecer,
@@ -149,7 +149,7 @@ export class ValidacaoService {
     });
   }
 
-  async reprovarValidacao(id: number, parecer?: string): Promise<Validacao> {
+  async reprovarValidacao(id: string, parecer?: string): Promise<Validacao> {
     return this.atualizarValidacao(id, {
       status: "reprovado",
       parecer: parecer,
@@ -168,7 +168,7 @@ export class ValidacaoService {
   }
 
   // Métodos específicos para questionários
-  async criarValidacaoQuestionario(questionarioId: number, parecer: string, responsavelId: number): Promise<Validacao> {
+  async criarValidacaoQuestionario(questionarioId: string, parecer: string, responsavelId: string): Promise<Validacao> {
     return this.criarValidacao({
       parecer,
       responsavel_id: responsavelId,
@@ -180,9 +180,9 @@ export class ValidacaoService {
 
   // Métodos específicos para documentos
   async criarValidacaoDocumento(
-    documentoId: number,
+    documentoId: string,
     parecer: string,
-    responsavelId: number,
+    responsavelId: string,
     status: "pendente" | "aprovado" | "reprovado" = "pendente"
   ): Promise<Validacao> {
     return this.criarValidacao({
@@ -196,9 +196,9 @@ export class ValidacaoService {
 
   // Métodos específicos para respostas
   async criarValidacaoResposta(
-    respostaId: number,
+    respostaId: string,
     parecer: string,
-    responsavelId: number,
+    responsavelId: string,
     status: "pendente" | "aprovado" | "reprovado" = "pendente"
   ): Promise<Validacao> {
     return this.criarValidacao({
@@ -210,7 +210,7 @@ export class ValidacaoService {
     });
   }
 
-  async buscarValidacoesPorQuestionario(questionarioId: number): Promise<Validacao[]> {
+  async buscarValidacoesPorQuestionario(questionarioId: string): Promise<Validacao[]> {
     try {
       const validacoes = await this.listarValidacoes();
       return validacoes.filter((v) => v.questionario_id === questionarioId);
@@ -220,7 +220,7 @@ export class ValidacaoService {
     }
   }
 
-  async buscarValidacoesPorDocumento(documentoId: number): Promise<Validacao[]> {
+  async buscarValidacoesPorDocumento(documentoId: string): Promise<Validacao[]> {
     try {
       const validacoes = await this.listarValidacoes();
       return validacoes.filter((v) => v.documento_id === documentoId);

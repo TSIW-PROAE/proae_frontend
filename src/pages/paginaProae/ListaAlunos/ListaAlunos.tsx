@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Mail, BookOpen, MapPin, Calendar, Phone, Hash } from "lucide-react";
+import { Users, Mail, BookOpen, MapPin, Calendar, Phone } from "lucide-react";
 import { Aluno } from "../../../types/aluno";
 import { alunoService } from "../../../services/AlunoService/alunoService";
 import "./ListaAlunos.css";
@@ -95,7 +95,6 @@ export default function ListaAlunos() {
                     <table className="alunos-table-header">
                       <thead>
                         <tr>
-                          <th className="table-header-cell">ID</th>
                           <th className="table-header-cell">Matrícula</th>
                           <th className="table-header-cell">Nome/Email</th>
                           <th className="table-header-cell">CPF</th>
@@ -114,12 +113,6 @@ export default function ListaAlunos() {
                       <tbody className="table-body">
                         {alunos.map((aluno) => (
                           <tr key={aluno.aluno_id} className="table-row">
-                            <td className="table-cell id-cell">
-                              <div className="cell-content">
-                                <Hash className="w-3 h-3 text-gray-400" />
-                                <span>{aluno.aluno_id}</span>
-                              </div>
-                            </td>
                             <td className="table-cell matricula-cell">
                               <span className="matricula-badge">{aluno.matricula || "N/A"}</span>
                             </td>

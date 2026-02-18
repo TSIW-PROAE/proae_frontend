@@ -103,7 +103,7 @@ export default function PortalAluno() {
     {
       icon: Clock,
       label: "Pendências",
-      value: inscriptions?.filter((i) => i.possui_pendencias).length || 0,
+      value: inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0,
       color: "bg-amber-500",
       bgColor: "bg-amber-50",
       textColor: "text-amber-700",
@@ -139,8 +139,8 @@ export default function PortalAluno() {
             <div className="header-actions">
               <div className="notification-icon">
                 <Bell className="w-5 h-5" />
-                {(inscriptions?.filter((i) => i.possui_pendencias).length || 0) > 0 && (
-                  <span className="notification-badge">{inscriptions?.filter((i) => i.possui_pendencias).length || 0}</span>
+                {(inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0) > 0 && (
+                  <span className="notification-badge">{inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0}</span>
                 )}
               </div>
             </div>
@@ -225,8 +225,8 @@ export default function PortalAluno() {
                 <div className="status-content">
                   <h3 className="status-title">Documentação</h3>
                   <p className="status-description">
-                    {inscriptions?.filter((i) => !i.possui_pendencias).length || 0} inscri
-                    {(inscriptions?.filter((i) => !i.possui_pendencias).length || 0) !== 1 ? "ções" : "ção"} em dia
+                    {inscriptions?.filter((i) => !i.possui_pendencias && !i.possui_novas_perguntas_pendentes).length || 0} inscri
+                    {(inscriptions?.filter((i) => !i.possui_pendencias && !i.possui_novas_perguntas_pendentes).length || 0) !== 1 ? "ções" : "ção"} em dia
                   </p>
                 </div>
               </div>
@@ -236,8 +236,8 @@ export default function PortalAluno() {
                 <div className="status-content">
                   <h3 className="status-title">Pendências</h3>
                   <p className="status-description">
-                    {inscriptions?.filter((i) => i.possui_pendencias).length || 0} item
-                    {(inscriptions?.filter((i) => i.possui_pendencias).length || 0) !== 1 ? "s" : ""} para resolver
+                    {inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0} item
+                    {(inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0) !== 1 ? "s" : ""} para resolver
                   </p>
                 </div>
               </div>

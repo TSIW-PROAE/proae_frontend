@@ -7,7 +7,7 @@ export interface DocumentoValidacaoResumo {
 }
 
 export interface DocumentoInscricao {
-  documento_id: number;
+  documento_id: string;
   tipo_documento: string;
   documento_url?: string | null;
   status_documento: DocumentoStatus;

@@ -16,7 +16,7 @@ export class ValidationService {
     return response.data as Validacao;
   }
 
-  async atualizarValidacao(id: number, dados: Partial<ValidacaoCreateDto>): Promise<Validacao> {
+  async atualizarValidacao(id: string, dados: Partial<ValidacaoCreateDto>): Promise<Validacao> {
     const response = await this.http.patch<Validacao>(`${BASE_URL}/validacao/${id}`, dados);
     return response as Validacao;
   }

@@ -10,7 +10,7 @@ export class InscricaoServiceManager {
     this.httpClient = new FetchAdapter();
   }
 
-  async listarAlunosPorQuestionario(editalId: number, stepId: number): Promise<AlunoInscrito[]> {
+  async listarAlunosPorQuestionario(editalId: string, stepId: string): Promise<AlunoInscrito[]> {
     try {
       const response = await this.httpClient.get<ListaAlunosInscritosResponse>(`${BASE_URL}/aluno/edital/${editalId}/step/${stepId}/alunos`);
 
@@ -45,7 +45,7 @@ export class InscricaoServiceManager {
     }
   }
 
-  async buscarInscricaoPorId(id: number): Promise<AlunoInscrito | null> {
+  async buscarInscricaoPorId(id: string): Promise<AlunoInscrito | null> {
     try {
       const response = await this.httpClient.get<{ sucesso: boolean; dados: AlunoInscrito }>(`${BASE_URL}/inscricoes/${id}`);
 
@@ -62,7 +62,7 @@ export class InscricaoServiceManager {
     }
   }
 
-  async atualizarStatusInscricao(inscricaoId: number, status: string): Promise<void> {
+  async atualizarStatusInscricao(inscricaoId: string, status: string): Promise<void> {
     try {
       await this.httpClient.patch(`${BASE_URL}/inscricoes/${inscricaoId}`, {
         status_inscricao: status,
@@ -73,7 +73,7 @@ export class InscricaoServiceManager {
     }
   }
 
-  async listarInscritosPorEdital(editalId: number): Promise<AlunoInscrito[]> {
+  async listarInscritosPorEdital(editalId: string): Promise<AlunoInscrito[]> {
     try {
       const response = await this.httpClient.get<AlunoInscrito[]>(`${BASE_URL}/editais/${editalId}/inscritos`);
 
@@ -96,7 +96,7 @@ export class InscricaoServiceManager {
     }
   }
 
-  async downloadPdfAprovados(editalId?: number): Promise<void> {
+  async downloadPdfAprovados(editalId?: string): Promise<void> {
     try {
       const url = editalId ? `${BASE_URL}/inscricoes/aprovados/pdf?editalId=${editalId}` : `${BASE_URL}/inscricoes/aprovados/pdf`;
 

@@ -6,6 +6,7 @@ import { documentoService } from "../../services/DocumentoService/documentoServi
 import { DocumentoInscricao, DocumentoStatus } from "../../types/documento";
 import { validacaoService } from "../../services/ValidacaoService/validacaoService";
 import { AuthContext } from "../../context/AuthContext";
+import { MinioService } from "../../services/MinioService/minio.service";
 import "./ModalRespostaAluno.css";
 
 interface ModalRespostaAlunoProps {
@@ -55,9 +56,9 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
   const authContext = useContext(AuthContext) as any;
   const userInfo = authContext?.userInfo;
 
-  const [respostasEstado, setRespostasEstado] = useState<Record<number, RespostaEstado>>({});
+  const [respostasEstado, setRespostasEstado] = useState<Record<string, RespostaEstado>>({});
   const [documentos, setDocumentos] = useState<DocumentoInscricao[]>([]);
-  const [documentosEstado, setDocumentosEstado] = useState<Record<number, DocumentoEstado>>({});
+  const [documentosEstado, setDocumentosEstado] = useState<Record<string, DocumentoEstado>>({});
   const [carregandoDocumentos, setCarregandoDocumentos] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
@@ -68,7 +69,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
       return;
     }
 
-    const estadoInicial = aluno.respostas_step.reduce<Record<number, RespostaEstado>>((acc, resposta) => {
+    const estadoInicial = aluno.respostas_step.reduce<Record<string, RespostaEstado>>((acc, resposta) => {
       acc[resposta.resposta_id] = {
         validada: Boolean(resposta.validada),
         dataValidade: resposta.data_validacao ? new Date(resposta.data_validacao).toISOString().split("T")[0] : undefined,
@@ -91,7 +92,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
       try {
         const lista = await documentoService.listarPorInscricao(aluno.inscricao_id);
         setDocumentos(lista);
-        const estadoDocs = lista.reduce<Record<number, DocumentoEstado>>((acc, documento) => {
+        const estadoDocs = lista.reduce<Record<string, DocumentoEstado>>((acc, documento) => {
           const parecerAnterior = documento.validacoes?.[0]?.parecer ?? "";
           acc[documento.documento_id] = {
             status: documento.status_documento,
@@ -112,12 +113,12 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
   }, [aluno?.inscricao_id]);
 
   const respostasOrdenadas: RespostaStep[] = useMemo(() => {
-    return [...(aluno?.respostas_step || [])].sort((a, b) => a.pergunta_id - b.pergunta_id);
+    return [...(aluno?.respostas_step || [])].sort((a, b) => String(a.pergunta_id).localeCompare(String(b.pergunta_id)));
   }, [aluno?.respostas_step]);
 
   if (!aluno) return null;
 
-  const handleRespostaStatus = (respostaId: number, validada: boolean) => {
+  const handleRespostaStatus = (respostaId: string, validada: boolean) => {
     setRespostasEstado((prev) => ({
       ...prev,
       [respostaId]: {
@@ -127,7 +128,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
     }));
   };
 
-  const handleRespostaDataValidade = (respostaId: number, dataValidade: string) => {
+  const handleRespostaDataValidade = (respostaId: string, dataValidade: string) => {
     setRespostasEstado((prev) => ({
       ...prev,
       [respostaId]: {
@@ -139,7 +140,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
 
   const aplicarStatusTodasRespostas = (validada: boolean) => {
     if (!aluno?.respostas_step) return;
-    const atualizado = aluno.respostas_step.reduce<Record<number, RespostaEstado>>((acc, resposta) => {
+    const atualizado = aluno.respostas_step.reduce<Record<string, RespostaEstado>>((acc, resposta) => {
       acc[resposta.resposta_id] = {
         validada,
         dataValidade: respostasEstado[resposta.resposta_id]?.dataValidade,
@@ -149,7 +150,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
     setRespostasEstado(atualizado);
   };
 
-  const handleDocumentoStatus = (documentoId: number, status: DocumentoStatus) => {
+  const handleDocumentoStatus = (documentoId: string, status: DocumentoStatus) => {
     setDocumentosEstado((prev) => ({
       ...prev,
       [documentoId]: {
@@ -159,7 +160,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
     }));
   };
 
-  const handleDocumentoParecer = (documentoId: number, parecer: string) => {
+  const handleDocumentoParecer = (documentoId: string, parecer: string) => {
     setDocumentosEstado((prev) => ({
       ...prev,
       [documentoId]: {
@@ -195,17 +196,17 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
           return;
         }
 
-        const respostaIdNumerico = Number(resposta.resposta_id);
-        if (Number.isNaN(respostaIdNumerico)) {
+        const respostaId = resposta.resposta_id;
+        if (!respostaId) {
           console.warn(`Resposta com ID inválido recebido (${resposta.resposta_id}). Ignorando validação desta resposta.`);
           return;
         }
 
         promessas.push(
-          respostaService.validarResposta(respostaIdNumerico, {
+          respostaService.validarResposta(respostaId, {
             validada: estadoAtual.validada,
             dataValidade: estadoAtual.dataValidade,
-          })
+          }),
         );
       });
 
@@ -228,7 +229,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
               responsavel_id: userInfo.id,
               documento_id: documento.documento_id,
               data_validacao: new Date().toISOString().split("T")[0],
-            })
+            }),
           );
         }
       });
@@ -303,7 +304,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
                     </div>
                   </div>
 
-                  {respostasOrdenadas.map((resposta) => {
+                  {respostasOrdenadas.map((resposta, index) => {
                     const estado = respostasEstado[resposta.resposta_id] ?? {
                       validada: Boolean(resposta.validada),
                     };
@@ -313,7 +314,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
                       <div key={resposta.resposta_id} className="resposta-validacao-card">
                         <div className="resposta-header">
                           <div className="pergunta-info">
-                            <span className="pergunta-label">Pergunta #{resposta.pergunta_id}</span>
+                            <span className="pergunta-label">Pergunta {index + 1}</span>
                             <h5 className="pergunta-texto">{resposta.pergunta_texto}</h5>
                             <span className={RESPOSTA_STATUS_INFO[statusKey].className}>
                               {RESPOSTA_STATUS_INFO[statusKey].icon}
@@ -332,10 +333,10 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
                             <span className="resposta-data">Respondido em: {new Date(resposta.data_resposta).toLocaleString("pt-BR")}</span>
                           </div>
 
-                          {resposta.url_arquivo && (
+                          {resposta.url_arquivo && MinioService.isObjectKey(resposta.url_arquivo) && (
                             <div className="resposta-documento">
                               <Paperclip className="w-4 h-4" />
-                              <a href={resposta.url_arquivo} target="_blank" rel="noreferrer">
+                              <a href={MinioService.getViewUrl(resposta.url_arquivo)} target="_blank" rel="noreferrer">
                                 Abrir documento enviado
                               </a>
                             </div>
@@ -398,8 +399,8 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
                             <FileText className="w-4 h-4" />
                             <span>{documento.tipo_documento}</span>
                           </div>
-                          {documento.documento_url && (
-                            <a href={documento.documento_url} target="_blank" rel="noreferrer" className="documento-link">
+                          {documento.documento_url && MinioService.isObjectKey(documento.documento_url) && (
+                            <a href={MinioService.getViewUrl(documento.documento_url)} target="_blank" rel="noreferrer" className="documento-link">
                               <Paperclip className="w-4 h-4" />
                               Ver arquivo
                             </a>

@@ -1,6 +1,6 @@
 export interface RespostaStep {
-  resposta_id: number;
-  pergunta_id: number;
+  resposta_id: string;
+  pergunta_id: string;
   pergunta_texto: string;
   resposta_texto: string;
   data_resposta: string;
@@ -12,7 +12,7 @@ export interface RespostaStep {
 }
 
 export interface AlunoInscrito {
-  aluno_id: number;
+  aluno_id: string;
   usuario_id: number;
   email: string;
   nome: string;
@@ -23,21 +23,21 @@ export interface AlunoInscrito {
   campus: string;
   data_nascimento: string;
   data_ingresso: string;
-  inscricao_id: number;
+  inscricao_id: string;
   status_inscricao: string;
   data_inscricao: string;
   respostas_step?: RespostaStep[];
 }
 
 export interface EditalInfo {
-  id: number;
+  id: string;
   titulo: string;
   descricao: string;
   status: string;
 }
 
 export interface StepInfo {
-  id: number;
+  id: string;
   texto: string;
 }
 
@@ -53,9 +53,9 @@ export interface ListaAlunosInscritosResponse {
 
 // Mantendo compatibilidade com código existente
 export interface Inscricao {
-  inscricao_id?: number;
-  edital_id?: number;
-  aluno_id: number;
+  inscricao_id?: string;
+  edital_id?: string;
+  aluno_id: string;
   status_inscricao?: "PENDENTE" | "APROVADA" | "REPROVADA" | "EM_ANALISE";
   data_inscricao?: string;
   updated_at?: string;

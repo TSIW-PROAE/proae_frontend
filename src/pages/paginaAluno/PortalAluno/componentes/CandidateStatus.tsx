@@ -33,16 +33,16 @@ interface EtapaEdital {
 }
 
 interface Vaga {
-  vaga_id: number;
+  vaga_id: string;
   beneficio: string;
   descricao_beneficio: string;
   numero_vagas: number;
 }
 
 interface PerguntaPendente {
-  pergunta_id: number;
+  pergunta_id: string;
   pergunta_texto: string;
-  resposta_id: number;
+  resposta_id: string;
   resposta_texto: string;
   parecer: string;
   prazo_reenvio: string;
@@ -51,15 +51,30 @@ interface PerguntaPendente {
 }
 
 interface PendenciaStep {
-  step_id: number;
+  step_id: string;
   step_texto: string;
   perguntas_pendentes: PerguntaPendente[];
   total_pendentes: number;
 }
 
+// Novas perguntas adicionadas após a inscrição do aluno
+interface NovaPerguntaPendente {
+  pergunta_id: string;
+  pergunta_texto: string;
+  resposta_id: string;
+  prazo_resposta: string;
+}
+
+interface NovaPerguntaPendenteStep {
+  step_id: string;
+  step_texto: string;
+  total_novas: number;
+  perguntas_novas: NovaPerguntaPendente[];
+}
+
 interface EditalAPI {
-  edital_id: number;
-  inscricao_id: number;
+  edital_id: string;
+  inscricao_id: string;
   titulo_edital: string;
   status_edital: string;
   etapa_edital: EtapaEdital[];
@@ -70,6 +85,11 @@ interface EditalAPI {
   total_pendencias: number;
   pendencias_por_step?: PendenciaStep[];
   rejeitada_por_prazo?: boolean;
+  rejeitada_por_prazo_complemento?: boolean;
+  // Novas perguntas adicionadas após a inscrição
+  possui_novas_perguntas_pendentes?: boolean;
+  total_novas_perguntas?: number;
+  novas_perguntas_pendentes_por_step?: NovaPerguntaPendenteStep[];
 }
 
 interface CandidateStatusProps {
@@ -81,12 +101,22 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
   // ── Estado do modal de reenvio ──
   const [modalAberto, setModalAberto] = useState(false);
   const [stepSelecionado, setStepSelecionado] = useState<PendenciaStep | null>(null);
-  const [respostasEditadas, setRespostasEditadas] = useState<Record<number, string>>({});
-  const [enviando, setEnviando] = useState<Record<number, boolean>>({});
-  const [resultados, setResultados] = useState<Record<number, "sucesso" | "erro">>({});
-  const [mensagensErro, setMensagensErro] = useState<Record<number, string>>({});
-  const [confirmandoId, setConfirmandoId] = useState<number | null>(null);
+  const [respostasEditadas, setRespostasEditadas] = useState<Record<string, string>>({});
+  const [enviando, setEnviando] = useState<Record<string, boolean>>({});
+  const [resultados, setResultados] = useState<Record<string, "sucesso" | "erro">>({});
+  const [mensagensErro, setMensagensErro] = useState<Record<string, string>>({});
+  const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
   const [houveEnvio, setHouveEnvio] = useState(false);
+
+  // ── Estado do modal de novas perguntas ──
+  const [modalNovaPerguntaAberto, setModalNovaPerguntaAberto] = useState(false);
+  const [novaStepSelecionado, setNovaStepSelecionado] = useState<NovaPerguntaPendenteStep | null>(null);
+  const [novasRespostasEditadas, setNovasRespostasEditadas] = useState<Record<string, string>>({});
+  const [novaEnviando, setNovaEnviando] = useState<Record<string, boolean>>({});
+  const [novaResultados, setNovaResultados] = useState<Record<string, "sucesso" | "erro">>({});
+  const [novaMensagensErro, setNovaMensagensErro] = useState<Record<string, string>>({});
+  const [novaConfirmandoId, setNovaConfirmandoId] = useState<string | null>(null);
+  const [houveEnvioNova, setHouveEnvioNova] = useState(false);
 
   if (!edital) return null;
 
@@ -95,12 +125,15 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
     status_inscricao,
     possui_pendencias,
     etapa_edital,
-    inscricao_id,
     data_inscricao,
     vaga,
     total_pendencias,
     pendencias_por_step,
     rejeitada_por_prazo,
+    rejeitada_por_prazo_complemento,
+    possui_novas_perguntas_pendentes,
+    total_novas_perguntas,
+    novas_perguntas_pendentes_por_step,
   } = edital;
 
   // Ordenar etapas por data de início (e não pela ordem que vem do backend)
@@ -140,6 +173,15 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
         label: "Aprovada",
         dotClass: "status-dot-approved",
       };
+    } else if (statusLower.includes("rejeitada por prazo de complemento") || statusLower.includes("rejeitada_por_prazo_complemento")) {
+      return {
+        icon: Clock,
+        color: "text-red-700",
+        bgColor: "bg-red-50",
+        borderColor: "border-red-300",
+        label: "Rejeitada por Prazo de Complemento",
+        dotClass: "status-dot-rejected-complemento",
+      };
     } else if (statusLower.includes("rejeitada") || statusLower.includes("reprovada")) {
       return {
         icon: XCircle,
@@ -148,6 +190,15 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
         borderColor: "border-red-200",
         label: "Rejeitada",
         dotClass: "status-dot-rejected",
+      };
+    } else if (statusLower.includes("aguardando complemento") || statusLower.includes("aguardando_complemento")) {
+      return {
+        icon: RefreshCw,
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-300",
+        label: "Aguardando Complemento",
+        dotClass: "status-dot-complemento",
       };
     } else if (statusLower.includes("selecionada") && !statusLower.includes("não")) {
       return {
@@ -175,6 +226,16 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
         borderColor: "border-orange-300",
         label: "Pendente de Regularização",
         dotClass: "status-dot-regularization",
+      };
+    } else if (statusLower.includes("reenvio") || statusLower.includes("pendente_reenvio")) {
+      // Legacy: mantém para retrocompatibilidade, mas agora é "Aguardando Complemento"
+      return {
+        icon: RefreshCw,
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-300",
+        label: "Aguardando Complemento",
+        dotClass: "status-dot-complemento",
       };
     } else if (statusLower.includes("em_analise") || statusLower.includes("em análise")) {
       return {
@@ -245,11 +306,11 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
     // NÃO limpa resultados — preserva o estado de quem já foi corrigido
   }, []);
 
-  const handleRespostaChange = useCallback((respostaId: number, valor: string) => {
+  const handleRespostaChange = useCallback((respostaId: string, valor: string) => {
     setRespostasEditadas((prev) => ({ ...prev, [respostaId]: valor }));
   }, []);
 
-  const pedirConfirmacao = useCallback((respostaId: number) => {
+  const pedirConfirmacao = useCallback((respostaId: string) => {
     setConfirmandoId(respostaId);
   }, []);
 
@@ -293,6 +354,86 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
     [respostasEditadas],
   );
 
+  // ── Handlers do modal de novas perguntas ──
+  const abrirModalNovasPergunta = useCallback(() => {
+    setModalNovaPerguntaAberto(true);
+    setNovaStepSelecionado(null);
+    setNovasRespostasEditadas({});
+    setNovaEnviando({});
+    setNovaResultados({});
+    setNovaMensagensErro({});
+  }, []);
+
+  const fecharModalNovasPergunta = useCallback(() => {
+    setModalNovaPerguntaAberto(false);
+    setNovaStepSelecionado(null);
+    setNovasRespostasEditadas({});
+    setNovaEnviando({});
+    setNovaResultados({});
+    setNovaMensagensErro({});
+    setNovaConfirmandoId(null);
+    if (houveEnvioNova && onReload) {
+      onReload();
+    }
+    setHouveEnvioNova(false);
+  }, [houveEnvioNova, onReload]);
+
+  const voltarParaStepsNova = useCallback(() => {
+    setNovaStepSelecionado(null);
+    setNovasRespostasEditadas({});
+    setNovaEnviando({});
+    setNovaMensagensErro({});
+    setNovaConfirmandoId(null);
+  }, []);
+
+  const handleNovaRespostaChange = useCallback((respostaId: string, valor: string) => {
+    setNovasRespostasEditadas((prev) => ({ ...prev, [respostaId]: valor }));
+  }, []);
+
+  const pedirConfirmacaoNova = useCallback((respostaId: string) => {
+    setNovaConfirmandoId(respostaId);
+  }, []);
+
+  const cancelarConfirmacaoNova = useCallback(() => {
+    setNovaConfirmandoId(null);
+  }, []);
+
+  const confirmarEnvioNova = useCallback(
+    async (pergunta: NovaPerguntaPendente) => {
+      const novoValor = novasRespostasEditadas[pergunta.resposta_id]?.trim();
+      if (!novoValor) return;
+
+      setNovaConfirmandoId(null);
+      setNovaEnviando((prev) => ({ ...prev, [pergunta.resposta_id]: true }));
+      setNovaResultados((prev) => {
+        const copia = { ...prev };
+        delete copia[pergunta.resposta_id];
+        return copia;
+      });
+      setNovaMensagensErro((prev) => {
+        const copia = { ...prev };
+        delete copia[pergunta.resposta_id];
+        return copia;
+      });
+
+      try {
+        const dto: UpdateRespostaDto = { valorTexto: novoValor };
+        await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        setNovaResultados((prev) => ({ ...prev, [pergunta.resposta_id]: "sucesso" }));
+        setHouveEnvioNova(true);
+      } catch (err: any) {
+        setNovaResultados((prev) => ({ ...prev, [pergunta.resposta_id]: "erro" }));
+        setNovaMensagensErro((prev) => ({
+          ...prev,
+          [pergunta.resposta_id]: err?.message || "Erro ao enviar resposta",
+        }));
+      } finally {
+        setNovaEnviando((prev) => ({ ...prev, [pergunta.resposta_id]: false }));
+      }
+    },
+    [novasRespostasEditadas],
+  );
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -333,7 +474,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
           <div className="status-subtitle">
             <Calendar className="w-4 h-4" />
             <span>
-              Inscrito em {formatDate(data_inscricao)} &middot; #{inscricao_id}
+              Inscrito em {formatDate(data_inscricao)}
             </span>
           </div>
         </div>
@@ -447,8 +588,49 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
           </div>
         )}
 
+        {/* Seção de Novas Perguntas Pendentes (adicionadas após a inscrição) */}
+        {possui_novas_perguntas_pendentes && novas_perguntas_pendentes_por_step && novas_perguntas_pendentes_por_step.length > 0 && (
+          <div className="pendencias-urgent-section novas-perguntas-section">
+            <div className="pendencias-urgent-header">
+              <div className="pendencias-urgent-icon-wrapper novas-perguntas-icon">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="pendencias-urgent-info">
+                <h4 className="pendencias-urgent-title">
+                  {total_novas_perguntas} nova{(total_novas_perguntas ?? 0) > 1 ? "s" : ""} pergunta{(total_novas_perguntas ?? 0) > 1 ? "s" : ""} adicionada{(total_novas_perguntas ?? 0) > 1 ? "s" : ""} ao processo
+                </h4>
+                <p className="novas-perguntas-descricao">
+                  O edital foi atualizado com novas perguntas após a sua inscrição. É necessário respondê-las dentro do prazo para manter sua inscrição ativa.
+                </p>
+              </div>
+            </div>
+
+            <div className="pendencias-steps-list">
+              {novas_perguntas_pendentes_por_step.map((step) => (
+                <div key={step.step_id} className="pendencia-step-item">
+                  <div className="pendencia-step-icon">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="pendencia-step-info">
+                    <span className="pendencia-step-name">{step.step_texto}</span>
+                    <span className="pendencia-step-count">
+                      {step.total_novas} pergunta{step.total_novas > 1 ? "s" : ""} nova{step.total_novas > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={abrirModalNovasPergunta} className="pendencias-urgent-button novas-perguntas-button">
+              <Send className="w-4 h-4" />
+              <span>Responder Novas Perguntas</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Sem pendências */}
-        {!possui_pendencias &&
+        {!possui_pendencias && !possui_novas_perguntas_pendentes &&
           (() => {
             const statusLower = status_inscricao.toLowerCase();
             const isRejeitada = statusLower.includes("rejeitada") || statusLower.includes("reprovada");
@@ -461,11 +643,19 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
                   <div className="alert-content">
                     <h4 className="alert-title">Inscrição rejeitada</h4>
                     <p className="alert-description">
-                      {rejeitada_por_prazo
-                        ? "Sua inscrição foi rejeitada devido ao não cumprimento do prazo para correção das pendências solicitadas."
-                        : "Infelizmente sua inscrição não foi aprovada neste edital. Consulte o edital para mais informações ou entre em contato com a PROAE."}
+                      {rejeitada_por_prazo_complemento
+                        ? "Sua inscrição foi rejeitada porque o prazo para responder as novas perguntas adicionadas ao questionário expirou."
+                        : rejeitada_por_prazo
+                          ? "Sua inscrição foi rejeitada devido ao não cumprimento do prazo para correção das pendências solicitadas."
+                          : "Infelizmente sua inscrição não foi aprovada neste edital. Consulte o edital para mais informações ou entre em contato com a PROAE."}
                     </p>
-                    {rejeitada_por_prazo && (
+                    {rejeitada_por_prazo_complemento && (
+                      <div className="alert-prazo-aviso">
+                        <Clock className="w-4 h-4" />
+                        <span>O prazo para responder as novas perguntas expirou antes que as respostas fossem enviadas.</span>
+                      </div>
+                    )}
+                    {rejeitada_por_prazo && !rejeitada_por_prazo_complemento && (
                       <div className="alert-prazo-aviso">
                         <Clock className="w-4 h-4" />
                         <span>O prazo para reenvio das respostas expirou antes que as correções fossem realizadas.</span>
@@ -682,6 +872,210 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
                                 <button
                                   className="reenvio-enviar-btn"
                                   onClick={() => pedirConfirmacao(pergunta.resposta_id)}
+                                  disabled={estaEnviando || !valorEditado.trim()}
+                                >
+                                  {estaEnviando ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                      <span>Enviando...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className="w-4 h-4" />
+                                      <span>Enviar Resposta</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* ── Modal de Novas Perguntas (perguntas adicionadas após inscrição) ── */}
+      {modalNovaPerguntaAberto &&
+        novas_perguntas_pendentes_por_step &&
+        createPortal(
+          <div className="reenvio-overlay" onClick={fecharModalNovasPergunta}>
+            <div className="reenvio-modal" onClick={(e) => e.stopPropagation()}>
+              {/* Header do modal */}
+              <div className="reenvio-modal-header novas-perguntas-modal-header">
+                <div className="reenvio-modal-header-left">
+                  {novaStepSelecionado && (
+                    <button className="reenvio-voltar-btn" onClick={voltarParaStepsNova} title="Voltar para etapas">
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                  <div>
+                    <h2 className="reenvio-modal-title">{novaStepSelecionado ? novaStepSelecionado.step_texto : "Novas Perguntas do Processo"}</h2>
+                    <p className="reenvio-modal-subtitle">
+                      {(() => {
+                        const totalRespondidas = Object.values(novaResultados).filter((r) => r === "sucesso").length;
+                        if (novaStepSelecionado) {
+                          const respondidasStep = novaStepSelecionado.perguntas_novas.filter((p) => novaResultados[p.resposta_id] === "sucesso").length;
+                          const restantesStep = novaStepSelecionado.total_novas - respondidasStep;
+                          return restantesStep > 0
+                            ? `${restantesStep} pergunta${restantesStep > 1 ? "s" : ""} nova${restantesStep > 1 ? "s" : ""} aguardando resposta`
+                            : "Todas as novas perguntas foram respondidas!";
+                        }
+                        const restantesTotal = (total_novas_perguntas ?? 0) - totalRespondidas;
+                        return restantesTotal > 0
+                          ? `${restantesTotal} nova${restantesTotal > 1 ? "s" : ""} pergunta${restantesTotal > 1 ? "s" : ""} em ${novas_perguntas_pendentes_por_step.length} questionário${novas_perguntas_pendentes_por_step.length > 1 ? "s" : ""}`
+                          : "Todas as novas perguntas foram respondidas!";
+                      })()}
+                    </p>
+                  </div>
+                </div>
+                <button className="reenvio-fechar-btn" onClick={fecharModalNovasPergunta} title="Fechar">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Info box explicativo */}
+              {!novaStepSelecionado && (
+                <div className="novas-perguntas-info-box">
+                  <AlertCircle className="w-4 h-4" />
+                  <p>
+                    Estas perguntas foram adicionadas ao processo seletivo após sua inscrição. 
+                    Responda-as dentro do prazo indicado para cada pergunta. Ao responder todas, 
+                    sua inscrição será reavaliada automaticamente.
+                  </p>
+                </div>
+              )}
+
+              {/* Corpo do modal */}
+              <div className="reenvio-modal-body">
+                {!novaStepSelecionado ? (
+                  /* ── Grade de Steps ── */
+                  <div className="reenvio-steps-grid">
+                    {novas_perguntas_pendentes_por_step.map((step) => {
+                      const respondidasNoStep = step.perguntas_novas.filter((p) => novaResultados[p.resposta_id] === "sucesso").length;
+                      const restantes = step.total_novas - respondidasNoStep;
+
+                      return (
+                        <button
+                          key={step.step_id}
+                          className={`reenvio-step-card ${restantes === 0 ? "reenvio-step-card-done" : ""}`}
+                          onClick={() => setNovaStepSelecionado(step)}
+                        >
+                          <div className={`reenvio-step-card-icon ${restantes === 0 ? "reenvio-step-icon-done" : "reenvio-step-icon-nova"}`}>
+                            {restantes === 0 ? <CheckCircle2 className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
+                          </div>
+                          <h3 className="reenvio-step-card-title">{step.step_texto}</h3>
+                          {restantes > 0 ? (
+                            <div className="reenvio-step-card-badge reenvio-step-badge-nova">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              <span>
+                                {restantes} nova{restantes > 1 ? "s" : ""}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="reenvio-step-card-badge-done">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Tudo respondido</span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* ── Lista de Novas Perguntas ── */
+                  <div className="reenvio-perguntas-lista">
+                    {novaStepSelecionado.perguntas_novas.map((pergunta) => {
+                      const jaRespondeu = novaResultados[pergunta.resposta_id] === "sucesso";
+                      const temErro = novaResultados[pergunta.resposta_id] === "erro";
+                      const estaEnviando = novaEnviando[pergunta.resposta_id] || false;
+                      const valorEditado = novasRespostasEditadas[pergunta.resposta_id] ?? "";
+
+                      const prazo = new Date(pergunta.prazo_resposta);
+                      const prazoExpirado = prazo.getTime() < Date.now();
+                      const prazoFormatado = prazo.toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
+
+                      return (
+                        <div
+                          key={pergunta.resposta_id}
+                          className={`reenvio-pergunta-card ${jaRespondeu ? "reenvio-pergunta-sucesso" : ""} ${prazoExpirado ? "reenvio-pergunta-expirada" : ""}`}
+                        >
+                          {/* Cabeçalho da pergunta */}
+                          <div className="reenvio-pergunta-header">
+                            <h4 className="reenvio-pergunta-texto">{pergunta.pergunta_texto}</h4>
+                            <div className={`reenvio-prazo-chip ${prazoExpirado ? "reenvio-prazo-expirado" : ""}`}>
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{prazoExpirado ? "Prazo vencido" : `Prazo: ${prazoFormatado}`}</span>
+                            </div>
+                          </div>
+
+                          {/* Aviso de nova pergunta */}
+                          <div className="nova-pergunta-aviso-box">
+                            <AlertCircle className="w-4 h-4" />
+                            <span>Esta pergunta foi adicionada ao questionário após sua inscrição e precisa ser respondida.</span>
+                          </div>
+
+                          {/* Input de resposta ou mensagem de sucesso */}
+                          {jaRespondeu ? (
+                            <div className="reenvio-sucesso-msg">
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Resposta enviada com sucesso!</span>
+                            </div>
+                          ) : prazoExpirado ? (
+                            <div className="reenvio-expirado-msg">
+                              <AlertCircle className="w-4 h-4" />
+                              <span>O prazo para responder esta pergunta já expirou.</span>
+                            </div>
+                          ) : (
+                            <div className="reenvio-input-area">
+                              <label className="reenvio-input-label">Sua resposta</label>
+                              <textarea
+                                className="reenvio-textarea"
+                                rows={3}
+                                placeholder="Digite sua resposta..."
+                                value={valorEditado}
+                                onChange={(e) => handleNovaRespostaChange(pergunta.resposta_id, e.target.value)}
+                                disabled={estaEnviando}
+                              />
+                              {temErro && novaMensagensErro[pergunta.resposta_id] && (
+                                <div className="reenvio-erro-msg">
+                                  <AlertCircle className="w-3.5 h-3.5" />
+                                  <span>{novaMensagensErro[pergunta.resposta_id]}</span>
+                                </div>
+                              )}
+
+                              {novaConfirmandoId === pergunta.resposta_id ? (
+                                <div className="reenvio-confirmacao">
+                                  <p className="reenvio-confirmacao-texto">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    Tem certeza que deseja enviar esta resposta?
+                                  </p>
+                                  <div className="reenvio-confirmacao-botoes">
+                                    <button className="reenvio-confirmar-sim" onClick={() => confirmarEnvioNova(pergunta)}>
+                                      <CheckCircle2 className="w-4 h-4" />
+                                      <span>Sim, enviar</span>
+                                    </button>
+                                    <button className="reenvio-confirmar-nao" onClick={cancelarConfirmacaoNova}>
+                                      <X className="w-4 h-4" />
+                                      <span>Cancelar</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  className="reenvio-enviar-btn"
+                                  onClick={() => pedirConfirmacaoNova(pergunta.resposta_id)}
                                   disabled={estaEnviando || !valorEditado.trim()}
                                 >
                                   {estaEnviando ? (

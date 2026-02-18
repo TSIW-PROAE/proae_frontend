@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil } from "lucide-react";
+import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { Edital } from "@/types/edital";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
@@ -8,17 +8,21 @@ import { respostaService } from "@/services/RespostaService/respostaService";
 import "./InscricoesProae.css";
 
 interface PerguntaPayload {
-  id: number;
+  id: string;
   pergunta: string;
   tipo_Pergunta: string;
   obrigatoriedade: boolean;
   opcoes?: string[] | null;
   tipo_formatacao?: string | null;
   placeholder?: string | null;
+  dado?: {
+    id: string;
+    nome: string;
+  } | null;
 }
 
 interface RespostaPayload {
-  id: number;
+  id: string;
   texto: string | null;
   valorTexto: string | null;
   valorOpcoes: string[] | null;
@@ -31,6 +35,8 @@ interface RespostaPayload {
   requerReenvio?: boolean | null;
   parecer?: string | null;
   prazoReenvio?: string | null;
+  aguardandoRespostaNovaPergunta?: boolean | null;
+  prazoRespostaNovaPergunta?: string | null;
 }
 
 interface PerguntaComResposta {
@@ -40,7 +46,7 @@ interface PerguntaComResposta {
 
 interface StepComStatus {
   step: {
-    id: number;
+    id: string;
     texto: string;
   };
   status: string;
@@ -49,14 +55,14 @@ interface StepComStatus {
 
 interface StepsCompletos {
   edital: {
-    id: number;
+    id: string;
     titulo?: string;
     titulo_edital?: string;
     descricao?: string;
     status?: string;
   };
   aluno: {
-    aluno_id: number;
+    aluno_id: string;
     nome: string;
     email: string;
     matricula: string;
@@ -76,20 +82,19 @@ export default function InscricoesProae() {
   const [inscricaoSelecionada, setInscricaoSelecionada] = useState<AlunoInscrito | null>(null);
   const [abaAtiva, setAbaAtiva] = useState<"questionarios" | "informacoes">("questionarios");
   const [stepsCompletos, setStepsCompletos] = useState<StepsCompletos | null>(null);
-  const [questionarioSelecionado, setQuestionarioSelecionado] = useState<number | null>(null);
+  const [questionarioSelecionado, setQuestionarioSelecionado] = useState<string | null>(null);
   const [isLoadingModal, setIsLoadingModal] = useState(false);
-  const [validandoRespostas, setValidandoRespostas] = useState<Record<number, boolean>>({});
-  const [validandoTodas, setValidandoTodas] = useState(false);
+  const [validandoRespostas, setValidandoRespostas] = useState<Record<string, boolean>>({});
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Estado do modal de confirmação de validação
   const [modalValidarOpen, setModalValidarOpen] = useState(false);
-  const [validarRespostaId, setValidarRespostaId] = useState<number | null>(null);
+  const [validarRespostaId, setValidarRespostaId] = useState<string | null>(null);
   const [validarPerguntaTitulo, setValidarPerguntaTitulo] = useState<string>("");
 
   // Estado do modal de invalidação
   const [modalInvalidarOpen, setModalInvalidarOpen] = useState(false);
-  const [invalidarRespostaId, setInvalidarRespostaId] = useState<number | null>(null);
+  const [invalidarRespostaId, setInvalidarRespostaId] = useState<string | null>(null);
   const [invalidarPerguntaTitulo, setInvalidarPerguntaTitulo] = useState<string>("");
   const [invalidarParecer, setInvalidarParecer] = useState("");
   const [invalidarPrazo, setInvalidarPrazo] = useState("");
@@ -98,13 +103,27 @@ export default function InscricoesProae() {
 
   // Estado para edição de resposta pela PROAE
   const [confirmarEdicaoOpen, setConfirmarEdicaoOpen] = useState(false);
-  const [editarRespostaId, setEditarRespostaId] = useState<number | null>(null);
+  const [editarRespostaId, setEditarRespostaId] = useState<string | null>(null);
   const [editarPerguntaInfo, setEditarPerguntaInfo] = useState<PerguntaPayload | null>(null);
   const [editarRespostaAtual, setEditarRespostaAtual] = useState<string>("");
   const [modalEditarOpen, setModalEditarOpen] = useState(false);
   const [editarValorTexto, setEditarValorTexto] = useState("");
   const [editarValorOpcoes, setEditarValorOpcoes] = useState<string[]>([]);
   const [enviandoEdicao, setEnviandoEdicao] = useState(false);
+
+  // Estado do modal de reabrir prazo de complemento
+  const [modalReabrirComplementoOpen, setModalReabrirComplementoOpen] = useState(false);
+  const [reabrirRespostaId, setReabrirRespostaId] = useState<string | null>(null);
+  const [reabrirPerguntaTitulo, setReabrirPerguntaTitulo] = useState("");
+  const [reabrirNovoPrazo, setReabrirNovoPrazo] = useState("");
+  const [enviandoReabertura, setEnviandoReabertura] = useState(false);
+
+  // Estado do visualizador de documentos
+  const [documentoViewerOpen, setDocumentoViewerOpen] = useState(false);
+  const [documentoUrl, setDocumentoUrl] = useState<string | null>(null);
+  const [documentoNome, setDocumentoNome] = useState("");
+  const [documentoLoading, setDocumentoLoading] = useState(false);
+  const [documentoErro, setDocumentoErro] = useState<string | null>(null);
 
   useEffect(() => {
     carregarEditais();
@@ -172,6 +191,12 @@ export default function InscricoesProae() {
         case "pendente_regularizacao":
           matchStatus = statusNorm === "PENDENTE DE REGULARIZAÇÃO" || statusNorm === "PENDENTE_REGULARIZACAO";
           break;
+        case "aguardando_complemento":
+          matchStatus = statusNorm === "AGUARDANDO COMPLEMENTO" || statusNorm === "AGUARDANDO_COMPLEMENTO";
+          break;
+        case "rejeitada_prazo_complemento":
+          matchStatus = statusNorm === "REJEITADA POR PRAZO DE COMPLEMENTO" || statusNorm === "REJEITADA_POR_PRAZO_COMPLEMENTO";
+          break;
         case "pendente":
           matchStatus = statusNorm === "PENDENTE";
           break;
@@ -201,6 +226,12 @@ export default function InscricoesProae() {
       case "PENDENTE DE REGULARIZAÇÃO":
       case "PENDENTE_REGULARIZACAO":
         return "status-badge status-pendente-regularizacao";
+      case "AGUARDANDO COMPLEMENTO":
+      case "AGUARDANDO_COMPLEMENTO":
+        return "status-badge status-aguardando-complemento";
+      case "REJEITADA POR PRAZO DE COMPLEMENTO":
+      case "REJEITADA_POR_PRAZO_COMPLEMENTO":
+        return "status-badge status-rejeitada-prazo-complemento";
       case "PENDENTE":
       default:
         return "status-badge status-pendente";
@@ -225,6 +256,12 @@ export default function InscricoesProae() {
       case "PENDENTE DE REGULARIZAÇÃO":
       case "PENDENTE_REGULARIZACAO":
         return "Pendente de Regularização";
+      case "AGUARDANDO COMPLEMENTO":
+      case "AGUARDANDO_COMPLEMENTO":
+        return "Aguardando Complemento";
+      case "REJEITADA POR PRAZO DE COMPLEMENTO":
+      case "REJEITADA_POR_PRAZO_COMPLEMENTO":
+        return "Rejeitada por Prazo";
       case "PENDENTE":
       default:
         return "Pendente";
@@ -237,7 +274,7 @@ export default function InscricoesProae() {
     await carregarStepsCompletos(inscricao.aluno_id);
   };
 
-  const carregarStepsCompletos = async (alunoId: number) => {
+  const carregarStepsCompletos = async (alunoId: string) => {
     if (!editalSelecionado?.id || !alunoId) return;
 
     try {
@@ -274,7 +311,7 @@ export default function InscricoesProae() {
     }
   };
 
-  const abrirModalValidar = (respostaId: number, perguntaTitulo?: string) => {
+  const abrirModalValidar = (respostaId: string, perguntaTitulo?: string) => {
     setValidarRespostaId(respostaId);
     setValidarPerguntaTitulo(perguntaTitulo || "");
     setModalValidarOpen(true);
@@ -318,7 +355,7 @@ export default function InscricoesProae() {
     }
   };
 
-  const abrirModalInvalidar = (respostaId: number, perguntaTitulo?: string) => {
+  const abrirModalInvalidar = (respostaId: string, perguntaTitulo?: string) => {
     setInvalidarRespostaId(respostaId);
     setInvalidarPerguntaTitulo(perguntaTitulo || "");
     setInvalidarParecer("");
@@ -337,7 +374,7 @@ export default function InscricoesProae() {
   };
 
   // ── Edição de resposta pela PROAE ──
-  const abrirConfirmacaoEdicao = (respostaId: number, pergunta: PerguntaPayload, respostaAtual: string) => {
+  const abrirConfirmacaoEdicao = (respostaId: string, pergunta: PerguntaPayload, respostaAtual: string) => {
     setEditarRespostaId(respostaId);
     setEditarPerguntaInfo(pergunta);
     setEditarRespostaAtual(respostaAtual);
@@ -474,7 +511,7 @@ export default function InscricoesProae() {
     }
   };
 
-  const alterarPrazoReenvio = async (respostaId: number, novoPrazo: string, parecerExistente?: string) => {
+  const alterarPrazoReenvio = async (respostaId: string, novoPrazo: string, parecerExistente?: string) => {
     setValidandoRespostas((prev) => ({ ...prev, [respostaId]: true }));
     try {
       const prazoDate = new Date(novoPrazo + "T23:59:59.000Z");
@@ -509,38 +546,132 @@ export default function InscricoesProae() {
     }
   };
 
-  const validarTodasRespostas = async () => {
-    const stepAtual = stepsCompletos?.steps?.find((s) => s.step.id === questionarioSelecionado);
-    const pendentes = stepAtual?.perguntas?.filter((p) => p.resposta?.id && p.resposta.validada !== true) || [];
-    const ids = pendentes.map((p) => p.resposta!.id);
+  // ── Reabrir prazo de complemento ──
+  const abrirModalReabrirComplemento = (respostaId: string, perguntaTitulo: string) => {
+    setReabrirRespostaId(respostaId);
+    setReabrirPerguntaTitulo(perguntaTitulo);
+    setReabrirNovoPrazo("");
+    setModalReabrirComplementoOpen(true);
+  };
 
-    if (!ids.length) {
-      window.alert("Não há respostas pendentes para validar.");
+  // ── Documento: buscar URL presigned ──
+  const extrairNomeArquivo = (urlArquivo: string): string => {
+    // Se for uma URL completa, pegar último segmento
+    try {
+      const url = new URL(urlArquivo);
+      const segments = url.pathname.split("/").filter(Boolean);
+      return segments[segments.length - 1] || urlArquivo;
+    } catch {
+      // Se não for URL válida, usar como está (já é o nome do arquivo)
+      return urlArquivo;
+    }
+  };
+
+  const getExtensaoArquivo = (nome: string): string => {
+    return nome.split(".").pop()?.toLowerCase() || "";
+  };
+
+  const isImagemExtensao = (extensao: string): boolean => {
+    return ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"].includes(extensao);
+  };
+
+  const isPdfExtensao = (extensao: string): boolean => {
+    return extensao === "pdf";
+  };
+
+  const buscarDocumentoPresignedUrl = async (nomeArquivo: string): Promise<{ nome_do_arquivo: string; url: string } | null> => {
+    try {
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/documents/${encodeURIComponent(nomeArquivo)}`;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Erro ao buscar documento");
+      return await response.json();
+    } catch (err) {
+      console.error("Erro ao buscar presigned URL:", err);
+      return null;
+    }
+  };
+
+  const abrirVisualizadorDocumento = async (urlArquivo: string) => {
+    const nomeArquivo = extrairNomeArquivo(urlArquivo);
+    setDocumentoNome(nomeArquivo);
+    setDocumentoLoading(true);
+    setDocumentoErro(null);
+    setDocumentoViewerOpen(true);
+
+    const result = await buscarDocumentoPresignedUrl(nomeArquivo);
+    if (result?.url) {
+      setDocumentoUrl(result.url);
+    } else {
+      setDocumentoErro("Não foi possível carregar o documento. Tente novamente.");
+    }
+    setDocumentoLoading(false);
+  };
+
+  const fecharVisualizadorDocumento = () => {
+    setDocumentoViewerOpen(false);
+    setDocumentoUrl(null);
+    setDocumentoNome("");
+    setDocumentoErro(null);
+  };
+
+  const baixarDocumento = async (urlArquivo: string) => {
+    const nomeArquivo = extrairNomeArquivo(urlArquivo);
+    const result = await buscarDocumentoPresignedUrl(nomeArquivo);
+    if (result?.url) {
+      const a = document.createElement("a");
+      a.href = result.url;
+      a.download = result.nome_do_arquivo || nomeArquivo;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      window.alert("Não foi possível baixar o documento.");
+    }
+  };
+
+  const fecharModalReabrirComplemento = () => {
+    setModalReabrirComplementoOpen(false);
+    setReabrirRespostaId(null);
+    setReabrirPerguntaTitulo("");
+    setReabrirNovoPrazo("");
+  };
+
+  const confirmarReabrirComplemento = async () => {
+    if (!reabrirRespostaId || !reabrirNovoPrazo) return;
+
+    const prazoDate = new Date(reabrirNovoPrazo);
+    if (prazoDate.getTime() <= Date.now()) {
+      window.alert("O novo prazo deve ser uma data futura.");
       return;
     }
 
-    if (!window.confirm(`Validar ${ids.length} resposta${ids.length > 1 ? "s" : ""} deste questionário?`)) return;
-
-    setValidandoTodas(true);
+    setEnviandoReabertura(true);
     try {
-      await Promise.all(
-        ids.map((id) =>
-          fetch(`${import.meta.env.VITE_API_URL_SERVICES}/respostas/${id}/validate`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ validada: true }),
-          }),
-        ),
-      );
+      const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/${reabrirRespostaId}/reabrir-complemento`;
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ novoPrazo: prazoDate.toISOString() }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.mensagem || `Erro: ${response.statusText}`);
+      }
+
+      fecharModalReabrirComplemento();
 
       if (inscricaoSelecionada?.aluno_id) {
         await carregarStepsCompletos(inscricaoSelecionada.aluno_id);
       }
+      // Recarrega a lista de inscrições para atualizar o status
+      await carregarInscricoes();
     } catch (err: any) {
-      console.error("Erro ao validar respostas:", err);
-      window.alert("Não foi possível validar todas as respostas. Tente novamente.");
+      console.error("Erro ao reabrir complemento:", err);
+      window.alert(err.message || "Não foi possível reabrir o prazo. Tente novamente.");
     } finally {
-      setValidandoTodas(false);
+      setEnviandoReabertura(false);
     }
   };
 
@@ -572,7 +703,7 @@ export default function InscricoesProae() {
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `estudantes-aprovados-edital-${editalSelecionado.id}.pdf`;
+      link.download = `estudantes-aprovados-${editalSelecionado.titulo_edital || "edital"}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -602,11 +733,18 @@ export default function InscricoesProae() {
       case "CONCLUIDO":
         return "Concluído";
       case "PENDENTE_CORRECAO":
-        return "Pendente de Correção";
+      case "PENDENTE_REGULARIZACAO":
+        return "Pendente de Regularização";
       case "EM_ANDAMENTO":
         return "Em Andamento";
       case "NAO_INICIADO":
         return "Não Iniciado";
+      case "REJEITADO":
+        return "Rejeitado";
+      case "AGUARDANDO_COMPLEMENTO":
+        return "Aguardando Complemento";
+      case "PRAZO_COMPLEMENTO_EXPIRADO":
+        return "Prazo de Complemento Expirado";
       default:
         return status || "Pendente";
     }
@@ -618,11 +756,18 @@ export default function InscricoesProae() {
       case "CONCLUIDO":
         return { backgroundColor: "#dcfce7", color: "#166534" };
       case "PENDENTE_CORRECAO":
+      case "PENDENTE_REGULARIZACAO":
         return { backgroundColor: "#fef3c7", color: "#92400e" };
       case "EM_ANDAMENTO":
         return { backgroundColor: "#dbeafe", color: "#1e40af" };
       case "NAO_INICIADO":
         return { backgroundColor: "#f1f5f9", color: "#475569" };
+      case "REJEITADO":
+        return { backgroundColor: "#fef2f2", color: "#991b1b" };
+      case "AGUARDANDO_COMPLEMENTO":
+        return { backgroundColor: "#eff6ff", color: "#1d4ed8" };
+      case "PRAZO_COMPLEMENTO_EXPIRADO":
+        return { backgroundColor: "#fef2f2", color: "#be123c" };
       default:
         return { backgroundColor: "#e2e8f0", color: "#64748b" };
     }
@@ -660,7 +805,7 @@ export default function InscricoesProae() {
                 className="edital-select"
                 value={editalSelecionado?.id || ""}
                 onChange={(e) => {
-                  const edital = editais.find((ed) => ed.id === Number(e.target.value));
+                  const edital = editais.find((ed) => ed.id === e.target.value);
                   setEditalSelecionado(edital || null);
                 }}
                 disabled={isLoadingEditais}
@@ -700,6 +845,8 @@ export default function InscricoesProae() {
                     <option value="selecionada">Selecionada</option>
                     <option value="nao_selecionada">Não Selecionada</option>
                     <option value="pendente_regularizacao">Pendente de Regularização</option>
+                    <option value="aguardando_complemento">Aguardando Complemento</option>
+                    <option value="rejeitada_prazo_complemento">Rejeitada por Prazo de Complemento</option>
                   </select>
                 </div>
                 <button onClick={baixarPdfAprovados} disabled={downloadingPdf} className="download-pdf-button" title="Baixar PDF dos aprovados">
@@ -733,7 +880,6 @@ export default function InscricoesProae() {
                   <table className="inscricoes-table">
                     <thead>
                       <tr>
-                        <th>ID</th>
                         <th>Matrícula</th>
                         <th>Nome</th>
                         <th>Email</th>
@@ -752,7 +898,6 @@ export default function InscricoesProae() {
                           style={{ cursor: "pointer" }}
                           className="table-row-clickable"
                         >
-                          <td>{inscricao.inscricao_id || "N/A"}</td>
                           <td>
                             <span className="matricula-badge">{inscricao.matricula || "N/A"}</span>
                           </td>
@@ -977,7 +1122,7 @@ export default function InscricoesProae() {
                                   lineHeight: "1.4",
                                 }}
                               >
-                                {stepItem.step.texto || `Questionário ${stepItem.step.id}`}
+                                {stepItem.step.texto || "Questionário"}
                               </h4>
 
                               {/* Info */}
@@ -1004,39 +1149,6 @@ export default function InscricoesProae() {
                                   }}
                                 >
                                   <h3 style={{ margin: 0, color: "#1e293b", fontSize: "18px", fontWeight: "600" }}>Perguntas</h3>
-                                  <button
-                                    onClick={validarTodasRespostas}
-                                    disabled={validandoTodas || !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)}
-                                    style={{
-                                      padding: "10px 14px",
-                                      backgroundColor: validandoTodas
-                                        ? "#cbd5e1"
-                                        : !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
-                                          ? "#dcfce7"
-                                          : "#16a34a",
-                                      color: !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true) ? "#166534" : "white",
-                                      border: !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
-                                        ? "1px solid #bbf7d0"
-                                        : "none",
-                                      borderRadius: "8px",
-                                      cursor:
-                                        validandoTodas || !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
-                                          ? "default"
-                                          : "pointer",
-                                      fontWeight: 600,
-                                      fontSize: "13px",
-                                      transition: "background-color 0.2s, transform 0.1s",
-                                      boxShadow: !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
-                                        ? "none"
-                                        : "0 2px 6px rgba(22, 163, 74, 0.25)",
-                                    }}
-                                  >
-                                    {validandoTodas
-                                      ? "Validando..."
-                                      : !stepAtual?.perguntas?.some((p) => p.resposta?.id && p.resposta.validada !== true)
-                                        ? "✓ Todas validadas"
-                                        : "Validar todas"}
-                                  </button>
                                 </div>
 
                                 {stepAtual?.perguntas?.length ? (
@@ -1052,6 +1164,12 @@ export default function InscricoesProae() {
                                         (respostaInfo?.texto && respostaInfo.texto.trim().length > 0 ? respostaInfo.texto : null);
                                       const respostaConteudo = valorOpcoes || valorTexto;
                                       const isValidandoResposta = respostaInfo?.id ? validandoRespostas[respostaInfo.id] : false;
+                                      const isDado = !!perguntaInfo?.dado;
+                                      const dadoNome = perguntaInfo?.dado?.nome || null;
+
+                                      // Nova pergunta aguardando resposta do aluno
+                                      const aguardandoNovaPergunta = respostaInfo?.aguardandoRespostaNovaPergunta === true;
+                                      const prazoNovaPergunta = respostaInfo?.prazoRespostaNovaPergunta;
 
                                       // Determinar status detalhado da resposta
                                       const respostaValidada = respostaInfo?.validada === true;
@@ -1068,7 +1186,10 @@ export default function InscricoesProae() {
                                       let chipLabel: string;
                                       let chipStyle: React.CSSProperties;
 
-                                      if (!respostaInfo) {
+                                      if (aguardandoNovaPergunta) {
+                                        chipLabel = "⏳ Aguardando Complemento";
+                                        chipStyle = { backgroundColor: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8" };
+                                      } else if (!respostaInfo) {
                                         chipLabel = "Sem resposta";
                                         chipStyle = { backgroundColor: "#e2e8f0", border: "1px solid #cbd5e1", color: "#475569" };
                                       } else if (respostaValidada) {
@@ -1133,13 +1254,174 @@ export default function InscricoesProae() {
                                             <span>Obrigatória: {obrigatoria}</span>
                                           </div>
 
+                                          {/* Card especial: nova pergunta aguardando resposta do aluno */}
+                                          {aguardandoNovaPergunta ? (
+                                            <div
+                                              style={{
+                                                marginTop: "8px",
+                                                padding: "16px",
+                                                background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+                                                border: "1px solid #93c5fd",
+                                                borderRadius: "10px",
+                                              }}
+                                            >
+                                              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                                                <div
+                                                  style={{
+                                                    width: "32px",
+                                                    height: "32px",
+                                                    borderRadius: "8px",
+                                                    background: "#3b82f6",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    color: "white",
+                                                    fontSize: "16px",
+                                                    flexShrink: 0,
+                                                  }}
+                                                >
+                                                  🕐
+                                                </div>
+                                                <div>
+                                                  <div style={{ fontSize: "13px", fontWeight: "700", color: "#1e40af" }}>
+                                                    Nova pergunta — Aguardando resposta do aluno
+                                                  </div>
+                                                  <div style={{ fontSize: "12px", color: "#3b82f6", marginTop: "2px" }}>
+                                                    Esta pergunta foi adicionada ao questionário após a inscrição do aluno.
+                                                  </div>
+                                                </div>
+                                              </div>
+
+                                              {prazoNovaPergunta && (
+                                                <div
+                                                  style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "8px",
+                                                    padding: "10px 14px",
+                                                    background: "white",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid #bfdbfe",
+                                                  }}
+                                                >
+                                                  <Calendar style={{ width: "15px", height: "15px", color: "#2563eb", flexShrink: 0 }} />
+                                                  <div style={{ fontSize: "13px", color: "#1e3a5f" }}>
+                                                    <span style={{ fontWeight: 600 }}>Prazo para resposta: </span>
+                                                    {new Date(prazoNovaPergunta).toLocaleDateString("pt-BR", {
+                                                      day: "2-digit",
+                                                      month: "long",
+                                                      year: "numeric",
+                                                      hour: "2-digit",
+                                                      minute: "2-digit",
+                                                    })}
+                                                    {(() => {
+                                                      const agora = new Date();
+                                                      const prazo = new Date(prazoNovaPergunta);
+                                                      const diffMs = prazo.getTime() - agora.getTime();
+                                                      const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                                                      if (diffDias < 0) {
+                                                        return (
+                                                          <span style={{ color: "#dc2626", fontWeight: 600, marginLeft: "8px" }}>
+                                                            (vencido há {Math.abs(diffDias)} dia{Math.abs(diffDias) !== 1 ? "s" : ""})
+                                                          </span>
+                                                        );
+                                                      } else if (diffDias === 0) {
+                                                        return (
+                                                          <span style={{ color: "#ea580c", fontWeight: 600, marginLeft: "8px" }}>
+                                                            (vence hoje)
+                                                          </span>
+                                                        );
+                                                      } else if (diffDias <= 3) {
+                                                        return (
+                                                          <span style={{ color: "#ea580c", fontWeight: 600, marginLeft: "8px" }}>
+                                                            (falta{diffDias !== 1 ? "m" : ""} {diffDias} dia{diffDias !== 1 ? "s" : ""})
+                                                          </span>
+                                                        );
+                                                      } else {
+                                                        return (
+                                                          <span style={{ color: "#64748b", marginLeft: "8px" }}>
+                                                            ({diffDias} dias restantes)
+                                                          </span>
+                                                        );
+                                                      }
+                                                    })()}
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                              {/* Botão: Definir novo prazo (quando o prazo expirou) */}
+                                              {prazoNovaPergunta && new Date(prazoNovaPergunta).getTime() < Date.now() && (
+                                                <div style={{ marginTop: "10px" }}>
+                                                  <button
+                                                    onClick={() =>
+                                                      abrirModalReabrirComplemento(
+                                                        respostaInfo?.id || "",
+                                                        perguntaInfo?.pergunta || "Pergunta"
+                                                      )
+                                                    }
+                                                    style={{
+                                                      padding: "8px 16px",
+                                                      backgroundColor: "#2563eb",
+                                                      color: "white",
+                                                      border: "none",
+                                                      borderRadius: "8px",
+                                                      cursor: "pointer",
+                                                      fontWeight: 600,
+                                                      fontSize: "13px",
+                                                      display: "flex",
+                                                      alignItems: "center",
+                                                      gap: "6px",
+                                                      transition: "background-color 0.2s",
+                                                      boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)",
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1d4ed8")}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#2563eb")}
+                                                  >
+                                                    🔄 Definir novo prazo
+                                                  </button>
+                                                </div>
+                                              )}
+
+                                              {!respostaConteudo && (
+                                                <div style={{ fontSize: "12px", color: "#64748b", marginTop: "10px", fontStyle: "italic" }}>
+                                                  O aluno ainda não enviou sua resposta para esta pergunta.
+                                                </div>
+                                              )}
+
+                                              {respostaConteudo && (
+                                                <div
+                                                  style={{
+                                                    marginTop: "10px",
+                                                    padding: "10px 14px",
+                                                    background: "#f0fdf4",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid #bbf7d0",
+                                                  }}
+                                                >
+                                                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#166534", marginBottom: "4px" }}>
+                                                    Resposta enviada:
+                                                  </div>
+                                                  <div style={{ fontSize: "14px", color: "#15803d" }}>{respostaConteudo}</div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <>
                                           {/* Resposta */}
                                           {respostaConteudo ? (
                                             <div
                                               style={{
                                                 padding: "12px",
-                                                backgroundColor: respostaInvalidada ? "#fefce8" : "#f0fdf4",
-                                                border: respostaInvalidada ? "1px solid #fde68a" : "1px solid #bbf7d0",
+                                                backgroundColor: respostaInvalidada
+                                                  ? "#fefce8"
+                                                  : isDado
+                                                    ? "#f5f3ff"
+                                                    : "#f0fdf4",
+                                                border: respostaInvalidada
+                                                  ? "1px solid #fde68a"
+                                                  : isDado
+                                                    ? "1px solid #c4b5fd"
+                                                    : "1px solid #bbf7d0",
                                                 borderRadius: "6px",
                                                 marginTop: "8px",
                                               }}
@@ -1156,7 +1438,7 @@ export default function InscricoesProae() {
                                                   style={{
                                                     fontSize: "12px",
                                                     fontWeight: "600",
-                                                    color: respostaInvalidada ? "#854d0e" : "#166534",
+                                                    color: respostaInvalidada ? "#854d0e" : isDado ? "#5b21b6" : "#166534",
                                                   }}
                                                 >
                                                   Resposta:
@@ -1189,10 +1471,193 @@ export default function InscricoesProae() {
                                                   </button>
                                                 )}
                                               </div>
-                                              <div style={{ fontSize: "14px", color: respostaInvalidada ? "#713f12" : "#15803d" }}>
+                                              <div style={{ fontSize: "14px", color: respostaInvalidada ? "#713f12" : isDado ? "#4c1d95" : "#15803d" }}>
                                                 {respostaConteudo}
                                               </div>
+
+                                              {isDado && dadoNome && (
+                                                <div
+                                                  style={{
+                                                    marginTop: "8px",
+                                                    padding: "8px 12px",
+                                                    backgroundColor: "#ede9fe",
+                                                    borderRadius: "6px",
+                                                    border: "1px solid #c4b5fd",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "8px",
+                                                  }}
+                                                >
+                                                  <span style={{ fontSize: "14px", flexShrink: 0 }}>🔗</span>
+                                                  <div style={{ fontSize: "12px", color: "#5b21b6", lineHeight: 1.4 }}>
+                                                    <strong>Dado: {dadoNome}</strong> — Ao validar esta resposta, o valor será vinculado ao histórico de dados do aluno.
+                                                  </div>
+                                                </div>
+                                              )}
                                             </div>
+                                          ) : respostaInfo?.urlArquivo ? (
+                                            /* Card de documento/arquivo */
+                                            (() => {
+                                              const nomeArq = extrairNomeArquivo(respostaInfo.urlArquivo!);
+                                              const ext = getExtensaoArquivo(nomeArq);
+                                              const isImagem = isImagemExtensao(ext);
+                                              const isPdf = isPdfExtensao(ext);
+                                              return (
+                                                <div
+                                                  style={{
+                                                    padding: "14px",
+                                                    backgroundColor: respostaInvalidada ? "#fefce8" : "#f0f9ff",
+                                                    border: respostaInvalidada ? "1px solid #fde68a" : "1px solid #bae6fd",
+                                                    borderRadius: "8px",
+                                                    marginTop: "8px",
+                                                  }}
+                                                >
+                                                  <div style={{ fontSize: "12px", fontWeight: 600, color: respostaInvalidada ? "#854d0e" : "#0369a1", marginBottom: "10px" }}>
+                                                    Documento enviado:
+                                                  </div>
+
+                                                  {/* Preview do arquivo */}
+                                                  <div
+                                                    onClick={() => abrirVisualizadorDocumento(respostaInfo.urlArquivo!)}
+                                                    style={{
+                                                      display: "flex",
+                                                      alignItems: "center",
+                                                      gap: "12px",
+                                                      padding: "12px",
+                                                      background: "white",
+                                                      borderRadius: "8px",
+                                                      border: "1px solid #e0f2fe",
+                                                      cursor: "pointer",
+                                                      transition: "all 0.2s",
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                      e.currentTarget.style.borderColor = "#7dd3fc";
+                                                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(14, 165, 233, 0.15)";
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                      e.currentTarget.style.borderColor = "#e0f2fe";
+                                                      e.currentTarget.style.boxShadow = "none";
+                                                    }}
+                                                  >
+                                                    <div
+                                                      style={{
+                                                        width: "48px",
+                                                        height: "48px",
+                                                        borderRadius: "10px",
+                                                        background: isPdf
+                                                          ? "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)"
+                                                          : isImagem
+                                                            ? "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
+                                                            : "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        color: "white",
+                                                        fontSize: "13px",
+                                                        fontWeight: 700,
+                                                        flexShrink: 0,
+                                                        textTransform: "uppercase",
+                                                      }}
+                                                    >
+                                                      {ext || <FileText style={{ width: "20px", height: "20px" }} />}
+                                                    </div>
+
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                      <div
+                                                        style={{
+                                                          fontSize: "14px",
+                                                          fontWeight: 600,
+                                                          color: "#0c4a6e",
+                                                          overflow: "hidden",
+                                                          textOverflow: "ellipsis",
+                                                          whiteSpace: "nowrap",
+                                                        }}
+                                                      >
+                                                        {nomeArq}
+                                                      </div>
+                                                      <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                                                        {isPdf ? "Documento PDF" : isImagem ? "Imagem" : `Arquivo .${ext}`}
+                                                        {" · Clique para visualizar"}
+                                                      </div>
+                                                    </div>
+
+                                                    <Eye style={{ width: "18px", height: "18px", color: "#0ea5e9", flexShrink: 0 }} />
+                                                  </div>
+
+                                                  {/* Botões de ação */}
+                                                  <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
+                                                    <button
+                                                      onClick={() => abrirVisualizadorDocumento(respostaInfo.urlArquivo!)}
+                                                      style={{
+                                                        padding: "7px 14px",
+                                                        backgroundColor: "#0ea5e9",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "6px",
+                                                        cursor: "pointer",
+                                                        fontWeight: 600,
+                                                        fontSize: "12px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "5px",
+                                                        transition: "background-color 0.2s",
+                                                      }}
+                                                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0284c7")}
+                                                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0ea5e9")}
+                                                    >
+                                                      <Eye style={{ width: "13px", height: "13px" }} /> Visualizar
+                                                    </button>
+                                                    <button
+                                                      onClick={() => baixarDocumento(respostaInfo.urlArquivo!)}
+                                                      style={{
+                                                        padding: "7px 14px",
+                                                        backgroundColor: "white",
+                                                        color: "#0369a1",
+                                                        border: "1px solid #bae6fd",
+                                                        borderRadius: "6px",
+                                                        cursor: "pointer",
+                                                        fontWeight: 600,
+                                                        fontSize: "12px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "5px",
+                                                        transition: "all 0.2s",
+                                                      }}
+                                                      onMouseEnter={(e) => {
+                                                        e.currentTarget.style.backgroundColor = "#f0f9ff";
+                                                        e.currentTarget.style.borderColor = "#7dd3fc";
+                                                      }}
+                                                      onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = "white";
+                                                        e.currentTarget.style.borderColor = "#bae6fd";
+                                                      }}
+                                                    >
+                                                      <Download style={{ width: "13px", height: "13px" }} /> Salvar
+                                                    </button>
+                                                  </div>
+
+                                                  {isDado && dadoNome && (
+                                                    <div
+                                                      style={{
+                                                        marginTop: "10px",
+                                                        padding: "8px 12px",
+                                                        backgroundColor: "#ede9fe",
+                                                        borderRadius: "6px",
+                                                        border: "1px solid #c4b5fd",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "8px",
+                                                      }}
+                                                    >
+                                                      <span style={{ fontSize: "14px", flexShrink: 0 }}>🔗</span>
+                                                      <div style={{ fontSize: "12px", color: "#5b21b6", lineHeight: 1.4 }}>
+                                                        <strong>Dado: {dadoNome}</strong> — Ao validar, o valor será vinculado ao histórico de dados do aluno.
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()
                                           ) : (
                                             <div
                                               style={{
@@ -1411,6 +1876,8 @@ export default function InscricoesProae() {
                                               </span>
                                             )}
                                           </div>
+                                            </>
+                                          )}
                                         </div>
                                       );
                                     })}
@@ -1927,6 +2394,371 @@ export default function InscricoesProae() {
               >
                 {enviandoEdicao ? "Salvando..." : "Salvar alteração"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Reabrir Complemento (definir novo prazo) ── */}
+      {modalReabrirComplementoOpen && (
+        <div
+          onClick={fecharModalReabrirComplemento}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10003,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "white",
+              borderRadius: "16px",
+              padding: "28px",
+              width: "440px",
+              maxWidth: "90vw",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontSize: "18px",
+                  flexShrink: 0,
+                }}
+              >
+                🔄
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>
+                  Reabrir prazo de complemento
+                </h3>
+                <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#64748b" }}>
+                  Defina um novo prazo para o aluno enviar a resposta.
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: "12px 14px",
+                background: "#f8fafc",
+                borderRadius: "8px",
+                border: "1px solid #e2e8f0",
+                marginBottom: "16px",
+              }}
+            >
+              <div style={{ fontSize: "12px", color: "#64748b", marginBottom: "2px" }}>Pergunta:</div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "#1e293b" }}>{reabrirPerguntaTitulo}</div>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>
+                Novo prazo para resposta
+              </label>
+              <input
+                type="datetime-local"
+                value={reabrirNovoPrazo}
+                onChange={(e) => setReabrirNovoPrazo(e.target.value)}
+                min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontFamily: "inherit",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#2563eb")}
+                onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                onClick={fecharModalReabrirComplemento}
+                disabled={enviandoReabertura}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "white",
+                  color: "#374151",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  cursor: enviandoReabertura ? "not-allowed" : "pointer",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  opacity: enviandoReabertura ? 0.6 : 1,
+                  transition: "background-color 0.2s",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarReabrirComplemento}
+                disabled={enviandoReabertura || !reabrirNovoPrazo}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: enviandoReabertura || !reabrirNovoPrazo ? "#94a3b8" : "#2563eb",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: enviandoReabertura || !reabrirNovoPrazo ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  boxShadow: enviandoReabertura || !reabrirNovoPrazo ? "none" : "0 2px 6px rgba(37, 99, 235, 0.3)",
+                  transition: "background-color 0.2s",
+                }}
+              >
+                {enviandoReabertura ? "Reabrindo..." : "Confirmar novo prazo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Visualizador de Documento ── */}
+      {documentoViewerOpen && (
+        <div
+          onClick={fecharVisualizadorDocumento}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10004,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "white",
+              borderRadius: "16px",
+              width: "90vw",
+              maxWidth: "900px",
+              height: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Header do Viewer */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 20px",
+                borderBottom: "1px solid #e2e8f0",
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
+                <FileText style={{ width: "20px", height: "20px", color: "#0ea5e9", flexShrink: 0 }} />
+                <span
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {documentoNome}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                {documentoUrl && (
+                  <button
+                    onClick={() => {
+                      const a = document.createElement("a");
+                      a.href = documentoUrl;
+                      a.download = documentoNome;
+                      a.target = "_blank";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }}
+                    style={{
+                      padding: "8px 14px",
+                      backgroundColor: "#0ea5e9",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                      fontSize: "13px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      transition: "background-color 0.2s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0284c7")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0ea5e9")}
+                  >
+                    <Download style={{ width: "14px", height: "14px" }} /> Salvar
+                  </button>
+                )}
+                <button
+                  onClick={fecharVisualizadorDocumento}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "8px",
+                    border: "1px solid #e2e8f0",
+                    backgroundColor: "white",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#64748b",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#fef2f2";
+                    e.currentTarget.style.color = "#dc2626";
+                    e.currentTarget.style.borderColor = "#fca5a5";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "white";
+                    e.currentTarget.style.color = "#64748b";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
+                  }}
+                >
+                  <X style={{ width: "18px", height: "18px" }} />
+                </button>
+              </div>
+            </div>
+
+            {/* Corpo do Viewer */}
+            <div style={{ flex: 1, overflow: "auto", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
+              {documentoLoading ? (
+                <div style={{ textAlign: "center", padding: "40px" }}>
+                  <div
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      border: "3px solid #e2e8f0",
+                      borderTopColor: "#0ea5e9",
+                      borderRadius: "50%",
+                      animation: "spin 0.8s linear infinite",
+                      margin: "0 auto 16px",
+                    }}
+                  />
+                  <div style={{ fontSize: "14px", color: "#64748b" }}>Carregando documento...</div>
+                </div>
+              ) : documentoErro ? (
+                <div style={{ textAlign: "center", padding: "40px" }}>
+                  <div style={{ fontSize: "40px", marginBottom: "12px" }}>⚠️</div>
+                  <div style={{ fontSize: "14px", color: "#991b1b", fontWeight: 500 }}>{documentoErro}</div>
+                  <button
+                    onClick={() => {
+                      if (documentoNome) abrirVisualizadorDocumento(documentoNome);
+                    }}
+                    style={{
+                      marginTop: "12px",
+                      padding: "8px 16px",
+                      backgroundColor: "#0ea5e9",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                      fontSize: "13px",
+                    }}
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              ) : documentoUrl ? (
+                (() => {
+                  const ext = getExtensaoArquivo(documentoNome);
+                  if (isPdfExtensao(ext)) {
+                    return (
+                      <iframe
+                        src={documentoUrl}
+                        title={documentoNome}
+                        style={{ width: "100%", height: "100%", border: "none" }}
+                      />
+                    );
+                  } else if (isImagemExtensao(ext)) {
+                    return (
+                      <img
+                        src={documentoUrl}
+                        alt={documentoNome}
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "100%",
+                          objectFit: "contain",
+                          padding: "20px",
+                        }}
+                      />
+                    );
+                  } else {
+                    return (
+                      <div style={{ textAlign: "center", padding: "40px" }}>
+                        <FileText style={{ width: "60px", height: "60px", color: "#94a3b8", marginBottom: "16px" }} />
+                        <div style={{ fontSize: "15px", color: "#475569", fontWeight: 500, marginBottom: "4px" }}>
+                          Pré-visualização não disponível
+                        </div>
+                        <div style={{ fontSize: "13px", color: "#94a3b8", marginBottom: "16px" }}>
+                          Este tipo de arquivo não pode ser exibido no navegador.
+                        </div>
+                        <button
+                          onClick={() => {
+                            const a = document.createElement("a");
+                            a.href = documentoUrl!;
+                            a.download = documentoNome;
+                            a.target = "_blank";
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }}
+                          style={{
+                            padding: "10px 20px",
+                            backgroundColor: "#0ea5e9",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <Download style={{ width: "16px", height: "16px" }} /> Baixar arquivo
+                        </button>
+                      </div>
+                    );
+                  }
+                })()
+              ) : null}
             </div>
           </div>
         </div>

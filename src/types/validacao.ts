@@ -2,13 +2,13 @@ export interface ValidacaoCreateDto {
   parecer: string;
   status?: "pendente" | "aprovado" | "reprovado";
   data_validacao?: string; // formato YYYY-MM-DD
-  responsavel_id: number;
-  questionario_id?: number | null;
-  documento_id?: number | null;
+  responsavel_id: string;
+  questionario_id?: string | null;
+  documento_id?: string | null;
 }
 
 export interface Validacao {
-  id: number;
+  id: string;
   parecer: string;
   status: "pendente" | "aprovado" | "reprovado";
   data_validacao?: string;
@@ -18,7 +18,7 @@ export interface Validacao {
     email: string;
   };
   questionario?: {
-    id: number;
+    id: string;
     texto: string;
   } | null;
   created_at: string;

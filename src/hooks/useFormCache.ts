@@ -20,13 +20,13 @@ function parseStringToDateValue(dateStr: string): CalendarDate | null {
 
 interface UseFormCacheProps {
   form: UseFormReturn<any>;
-  vagaId: number | null;
+  vagaId: string | null;
   currentPage: number;
 }
 
 interface UseFormCacheReturn {
   saveToCache: (showToast?: boolean) => Promise<void>;
-  loadFromCache: (vagaId: number) => Promise<boolean>;
+  loadFromCache: (vagaId: string) => Promise<boolean>;
   isSavingCache: boolean;
   lastSavedAt: Date | null;
   hasUnsavedChanges: boolean;
@@ -50,7 +50,7 @@ export function useFormCache({ form, vagaId, currentPage }: UseFormCacheProps): 
     return Object.entries(data)
       .filter(([key]) => key.startsWith('pergunta_'))
       .map(([key, value]) => {
-        const perguntaId = parseInt(key.replace('pergunta_', ''));
+        const perguntaId = key.replace('pergunta_', '');
         
         if (value instanceof File) {
           return { perguntaId, valorTexto: value.name };
@@ -112,7 +112,7 @@ export function useFormCache({ form, vagaId, currentPage }: UseFormCacheProps): 
   }, [vagaId, form, prepareRespostasForCache, isSavingCache]);
 
 
-  const loadFromCache = useCallback(async (vagaId: number): Promise<boolean> => {
+  const loadFromCache = useCallback(async (vagaId: string): Promise<boolean> => {
     try {
       const response = await inscricaoService.buscarRespostas(vagaId);
       

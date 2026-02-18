@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Edital, DocumentoEdital, EtapaEdital } from "../../types/edital";
+import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { Edital } from "../../types/edital";
 import { stepService } from "@/services/StepService/stepService";
 import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import { editalService } from "../../services/EditalService/editalService";
@@ -9,7 +10,8 @@ import "./ModalEditarEdital.css";
 
 // Importar tipos e utilitários
 import { EditableDocumento, EditableEtapa, EditableVaga, StatusEdital, EditableQuestionario, PerguntaEditorItem } from "./types";
-import { toInternalStatus, makeSnapshot } from "./utils";
+import { toInternalStatus } from "./utils";
+import type { AutoSaveStatus } from "./components/ModalFooter";
 
 // Importar componentes
 import {
@@ -56,10 +58,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
   const [openCronograma, setOpenCronograma] = useState(true);
   const [openVagas, setOpenVagas] = useState(true);
   const [openQuestionarios, setOpenQuestionarios] = useState(true);
-  // Controle de alterações locais
-  const [hasChanges, setHasChanges] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const baselineSnapshotRef = useRef<string | null>(null);
+  // Auto-save status indicator
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>("idle");
   // Celebração visual após sucesso
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -76,10 +76,19 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
   // Estado de Dados do Aluno
   const [dadosAluno, setDadosAluno] = useState<Dado[]>([]);
 
+  // Estado do modal de confirmação para nova pergunta em edital com inscrições
+  const [showNovaPerguntaConfirm, setShowNovaPerguntaConfirm] = useState(false);
+  const [novaPerguntaPrazo, setNovaPerguntaPrazo] = useState("");
+  const [novaPerguntaPendingIndex, setNovaPerguntaPendingIndex] = useState<number | null>(null);
+
+  // Estado do modal de confirmação para deletar pergunta em edital com inscrições
+  const [showDeletePerguntaConfirm, setShowDeletePerguntaConfirm] = useState(false);
+  const [deletePerguntaPendingIndex, setDeletePerguntaPendingIndex] = useState<number | null>(null);
+  const [deletePerguntaTexto, setDeletePerguntaTexto] = useState("");
+
   useEffect(() => {
     if (isOpen && edital) {
-      setInitialized(false);
-      setHasChanges(false);
+      setAutoSaveStatus("idle");
       setTitulo(edital.titulo_edital);
       setDescricao(edital.descricao || "");
       // Garantir que o status atual esteja refletido ao abrir, normalizando caso venha em outro formato da API
@@ -95,8 +104,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
         .map((etapa, idx) => ({ ...etapa, ordem_elemento: idx + 1 }));
       setEtapas([...etapasData.map((etapa) => ({ value: etapa, isEditing: false }))]);
 
-      // Carregar vagas e montar snapshot baseline assim que chegarem
-      loadVagasAndInitBaseline();
+      // Carregar vagas
+      loadVagas();
 
       // Carregar Steps deste edital e montar UI de questionários
       loadSteps();
@@ -111,32 +120,32 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
     if (!isOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        // Prioridade: fecha drawer primeiro; depois modais de status; por último fecha o modal principal
+        // Prioridade: fecha drawer primeiro; depois modais; por último fecha o modal principal
+        if (showDeletePerguntaConfirm) {
+          cancelDeletePergunta();
+          return;
+        }
+        if (showNovaPerguntaConfirm) {
+          cancelNovaPergunta();
+          return;
+        }
         if (drawerOpen) {
           setDrawerOpen(false);
           return;
         }
-        if (!showStatusConfirmModal && !showStatusErrorModal) onClose();
+        if (!showStatusConfirmModal && !showStatusErrorModal) handleClose();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen, onClose, showStatusConfirmModal, showStatusErrorModal, drawerOpen]);
+  }, [isOpen, onClose, showStatusConfirmModal, showStatusErrorModal, drawerOpen, showNovaPerguntaConfirm, showDeletePerguntaConfirm]);
 
-  const loadVagasAndInitBaseline = async () => {
+  const loadVagas = async () => {
     if (!edital.id) return;
     try {
       const vagasData = await editalService.buscarVagasDoEdital(edital.id);
       const vagasEditable = [...vagasData.map((vaga) => ({ value: vaga, isEditing: false }))];
       setVagas(vagasEditable);
-
-      // Criar baseline snapshot a partir do próprio edital + vagas retornadas
-      const docsOrig = (edital.edital_url || []) as DocumentoEdital[];
-      const etapasOrig = (edital.etapa_edital || []) as EtapaEdital[];
-      const baseline = makeSnapshot(edital.titulo_edital || "", edital.descricao || "", docsOrig, etapasOrig, vagasData, []);
-      baselineSnapshotRef.current = baseline;
-      setInitialized(true);
-      setHasChanges(false);
     } catch (error) {
       console.error("Erro ao carregar vagas:", error);
     }
@@ -148,7 +157,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
       const steps = await stepService.listarStepsPorEdital(edital.id.toString());
       // Monta questionários com preview vazio inicialmente
       const qs: EditableQuestionario[] = steps
-        .sort((a, b) => (a.id || 0) - (b.id || 0))
+        .sort((a, b) => (a.id || '').localeCompare(b.id || ''))
         .map((s) => ({
           value: {
             id: s.id,
@@ -185,19 +194,122 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
     }
   };
 
-  // Recalcula hasChanges após inicialização e a cada alteração
-  useEffect(() => {
-    if (!initialized) return;
-    const currentSnapshot = makeSnapshot(
-      titulo,
-      descricao,
-      documentos.map((d) => d.value),
-      etapas.map((e) => e.value),
-      vagas.map((v) => v.value),
-      questionarios.map((q) => q.value),
-    );
-    setHasChanges(currentSnapshot !== baselineSnapshotRef.current);
-  }, [initialized, titulo, descricao, documentos, etapas, vagas, questionarios]);
+
+  // ── Auto-save helpers ──────────────────────────────────────────────
+  const showSaved = useCallback(() => {
+    setAutoSaveStatus("saved");
+    const timer = setTimeout(() => setAutoSaveStatus((prev) => (prev === "saved" ? "idle" : prev)), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const showError = useCallback((msg?: string) => {
+    setAutoSaveStatus("error");
+    if (msg) toast.error(msg);
+    setTimeout(() => setAutoSaveStatus((prev) => (prev === "error" ? "idle" : prev)), 3000);
+  }, []);
+
+  /** Persiste título, descrição, documentos e etapas do edital (tudo junto num único PUT). */
+  const autoSaveEdital = useCallback(
+    async (overrides: { documentosOverride?: EditableDocumento[]; etapasOverride?: EditableEtapa[] } = {}) => {
+      if (!edital.id) return;
+      setAutoSaveStatus("saving");
+      try {
+        const docs = overrides.documentosOverride ?? documentos;
+        const etps = overrides.etapasOverride ?? etapas;
+
+        const documentosValidos = docs.filter((doc) => doc.value.titulo_documento && doc.value.url_documento).map((doc) => doc.value);
+
+        const etapasValidas = etps
+          .filter((etapa) => etapa.value.etapa && etapa.value.data_inicio && etapa.value.data_fim)
+          .map((etapa) => etapa.value)
+          .sort((a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
+          .map((etapa, idx) => ({ ...etapa, ordem_elemento: idx + 1 }));
+
+        await editalService.atualizarEdital(edital.id, {
+          titulo_edital: titulo,
+          descricao: descricao,
+          edital_url: documentosValidos,
+          etapa_edital: etapasValidas,
+        });
+
+        showSaved();
+      } catch (err) {
+        console.error("Erro ao salvar edital:", err);
+        showError("Erro ao salvar alterações");
+      }
+    },
+    [edital.id, titulo, descricao, documentos, etapas, showSaved, showError],
+  );
+
+  /** Persiste uma vaga individual (cria ou atualiza). */
+  const handleSaveVaga = useCallback(
+    async (index: number) => {
+      if (!edital.id) return;
+      const vaga = vagas[index];
+      setAutoSaveStatus("saving");
+      try {
+        if (vaga.value.id) {
+          await editalService.atualizarVaga(vaga.value.id, {
+            beneficio: vaga.value.beneficio,
+            descricao_beneficio: vaga.value.descricao_beneficio,
+            numero_vagas: vaga.value.numero_vagas,
+          });
+        } else {
+          const created = await editalService.criarVaga({
+            edital_id: edital.id,
+            beneficio: vaga.value.beneficio,
+            descricao_beneficio: vaga.value.descricao_beneficio,
+            numero_vagas: vaga.value.numero_vagas,
+          });
+          if (created.id) {
+            setVagas((prev) => prev.map((v, i) => (i === index ? { ...v, value: { ...v.value, id: created.id } } : v)));
+          }
+        }
+        showSaved();
+      } catch (err) {
+        console.error("Erro ao salvar vaga:", err);
+        showError("Erro ao salvar vaga");
+        throw err; // propaga para o sub-componente não sair do modo edição
+      }
+    },
+    [edital.id, vagas, showSaved, showError],
+  );
+
+  /** Deleta uma vaga no backend. */
+  const handleDeleteVaga = useCallback(
+    async (index: number) => {
+      const vaga = vagas[index];
+      if (!vaga.value.id) return;
+      setAutoSaveStatus("saving");
+      try {
+        await editalService.deletarVaga(vaga.value.id);
+        showSaved();
+      } catch (err) {
+        console.error("Erro ao deletar vaga:", err);
+        showError("Erro ao remover vaga");
+        throw err;
+      }
+    },
+    [vagas, showSaved, showError],
+  );
+
+  /** Callback de persistência para o CronogramaSection. */
+  const handleEtapasPersist = useCallback(
+    (newEtapas: EditableEtapa[]) => {
+      autoSaveEdital({ etapasOverride: newEtapas });
+    },
+    [autoSaveEdital],
+  );
+
+  /** Callback de persistência para o DocumentosSection. */
+  const handleDocumentosPersist = useCallback(
+    (newDocs: EditableDocumento[]) => {
+      autoSaveEdital({ documentosOverride: newDocs });
+    },
+    [autoSaveEdital],
+  );
+
+  // ── Fim auto-save helpers ──────────────────────────────────────────
 
   const isEditalCompleteLocal = () => {
     const hasTitulo = Boolean(titulo && titulo.trim().length > 0);
@@ -233,123 +345,10 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
     setConfirmText("");
   };
 
-  const persistChanges = async (): Promise<boolean> => {
-    if (!edital.id) return false;
-    setIsSaving(true);
-    setError(null);
-    try {
-      // Salvar edital
-      const documentosValidos = documentos.filter((doc) => doc.value.titulo_documento && doc.value.url_documento).map((doc) => doc.value);
-
-      const etapasValidas = etapas
-        .filter((etapa) => etapa.value.etapa && etapa.value.data_inicio && etapa.value.data_fim)
-        .map((etapa) => etapa.value)
-        .sort((a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
-        .map((etapa, idx) => ({ ...etapa, ordem_elemento: idx + 1 }));
-
-      await editalService.atualizarEdital(edital.id, {
-        titulo_edital: titulo,
-        descricao: descricao,
-        edital_url: documentosValidos,
-        etapa_edital: etapasValidas,
-      });
-
-      // Sincronizar Steps (Questionários)
-      // 1) Buscar steps atuais do backend
-      const stepsExistentes = await stepService.listarStepsPorEdital(edital.id.toString());
-      const idsExistentesSteps = new Set((stepsExistentes || []).map((s) => s.id!).filter(Boolean));
-
-      // 2) Criar/Atualizar conforme UI
-      const idsPersistentesSteps = new Set<number>();
-      let ordem = 1;
-      for (const q of questionarios) {
-        const tituloStep = q.value.titulo?.trim();
-        if (!tituloStep) continue; // ignora sem título
-        if (q.value.id) {
-          const updated = await stepService.atualizarStep(q.value.id, tituloStep);
-          if (updated.id) idsPersistentesSteps.add(updated.id);
-        } else {
-          const created = await stepService.criarStep(edital.id, tituloStep);
-          if (created.id) {
-            idsPersistentesSteps.add(created.id);
-            // atualiza id na UI
-            setQuestionarios((prev) => prev.map((qq) => (qq === q ? { ...qq, value: { ...qq.value, id: created.id } } : qq)));
-          }
-        }
-        ordem++;
-      }
-
-      // 3) Deletar steps removidos pela UI
-      for (const id of idsExistentesSteps) {
-        if (!idsPersistentesSteps.has(id)) {
-          await stepService.deletarStep(id);
-        }
-      }
-
-      // Sincronização de Vagas: cria/atualiza/deleta
-      const vagasValidas = vagas.filter((vaga) => vaga.value.beneficio && vaga.value.numero_vagas > 0);
-
-      const vagasExistentes = (await editalService.buscarVagasDoEdital(edital.id)) || [];
-      const idsExistentes = new Set(vagasExistentes.map((v) => v.id!).filter(Boolean));
-
-      const idsPersistentes = new Set<number>();
-      for (const vaga of vagasValidas) {
-        if (vaga.value.id) {
-          const updated = await editalService.atualizarVaga(vaga.value.id, {
-            beneficio: vaga.value.beneficio,
-            descricao_beneficio: vaga.value.descricao_beneficio,
-            numero_vagas: vaga.value.numero_vagas,
-          });
-          if (updated.id) idsPersistentes.add(updated.id);
-        } else {
-          const created = await editalService.criarVaga({
-            edital_id: edital.id,
-            beneficio: vaga.value.beneficio,
-            descricao_beneficio: vaga.value.descricao_beneficio,
-            numero_vagas: vaga.value.numero_vagas,
-          });
-          if (created.id) idsPersistentes.add(created.id);
-        }
-      }
-
-      for (const id of idsExistentes) {
-        if (!idsPersistentes.has(id)) {
-          await editalService.deletarVaga(id);
-        }
-      }
-
-      // Atualiza baseline e estado de alterações
-      baselineSnapshotRef.current = makeSnapshot(
-        titulo,
-        descricao,
-        documentos.map((d) => d.value),
-        etapas.map((e) => e.value),
-        vagas.filter((vaga) => vaga.value.beneficio && vaga.value.numero_vagas > 0).map((v) => v.value),
-        questionarios.map((q) => q.value),
-      );
-      setHasChanges(false);
-      return true;
-    } catch (error) {
-      console.error("Erro ao salvar edital:", error);
-      setError("Erro ao salvar edital. Tente novamente.");
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const confirmStatusChange = async () => {
     if (!newStatus || !edital.id) return;
     try {
       setIsSaving(true);
-      // Se há mudanças locais, persistir antes de alterar o status
-      if (hasChanges) {
-        const ok = await persistChanges();
-        if (!ok) {
-          // Erro já tratado em persistChanges
-          return;
-        }
-      }
       const atualizado = await editalService.alterarStatusEdital(edital.id, newStatus);
       // Atualiza status local com o retornado ou com newStatus
       setStatus(toInternalStatus(((atualizado?.status_edital as unknown as string) || newStatus) as string));
@@ -379,10 +378,36 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
 
   const handleTituloSave = async () => {
     setTituloEditando(false);
+    autoSaveEdital();
   };
 
   const handleDescricaoSave = async () => {
     setDescricaoEditando(false);
+    autoSaveEdital();
+  };
+
+  /** Salva o título do questionário no drawer (via API de step). */
+  const handleQuizTitleSave = async () => {
+    setQuizTitleEditing(false);
+    if (activeQuestionarioIndex !== null) {
+      const q = questionarios[activeQuestionarioIndex];
+      if (q.value.id && q.value.titulo.trim()) {
+        setAutoSaveStatus("saving");
+        try {
+          await stepService.atualizarStep(q.value.id, q.value.titulo.trim());
+          showSaved();
+        } catch (err) {
+          console.error("Erro ao salvar título do questionário:", err);
+          showError("Erro ao salvar título do questionário");
+        }
+      }
+    }
+  };
+
+  /** Fecha o modal e notifica o pai para recarregar a lista. */
+  const handleClose = () => {
+    onSave();   // recarrega a lista de editais no pai
+    onClose();  // fecha o modal
   };
 
   const handleAddQuestionario = () => {
@@ -437,15 +462,6 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
     } catch (error) {
       console.error("Erro ao criar questionário:", error);
       toast.error("Erro ao criar questionário. Tente novamente.");
-    }
-  };
-
-  const handleSave = async () => {
-    if (!edital.id) return;
-    const ok = await persistChanges();
-    if (ok) {
-      onSave();
-      onClose();
     }
   };
 
@@ -596,6 +612,56 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
       return;
     }
 
+    // Se é uma NOVA pergunta (sem ID) e o edital já possui inscrições, pedir confirmação
+    if (!pergunta.id && edital.possui_inscricoes && (edital.total_inscricoes ?? 0) > 0) {
+      setNovaPerguntaPendingIndex(perguntaIndex);
+      setNovaPerguntaPrazo("");
+      setShowNovaPerguntaConfirm(true);
+      return;
+    }
+
+    // Caso contrário, executa normalmente
+    await executeSavePergunta(perguntaIndex);
+  };
+
+  /** Confirmação do popup: cria a pergunta passando prazoResposta. */
+  const confirmNovaPergunta = async () => {
+    if (novaPerguntaPendingIndex === null) return;
+
+    if (!novaPerguntaPrazo) {
+      toast.error("Informe o prazo de resposta para os alunos já inscritos");
+      return;
+    }
+
+    // Validar que a data é futura
+    if (new Date(novaPerguntaPrazo).getTime() <= Date.now()) {
+      toast.error("O prazo deve ser uma data futura");
+      return;
+    }
+
+    setShowNovaPerguntaConfirm(false);
+    await executeSavePergunta(novaPerguntaPendingIndex, novaPerguntaPrazo);
+    setNovaPerguntaPendingIndex(null);
+    setNovaPerguntaPrazo("");
+  };
+
+  const cancelNovaPergunta = () => {
+    setShowNovaPerguntaConfirm(false);
+    setNovaPerguntaPendingIndex(null);
+    setNovaPerguntaPrazo("");
+  };
+
+  /** Executa de fato o salvamento da pergunta (criação ou atualização). */
+  const executeSavePergunta = async (perguntaIndex: number, prazoResposta?: string) => {
+    if (activeQuestionarioIndex === null) return;
+
+    const questionario = questionarios[activeQuestionarioIndex];
+    const stepId = questionario.value.id;
+    if (!stepId) return;
+
+    const pergunta = editorPerguntas[perguntaIndex];
+    const textoTrimmed = pergunta.texto.trim();
+
     // Mapear o tipo da pergunta para o formato do backend (EnumTipoInput)
     const tipoBackend =
       pergunta.tipo === "texto"
@@ -672,8 +738,10 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
           payload.dadoId = pergunta.dadoId;
         }
 
-        // Adicionar tipo_formatacao se necessário (opcional)
-        // payload.tipo_formatacao = "none";
+        // Se o edital possui inscrições, enviar prazoResposta
+        if (prazoResposta) {
+          payload.prazoResposta = prazoResposta;
+        }
 
         const created = await perguntaService.criarPergunta(payload);
 
@@ -685,7 +753,15 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
           isEditing: false,
         };
         setEditorPerguntas(updatedPerguntas);
-        toast.success("Pergunta criada com sucesso");
+
+        if (prazoResposta) {
+          toast.success(
+            `Pergunta criada com sucesso. ${edital.total_inscricoes} inscrição(ões) receberão esta pergunta como pendência.`,
+            { duration: 5000 },
+          );
+        } else {
+          toast.success("Pergunta criada com sucesso");
+        }
       }
 
       // Atualizar o preview do questionário
@@ -715,6 +791,35 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
   const handleDeletePergunta = async (perguntaIndex: number) => {
     const pergunta = editorPerguntas[perguntaIndex];
 
+    // Se o edital possui inscrições e a pergunta já existe no backend, mostra popup de confirmação
+    if (pergunta.id && edital.possui_inscricoes && (edital.total_inscricoes ?? 0) > 0) {
+      setDeletePerguntaPendingIndex(perguntaIndex);
+      setDeletePerguntaTexto(pergunta.texto || "Pergunta");
+      setShowDeletePerguntaConfirm(true);
+      return;
+    }
+
+    // Caso contrário, executa diretamente
+    await executeDeletePergunta(perguntaIndex);
+  };
+
+  const confirmDeletePergunta = async () => {
+    if (deletePerguntaPendingIndex === null) return;
+    setShowDeletePerguntaConfirm(false);
+    await executeDeletePergunta(deletePerguntaPendingIndex);
+    setDeletePerguntaPendingIndex(null);
+    setDeletePerguntaTexto("");
+  };
+
+  const cancelDeletePergunta = () => {
+    setShowDeletePerguntaConfirm(false);
+    setDeletePerguntaPendingIndex(null);
+    setDeletePerguntaTexto("");
+  };
+
+  const executeDeletePergunta = async (perguntaIndex: number) => {
+    const pergunta = editorPerguntas[perguntaIndex];
+
     // Se tem ID, deleta do backend
     if (pergunta.id) {
       try {
@@ -723,7 +828,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
       } catch (error) {
         console.error("Erro ao deletar pergunta:", error);
         toast.error("Erro ao remover pergunta. Tente novamente.");
-        return; // Não remove da UI se falhar no backend
+        return;
       }
     }
 
@@ -763,7 +868,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
           setDrawerOpen(false);
           return;
         }
-        if (!showStatusConfirmModal && !showStatusErrorModal) onClose();
+        if (!showStatusConfirmModal && !showStatusErrorModal) handleClose();
       }}
       role="dialog"
       aria-modal="true"
@@ -780,6 +885,134 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
       />
 
       <StatusErrorModal isOpen={showStatusErrorModal} errorMessage={statusErrorMessage} onClose={() => setShowStatusErrorModal(false)} />
+
+      {/* Modal de confirmação para nova pergunta em edital com inscrições */}
+      {showNovaPerguntaConfirm && createPortal(
+        <div className="nova-pergunta-confirm-overlay" onClick={(e) => { e.stopPropagation(); cancelNovaPergunta(); }}>
+          <div className="nova-pergunta-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="nova-pergunta-confirm-header">
+              <div className="nova-pergunta-confirm-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <h3>Atenção: Edital com inscrições ativas</h3>
+            </div>
+
+            <div className="nova-pergunta-confirm-body">
+              <p className="nova-pergunta-confirm-alert">
+                Este edital já possui <strong>{edital.total_inscricoes ?? 0} inscrição(ões)</strong> ativas.
+              </p>
+
+              <div className="nova-pergunta-confirm-info">
+                <p>Ao criar esta nova pergunta:</p>
+                <ul>
+                  <li>
+                    Será gerada automaticamente uma <strong>pendência de resposta</strong> para cada aluno já inscrito.
+                  </li>
+                  <li>
+                    O status de todas as inscrições existentes será alterado para <strong>"Pendente de Reenvio"</strong>.
+                  </li>
+                  <li>
+                    Cada aluno verá esta pergunta como uma <strong>nova pendência</strong> no seu portal, com a mensagem de que uma pergunta foi adicionada ao questionário após sua inscrição e precisa ser respondida até o prazo informado.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="nova-pergunta-confirm-prazo">
+                <label htmlFor="prazo-resposta-nova-pergunta">
+                  Prazo para os alunos responderem esta nova pergunta: <span className="required">*</span>
+                </label>
+                <input
+                  id="prazo-resposta-nova-pergunta"
+                  type="datetime-local"
+                  value={novaPerguntaPrazo}
+                  onChange={(e) => setNovaPerguntaPrazo(e.target.value)}
+                  min={new Date().toISOString().slice(0, 16)}
+                  className="nova-pergunta-prazo-input"
+                />
+                <p className="nova-pergunta-prazo-hint">
+                  Após este prazo, caso o aluno não responda, a inscrição poderá ser rejeitada automaticamente.
+                </p>
+              </div>
+            </div>
+
+            <div className="nova-pergunta-confirm-actions">
+              <button
+                className="btn-cancel-nova-pergunta"
+                onClick={cancelNovaPergunta}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-confirm-nova-pergunta"
+                onClick={confirmNovaPergunta}
+                disabled={!novaPerguntaPrazo}
+              >
+                Confirmar e Criar Pergunta
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal de confirmação para deletar pergunta em edital com inscrições */}
+      {showDeletePerguntaConfirm && createPortal(
+        <div className="nova-pergunta-confirm-overlay" onClick={(e) => { e.stopPropagation(); cancelDeletePergunta(); }}>
+          <div className="nova-pergunta-confirm-modal delete-pergunta-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-pergunta-confirm-header">
+              <div className="delete-pergunta-confirm-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+              </div>
+              <h3>Excluir pergunta de edital com inscrições</h3>
+            </div>
+
+            <div className="nova-pergunta-confirm-body">
+              <p className="nova-pergunta-confirm-alert">
+                Este edital já possui <strong>{edital.total_inscricoes ?? 0} inscrição(ões)</strong> ativas.
+              </p>
+
+              <div className="delete-pergunta-confirm-info">
+                <p className="delete-pergunta-nome">
+                  Pergunta: <strong>"{deletePerguntaTexto}"</strong>
+                </p>
+                <div className="delete-pergunta-aviso">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <span>Ao excluir esta pergunta, <strong>todas as respostas já enviadas pelos alunos</strong> para esta pergunta serão permanentemente apagadas. Esta ação não pode ser desfeita.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="nova-pergunta-confirm-actions">
+              <button
+                className="btn-cancel-nova-pergunta"
+                onClick={cancelDeletePergunta}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-delete-pergunta-confirm"
+                onClick={confirmDeletePergunta}
+              >
+                Excluir Pergunta
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Modal Principal - Layout Horizontal */}
       <div className={`modal-horizontal ${drawerOpen ? "drawer-open" : ""}`} onClick={(e) => e.stopPropagation()}>
@@ -814,6 +1047,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
             editalId={edital.id!}
             onVagasChange={setVagas}
             onToggleOpen={() => setOpenVagas(!openVagas)}
+            onSaveVaga={handleSaveVaga}
+            onDeleteVaga={handleDeleteVaga}
           />
 
           <QuestionariosSection
@@ -832,19 +1067,21 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
               openCronograma={openCronograma}
               onEtapasChange={setEtapas}
               onToggleOpen={() => setOpenCronograma(!openCronograma)}
+              onPersist={handleEtapasPersist}
             />
             <DocumentosSection
               documentos={documentos}
               openLinks={openLinks}
               onDocumentosChange={setDocumentos}
               onToggleOpen={() => setOpenLinks(!openLinks)}
+              onPersist={handleDocumentosPersist}
             />
           </div>
 
           {/* fim da row 2 colunas */}
         </div>
 
-        <ModalFooter error={error} isSaving={isSaving} hasChanges={hasChanges} onSave={handleSave} onCancel={onClose} />
+        <ModalFooter autoSaveStatus={autoSaveStatus} error={error} onClose={handleClose} />
 
         <QuestionarioDrawer
           isOpen={drawerOpen}
@@ -873,7 +1110,13 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
               setQuestionarios(list);
             }
           }}
-          onTitleEditToggle={setQuizTitleEditing}
+          onTitleEditToggle={(editing) => {
+            if (!editing) {
+              handleQuizTitleSave();
+            } else {
+              setQuizTitleEditing(true);
+            }
+          }}
           onPerguntasChange={setEditorPerguntas}
           onSave={() => {
             // UI-only: atualiza a prévia com base nas primeiras 3 perguntas

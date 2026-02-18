@@ -1,5 +1,5 @@
 export interface Aluno {
-  aluno_id: number;
+  aluno_id: string;
   email: string;
   matricula: string;
   data_nascimento: string;

@@ -152,7 +152,7 @@ export default function RanqueamentoProae() {
                 className="edital-select"
                 value={editalSelecionado?.id || ""}
                 onChange={(e) => {
-                  const edital = editais.find((ed) => ed.id === Number(e.target.value));
+                  const edital = editais.find((ed) => ed.id === e.target.value);
                   setEditalSelecionado(edital || null);
                 }}
                 disabled={isLoadingEditais}

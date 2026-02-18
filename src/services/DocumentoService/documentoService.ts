@@ -16,7 +16,7 @@ class DocumentoService {
     this.httpClient = new FetchAdapter();
   }
 
-  async listarPorInscricao(inscricaoId: number): Promise<DocumentoInscricao[]> {
+  async listarPorInscricao(inscricaoId: string): Promise<DocumentoInscricao[]> {
     try {
       const response = await this.httpClient.get<ListaDocumentosResponse>(`${BASE_URL}/documentos/inscricao/${inscricaoId}`);
 
@@ -41,7 +41,7 @@ class DocumentoService {
     }
   }
 
-  async atualizarStatus(documentoId: number, status: DocumentoStatus): Promise<void> {
+  async atualizarStatus(documentoId: string, status: DocumentoStatus): Promise<void> {
     try {
       await this.httpClient.put(`${BASE_URL}/documentos/${documentoId}`, {
         status_documento: status,

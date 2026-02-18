@@ -40,7 +40,7 @@ export default function ModalSelecionarQuestionario({ questionarios, onSelect, o
                   <div className="questionario-item-content">
                     <div className="questionario-item-header">
                       <FileText className="w-5 h-5 text-blue-600" />
-                      <h3 className="questionario-item-title">{questionario.texto || questionario.titulo || `Questionário ${questionario.id}`}</h3>
+                      <h3 className="questionario-item-title">{questionario.texto || questionario.titulo || "Questionário"}</h3>
                     </div>
 
                     {questionario.perguntas && questionario.perguntas.length > 0 && (
