@@ -23,6 +23,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { respostaService, UpdateRespostaDto } from "../../../../services/RespostaService/respostaService";
+import { MinioService } from "../../../../services/MinioService/minio.service";
+import SelectGroup from "../../../../components/SelectGroup/SelectGroup";
 
 // Tipos baseados no novo formato da API
 interface EtapaEdital {
@@ -46,8 +48,8 @@ interface PerguntaPendente {
   resposta_texto: string;
   parecer: string;
   prazo_reenvio: string;
-  tipo_pergunta?: string;
-  opcoes?: string[];
+  tipo_pergunta: string;
+  opcoes?: string[] | null;
 }
 
 interface PendenciaStep {
@@ -63,6 +65,10 @@ interface NovaPerguntaPendente {
   pergunta_texto: string;
   resposta_id: string;
   prazo_resposta: string;
+  tipo_Pergunta: string;
+  opcoes?: string[] | null;
+  obrigatoriedade?: boolean;
+  placeholder?: string | null;
 }
 
 interface NovaPerguntaPendenteStep {
@@ -101,7 +107,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
   // ── Estado do modal de reenvio ──
   const [modalAberto, setModalAberto] = useState(false);
   const [stepSelecionado, setStepSelecionado] = useState<PendenciaStep | null>(null);
-  const [respostasEditadas, setRespostasEditadas] = useState<Record<string, string>>({});
+  const [respostasEditadas, setRespostasEditadas] = useState<Record<string, string | File>>({});
   const [enviando, setEnviando] = useState<Record<string, boolean>>({});
   const [resultados, setResultados] = useState<Record<string, "sucesso" | "erro">>({});
   const [mensagensErro, setMensagensErro] = useState<Record<string, string>>({});
@@ -111,12 +117,14 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
   // ── Estado do modal de novas perguntas ──
   const [modalNovaPerguntaAberto, setModalNovaPerguntaAberto] = useState(false);
   const [novaStepSelecionado, setNovaStepSelecionado] = useState<NovaPerguntaPendenteStep | null>(null);
-  const [novasRespostasEditadas, setNovasRespostasEditadas] = useState<Record<string, string>>({});
+  const [novasRespostasEditadas, setNovasRespostasEditadas] = useState<Record<string, string | File>>({});
   const [novaEnviando, setNovaEnviando] = useState<Record<string, boolean>>({});
   const [novaResultados, setNovaResultados] = useState<Record<string, "sucesso" | "erro">>({});
   const [novaMensagensErro, setNovaMensagensErro] = useState<Record<string, string>>({});
   const [novaConfirmandoId, setNovaConfirmandoId] = useState<string | null>(null);
   const [houveEnvioNova, setHouveEnvioNova] = useState(false);
+
+  const minioService = React.useMemo(() => new MinioService(), []);
 
   if (!edital) return null;
 
@@ -306,7 +314,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
     // NÃO limpa resultados — preserva o estado de quem já foi corrigido
   }, []);
 
-  const handleRespostaChange = useCallback((respostaId: string, valor: string) => {
+  const handleRespostaChange = useCallback((respostaId: string, valor: string | File) => {
     setRespostasEditadas((prev) => ({ ...prev, [respostaId]: valor }));
   }, []);
 
@@ -320,7 +328,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
 
   const confirmarEnvio = useCallback(
     async (pergunta: PerguntaPendente) => {
-      const novoValor = respostasEditadas[pergunta.resposta_id]?.trim();
+      const novoValor = respostasEditadas[pergunta.resposta_id];
       if (!novoValor) return;
 
       setConfirmandoId(null);
@@ -337,8 +345,28 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
       });
 
       try {
-        const dto: UpdateRespostaDto = { valorTexto: novoValor };
-        await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        const tipo = (pergunta.tipo_pergunta || "text").toLowerCase();
+
+        if (tipo === "file" && novoValor instanceof File) {
+          // Upload do arquivo via MinIO e depois atualiza a resposta com o objectKey
+          const objectKey = await minioService.uploadDocument(novoValor);
+          const dto: UpdateRespostaDto = { urlArquivo: objectKey };
+          await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        } else if (tipo === "selectgroup" && typeof novoValor === "string") {
+          const parsed = JSON.parse(novoValor);
+          const valores = Object.values(parsed).filter(Boolean) as string[];
+          const dto: UpdateRespostaDto = { valorOpcoes: valores, valorTexto: valores.join(", ") };
+          await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        } else if ((tipo === "select" || tipo === "radio") && typeof novoValor === "string") {
+          const dto: UpdateRespostaDto = { valorOpcoes: [novoValor], valorTexto: novoValor };
+          await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        } else if (typeof novoValor === "string" && novoValor.trim()) {
+          const dto: UpdateRespostaDto = { valorTexto: novoValor.trim() };
+          await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        } else {
+          throw new Error("Nenhum valor válido para enviar");
+        }
+
         setResultados((prev) => ({ ...prev, [pergunta.resposta_id]: "sucesso" }));
         setHouveEnvio(true);
       } catch (err: any) {
@@ -351,7 +379,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
         setEnviando((prev) => ({ ...prev, [pergunta.resposta_id]: false }));
       }
     },
-    [respostasEditadas],
+    [respostasEditadas, minioService],
   );
 
   // ── Handlers do modal de novas perguntas ──
@@ -386,7 +414,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
     setNovaConfirmandoId(null);
   }, []);
 
-  const handleNovaRespostaChange = useCallback((respostaId: string, valor: string) => {
+  const handleNovaRespostaChange = useCallback((respostaId: string, valor: string | File) => {
     setNovasRespostasEditadas((prev) => ({ ...prev, [respostaId]: valor }));
   }, []);
 
@@ -400,7 +428,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
 
   const confirmarEnvioNova = useCallback(
     async (pergunta: NovaPerguntaPendente) => {
-      const novoValor = novasRespostasEditadas[pergunta.resposta_id]?.trim();
+      const novoValor = novasRespostasEditadas[pergunta.resposta_id];
       if (!novoValor) return;
 
       setNovaConfirmandoId(null);
@@ -417,8 +445,27 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
       });
 
       try {
-        const dto: UpdateRespostaDto = { valorTexto: novoValor };
-        await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        const tipo = (pergunta.tipo_Pergunta || "text").toLowerCase();
+
+        if (tipo === "file" && novoValor instanceof File) {
+          const objectKey = await minioService.uploadDocument(novoValor);
+          const dto: UpdateRespostaDto = { urlArquivo: objectKey };
+          await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        } else if (tipo === "selectgroup" && typeof novoValor === "string") {
+          const parsed = JSON.parse(novoValor);
+          const valores = Object.values(parsed).filter(Boolean) as string[];
+          const dto: UpdateRespostaDto = { valorOpcoes: valores, valorTexto: valores.join(", ") };
+          await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        } else if ((tipo === "select" || tipo === "radio") && typeof novoValor === "string") {
+          const dto: UpdateRespostaDto = { valorOpcoes: [novoValor], valorTexto: novoValor };
+          await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        } else if (typeof novoValor === "string" && novoValor.trim()) {
+          const dto: UpdateRespostaDto = { valorTexto: novoValor.trim() };
+          await respostaService.atualizarResposta(pergunta.resposta_id, dto);
+        } else {
+          throw new Error("Nenhum valor válido para enviar");
+        }
+
         setNovaResultados((prev) => ({ ...prev, [pergunta.resposta_id]: "sucesso" }));
         setHouveEnvioNova(true);
       } catch (err: any) {
@@ -431,7 +478,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
         setNovaEnviando((prev) => ({ ...prev, [pergunta.resposta_id]: false }));
       }
     },
-    [novasRespostasEditadas],
+    [novasRespostasEditadas, minioService],
   );
 
   const formatDate = (dateStr: string) => {
@@ -464,6 +511,155 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
   };
 
   const prazoProximo = getPrazoMaisProximo();
+
+  // ── Helpers de input dinâmico ──
+  const hasValue = (val: string | File | undefined): boolean => {
+    if (!val) return false;
+    if (val instanceof File) return true;
+    return typeof val === "string" && val.trim().length > 0;
+  };
+
+  const renderDynamicInput = (
+    tipo: string,
+    opcoes: string[] | null,
+    value: string | File,
+    onChange: (val: string | File) => void,
+    disabled: boolean,
+    id: string,
+  ): React.ReactNode => {
+    const t = tipo.toLowerCase();
+
+    if (t === "file") {
+      return (
+        <div className="reenvio-file-input-wrapper">
+          <input
+            type="file"
+            id={`file-input-${id}`}
+            className="reenvio-file-input"
+            disabled={disabled}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onChange(f);
+            }}
+          />
+          {value instanceof File && (
+            <span className="reenvio-file-name">{value.name}</span>
+          )}
+        </div>
+      );
+    }
+
+    if (t === "select") {
+      return (
+        <select
+          className="reenvio-textarea"
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+        >
+          <option value="">Selecione uma opção...</option>
+          {(opcoes || []).map((op) => (
+            <option key={op} value={op}>{op}</option>
+          ))}
+        </select>
+      );
+    }
+
+    if (t === "selectgroup") {
+      let selectedMap: Record<string, string> = {};
+      if (typeof value === "string" && value) {
+        try { selectedMap = JSON.parse(value); } catch { /* ignore */ }
+      }
+      const selectOptions = (opcoes || []).map((op) => ({ label: op, value: op }));
+      return (
+        <SelectGroup
+          title=""
+          options={selectOptions}
+          values={selectedMap}
+          onChange={(optionValue, checked) => {
+            const current = { ...selectedMap };
+            if (checked) {
+              current[optionValue] = optionValue;
+            } else {
+              delete current[optionValue];
+            }
+            const keys = Object.keys(current);
+            onChange(keys.length > 0 ? JSON.stringify(current) : "");
+          }}
+        />
+      );
+    }
+
+    if (t === "radio") {
+      return (
+        <div className="reenvio-radio-group">
+          {(opcoes || []).map((op) => (
+            <label key={op} className="reenvio-radio-label">
+              <input
+                type="radio"
+                name={`radio-${id}`}
+                value={op}
+                checked={value === op}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
+              />
+              <span>{op}</span>
+            </label>
+          ))}
+        </div>
+      );
+    }
+
+    if (t === "date") {
+      return (
+        <input
+          type="date"
+          className="reenvio-textarea"
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+        />
+      );
+    }
+
+    if (t === "number") {
+      return (
+        <input
+          type="number"
+          className="reenvio-textarea"
+          placeholder="Digite um número..."
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+        />
+      );
+    }
+
+    if (t === "email") {
+      return (
+        <input
+          type="email"
+          className="reenvio-textarea"
+          placeholder="Digite seu e-mail..."
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+        />
+      );
+    }
+
+    // text, textarea, password, textInputGroup e outros → textarea
+    return (
+      <textarea
+        className="reenvio-textarea"
+        rows={3}
+        placeholder="Digite sua resposta..."
+        value={typeof value === "string" ? value : ""}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+      />
+    );
+  };
 
   return (
     <div className="candidate-status-card">
@@ -836,14 +1032,14 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
                           ) : (
                             <div className="reenvio-input-area">
                               <label className="reenvio-input-label">Nova resposta</label>
-                              <textarea
-                                className="reenvio-textarea"
-                                rows={3}
-                                placeholder="Digite sua nova resposta..."
-                                value={valorEditado}
-                                onChange={(e) => handleRespostaChange(pergunta.resposta_id, e.target.value)}
-                                disabled={estaEnviando}
-                              />
+                              {renderDynamicInput(
+                                pergunta.tipo_pergunta || "text",
+                                pergunta.opcoes || null,
+                                valorEditado,
+                                (val) => handleRespostaChange(pergunta.resposta_id, val),
+                                estaEnviando,
+                                pergunta.resposta_id,
+                              )}
                               {temErro && mensagensErro[pergunta.resposta_id] && (
                                 <div className="reenvio-erro-msg">
                                   <AlertCircle className="w-3.5 h-3.5" />
@@ -872,7 +1068,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
                                 <button
                                   className="reenvio-enviar-btn"
                                   onClick={() => pedirConfirmacao(pergunta.resposta_id)}
-                                  disabled={estaEnviando || !valorEditado.trim()}
+                                  disabled={estaEnviando || !hasValue(valorEditado)}
                                 >
                                   {estaEnviando ? (
                                     <>
@@ -1040,14 +1236,14 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
                           ) : (
                             <div className="reenvio-input-area">
                               <label className="reenvio-input-label">Sua resposta</label>
-                              <textarea
-                                className="reenvio-textarea"
-                                rows={3}
-                                placeholder="Digite sua resposta..."
-                                value={valorEditado}
-                                onChange={(e) => handleNovaRespostaChange(pergunta.resposta_id, e.target.value)}
-                                disabled={estaEnviando}
-                              />
+                              {renderDynamicInput(
+                                pergunta.tipo_Pergunta || "text",
+                                pergunta.opcoes || null,
+                                valorEditado,
+                                (val) => handleNovaRespostaChange(pergunta.resposta_id, val),
+                                estaEnviando,
+                                pergunta.resposta_id,
+                              )}
                               {temErro && novaMensagensErro[pergunta.resposta_id] && (
                                 <div className="reenvio-erro-msg">
                                   <AlertCircle className="w-3.5 h-3.5" />
@@ -1076,7 +1272,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) =
                                 <button
                                   className="reenvio-enviar-btn"
                                   onClick={() => pedirConfirmacaoNova(pergunta.resposta_id)}
-                                  disabled={estaEnviando || !valorEditado.trim()}
+                                  disabled={estaEnviando || !hasValue(valorEditado)}
                                 >
                                   {estaEnviando ? (
                                     <>
