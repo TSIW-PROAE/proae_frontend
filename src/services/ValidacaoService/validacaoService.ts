@@ -1,4 +1,5 @@
 import { FetchAdapter } from "../api";
+import { API_BASE_URL } from "@/config/api";
 
 export interface Validacao {
   id?: number;
@@ -39,7 +40,7 @@ export interface UpdateValidacaoRequest {
   documento_id?: number;
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/validacao";
+const BASE_URL = API_BASE_URL + "/validacao";
 
 export class ValidacaoService {
   private httpClient: FetchAdapter;

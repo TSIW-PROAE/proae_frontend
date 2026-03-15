@@ -1,7 +1,7 @@
 
 import { CadastroFormData } from "@/pages/paginaProae/CadastroProae/CadastroProae";
 export interface UserInfo {
-  id: number;
+  id: string;
   nome: string;
   email: string;
   roles: UserRole[];
@@ -40,11 +40,17 @@ export type UserLogin = {
 export interface UserLoginResponse {
   success: string;
   user: {
-    usuario_id: number;
+    usuario_id: string;
     email: string;
     nome: string;
     roles: UserRole[];
+    /** Backend pode enviar adminAprovado ou aprovado */
+    aprovado?: boolean;
+    adminAprovado?: boolean;
+    hasAluno?: boolean;
   };
+  /** Resposta do login pode trazer adminAprovado no top level */
+  adminAprovado?: boolean;
   [key: string]: any;
 }
 

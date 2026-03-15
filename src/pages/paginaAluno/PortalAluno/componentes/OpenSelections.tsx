@@ -24,15 +24,18 @@ interface Edital {
 
 interface OpenSelectionsProps {
   editais: Edital[];
+  /** Se false, desabilita "Inscrever-se" e exibe mensagem sobre Formulário Geral */
+  podeSeInscreverEmOutros?: boolean;
 }
 
-const OpenSelectionCard: React.FC<Edital> = ({
+const OpenSelectionCard: React.FC<Edital & { podeSeInscreverEmOutros?: boolean }> = ({
   id,
   titulo_edital,
   status_edital,
   edital_url,
   descricao,
   quantidade_bolsas,
+  podeSeInscreverEmOutros = true,
 }) => {
   const navigate = useNavigate();
   const statusLower = status_edital ? status_edital.toLowerCase() : "";
@@ -106,14 +109,24 @@ const OpenSelectionCard: React.FC<Edital> = ({
 
       <div className="selection-card-footer">
         {isOpen ? (
-          <button
-            onClick={() => navigate(`/questionario/${id}`)}
-            className="selection-action-button primary"
-            title="Realizar Inscrição"
-          >
-            <span>Inscrever-se</span>
-            <ArrowRight className="w-3 h-3" />
-          </button>
+          podeSeInscreverEmOutros ? (
+            <button
+              onClick={() => navigate(`/questionario/${id}`)}
+              className="selection-action-button primary"
+              title="Realizar Inscrição"
+            >
+              <span>Inscrever-se</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          ) : (
+            <button
+              className="selection-action-button disabled"
+              disabled
+              title="É necessário ter o Formulário Geral aprovado"
+            >
+              <span>Inscrever-se (bloqueado)</span>
+            </button>
+          )
         ) : (
           <button
             className="selection-action-button disabled"
@@ -128,7 +141,10 @@ const OpenSelectionCard: React.FC<Edital> = ({
   );
 };
 
-const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
+const OpenSelections: React.FC<OpenSelectionsProps> = ({
+  editais,
+  podeSeInscreverEmOutros = true,
+}) => {
   const openEditais = editais?.filter((edital) =>
     edital.status_edital?.toLowerCase().includes("aberto")
   ) || [];
@@ -139,6 +155,11 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
 
   return (
     <div className="bg-white border-2 p-[1.25rem] shadow-md border-solid rounded-[1.25rem] flex flex-col h-full overflow-hidden overflow-y-auto">
+      {!podeSeInscreverEmOutros && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          É necessário preencher e ter o Formulário Geral aprovado para se inscrever em outros editais e benefícios. Acesse a aba &quot;Formulário Geral&quot; no menu.
+        </div>
+      )}
       <div className="selections-header">
         <div className="flex justify-start items-center gap-2 mb-4">
         <BookOpen className="w-5 h-5 text-blue-600" />
@@ -168,12 +189,20 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({ editais }) => {
         <div className="selections-grid">
           {/* Primeiro mostrar os editais abertos */}
           {openEditais.map((edital) => (
-            <OpenSelectionCard key={`open-${edital.id}`} {...edital} />
+            <OpenSelectionCard
+              key={`open-${edital.id}`}
+              {...edital}
+              podeSeInscreverEmOutros={podeSeInscreverEmOutros}
+            />
           ))}
 
           {/* Depois mostrar os editais fechados */}
           {closedEditais.map((edital) => (
-            <OpenSelectionCard key={`closed-${edital.id}`} {...edital} />
+            <OpenSelectionCard
+              key={`closed-${edital.id}`}
+              {...edital}
+              podeSeInscreverEmOutros={podeSeInscreverEmOutros}
+            />
           ))}
         </div>
       )}

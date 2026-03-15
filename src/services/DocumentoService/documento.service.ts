@@ -1,8 +1,9 @@
 import { FetchAdapter } from "../BaseRequestService/HttpClient";
 import { RDocumento, TipoDocumento } from "../../types/documento";
 import axios from "axios";
+import { API_BASE_URL } from "@/config/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + `/documentos`;
+const BASE_URL = API_BASE_URL + "/documentos";
 
 export default class DocumentoService{
     private readonly httpClient: FetchAdapter;

@@ -6,7 +6,7 @@ import {
   Settings,
   BookOpen,
   LogOut,
-  MessageSquare,
+  ClipboardList,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
@@ -17,6 +17,8 @@ export interface ISideBarProps {
   pendenciasIconRedirect: string;
   docsIconRedirect: string;
   pareceresIconRedirect?: string;
+  /** Aba "Formulário Geral" para o portal do aluno */
+  formularioGeralRedirect?: string;
   logoutIconRedirect: string;
   logoutOnClick: () => void;
 }
@@ -37,6 +39,7 @@ const SideBar: React.FC<ISideBarProps> = ({
   logoutIconRedirect,
   logoutOnClick,
   pendenciasIconRedirect = "",
+  formularioGeralRedirect = "",
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,6 +70,13 @@ const SideBar: React.FC<ISideBarProps> = ({
       label: "Processos",
       redirect: processIconRedirect,
       shouldShowIcon: processIconRedirect !== "",
+    },
+    {
+      icon: ClipboardList,
+      alt: "Formulário Geral",
+      label: "Form. Geral",
+      redirect: formularioGeralRedirect,
+      shouldShowIcon: formularioGeralRedirect !== "",
     },
     {
       icon: BookOpen,

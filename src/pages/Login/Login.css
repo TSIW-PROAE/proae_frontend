@@ -105,6 +105,39 @@
   box-shadow: none;
 }
 
+/* Toggle Aluno / Servidor PROAE */
+.login-as-toggle {
+  display: flex;
+  gap: 0;
+  background: rgba(24, 59, 78, 0.08);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 4px;
+}
+.login-as-tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: var(--tamanho-pequeno, 14px);
+  font-weight: var(--peso-medio, 500);
+  color: var(--cor-azul-medio, #183b4e);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.login-as-tab:hover {
+  background: rgba(24, 59, 78, 0.06);
+}
+.login-as-tab-active {
+  background: var(--cor-azul-escuro, #183b4e);
+  color: white;
+}
+.login-as-tab-active:hover {
+  background: var(--cor-azul-escuro, #183b4e);
+  color: white;
+}
+
 /* Cabeçalho */
 .login-header {
   margin-bottom: 25px;

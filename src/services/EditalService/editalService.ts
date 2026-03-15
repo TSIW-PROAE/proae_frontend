@@ -5,8 +5,9 @@ import {
   UpdateEditalRequest,
   Vaga,
 } from "../../types/edital";
+import { API_BASE_URL } from "@/config/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/editais";
+const BASE_URL = API_BASE_URL + "/editais";
 
 export class EditalService {
   private httpClient: FetchAdapter;
@@ -28,15 +29,13 @@ export class EditalService {
   }
 
   async buscarVagasDoEdital(editalId: number): Promise<Vaga[]> {
-    const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
-    return this.httpClient.get<Vaga[]>(`${baseUrl}/vagas/edital/${editalId}`);
+    return this.httpClient.get<Vaga[]>(`${API_BASE_URL}/vagas/edital/${editalId}`);
   }
 
   async criarVaga(
     vaga: Omit<Vaga, "id" | "created_at" | "updated_at">
   ): Promise<Vaga> {
-    const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
-  const resp = await this.httpClient.post<Vaga>(`${baseUrl}/vagas`, vaga);
+  const resp = await this.httpClient.post<Vaga>(`${API_BASE_URL}/vagas`, vaga);
   return resp.data;
   }
 
@@ -44,13 +43,11 @@ export class EditalService {
     id: number,
     vaga: Partial<Omit<Vaga, "id" | "created_at" | "updated_at">>
   ): Promise<Vaga> {
-    const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
-  return this.httpClient.patch<Vaga>(`${baseUrl}/vagas/${id}`, vaga);
+  return this.httpClient.patch<Vaga>(`${API_BASE_URL}/vagas/${id}`, vaga);
   }
 
   async deletarVaga(id: number): Promise<void> {
-    const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
-  return this.httpClient.delete<void>(`${baseUrl}/vagas/${id}`);
+  return this.httpClient.delete<void>(`${API_BASE_URL}/vagas/${id}`);
   }
 
   async criarEdital(edital: CreateEditalRequest): Promise<Edital> {

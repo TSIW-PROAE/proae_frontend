@@ -28,6 +28,8 @@ interface EditalAPI {
   status_inscricao: string;
   possui_pendencias: boolean;
   etapas_edital: Etapa[];
+  is_formulario_geral?: boolean;
+  observacao_admin?: string | null;
 }
 
 interface CandidateStatusProps {
@@ -60,6 +62,10 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
   const etapaAtualNome = nomesEtapas[indiceEtapaAtual];
   const progresso = ((indiceEtapaAtual + 1) / nomesEtapas.length) * 100;
 
+  const isAjuste = status_inscricao === "Ajuste Necessário";
+  const isNegada = status_inscricao.toLowerCase().includes("negada");
+  const isFG = edital.is_formulario_geral === true;
+
   const getStatusInfo = () => {
     const statusLower = status_inscricao.toLowerCase();
 
@@ -71,13 +77,21 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
         borderColor: "border-emerald-200",
         label: "Aprovada",
       };
-    } else if (statusLower.includes("reprovada")) {
+    } else if (statusLower.includes("negada")) {
       return {
         icon: XCircle,
         color: "text-red-600",
         bgColor: "bg-red-50",
         borderColor: "border-red-200",
-        label: "Reprovada",
+        label: "Negada",
+      };
+    } else if (isAjuste) {
+      return {
+        icon: AlertTriangle,
+        color: "text-orange-600",
+        bgColor: "bg-orange-50",
+        borderColor: "border-orange-200",
+        label: "Ajuste Necessário",
       };
     } else if (statusLower.includes("pendente")) {
       return {
@@ -128,28 +142,56 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
       </div>
 
       <div className="status-content">
-        {/* Informações de Pendências */}
-        {possui_pendencias ? (
+        {/* Ajuste Necessário: feedback do admin */}
+        {isAjuste && (
           <div className="alert alert-warning">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
             <div className="alert-content">
-              <h4 className="alert-title">Pendências de Documentação</h4>
+              <h4 className="alert-title">Ajustes Solicitados</h4>
               <p className="alert-description">
-                Você possui documentos pendentes que precisam ser enviados ou
-                corrigidos.
+                {edital.observacao_admin
+                  ? edital.observacao_admin
+                  : "A equipe PROAE solicitou correções na sua inscrição."}
               </p>
             </div>
           </div>
-        ) : (
-          <div className="alert alert-success">
-            <CheckCircle className="w-5 h-5 text-emerald-600" />
+        )}
+
+        {/* Negada: motivo */}
+        {isNegada && edital.observacao_admin && (
+          <div className="alert alert-warning">
+            <XCircle className="w-5 h-5 text-red-600" />
             <div className="alert-content">
-              <h4 className="alert-title">Documentação Completa</h4>
-              <p className="alert-description">
-                Todos os documentos foram enviados com sucesso.
-              </p>
+              <h4 className="alert-title">Motivo</h4>
+              <p className="alert-description">{edital.observacao_admin}</p>
             </div>
           </div>
+        )}
+
+        {/* Informações de Pendências (only show if not in ajuste/negada state) */}
+        {!isAjuste && !isNegada && (
+          possui_pendencias ? (
+            <div className="alert alert-warning">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <div className="alert-content">
+                <h4 className="alert-title">Pendências de Documentação</h4>
+                <p className="alert-description">
+                  Você possui documentos pendentes que precisam ser enviados ou
+                  corrigidos.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="alert alert-success">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              <div className="alert-content">
+                <h4 className="alert-title">Documentação Completa</h4>
+                <p className="alert-description">
+                  Todos os documentos foram enviados com sucesso.
+                </p>
+              </div>
+            </div>
+          )
         )}
 
         {/* Progresso das Etapas */}
@@ -219,7 +261,18 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
           <span>Ver Ficha de Inscrição</span>
         </button>
 
-        {possui_pendencias && (
+        {isAjuste && isFG && (
+          <button
+            onClick={() => navigate("/portal-aluno/formulario-geral")}
+            className="action-button primary"
+          >
+            <AlertTriangle className="w-4 h-4" />
+            <span>Corrigir Formulário</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
+
+        {possui_pendencias && !isAjuste && (
           <button
             onClick={handleCheckPendingItems}
             className="action-button primary"

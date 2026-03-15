@@ -2,6 +2,7 @@ import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
 import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
+import { formularioGeralService } from "@/services/FormularioGeralService/formularioGeral.service";
 import { useEffect, useState, useContext } from "react";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
@@ -32,6 +33,7 @@ export default function PortalAluno() {
   const [benefits, setBenefits] = useState<any[]>([]);
   const [openSelections, setOpenSelections] = useState<any[]>([]);
   const [inscriptions, setInscriptions] = useState<any[]>([]);
+  const [podeSeInscreverEmOutros, setPodeSeInscreverEmOutros] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
 
 
@@ -79,12 +81,22 @@ export default function PortalAluno() {
     }
   };
 
+  const getFormularioGeralStatus = async () => {
+    try {
+      const fg = await formularioGeralService.getFormularioGeralOrNull();
+      setPodeSeInscreverEmOutros(fg?.pode_se_inscrever_em_outros ?? true);
+    } catch {
+      setPodeSeInscreverEmOutros(true);
+    }
+  };
+
   useEffect(() => {
     if (userId) {
       Promise.all([
         getBenefits(),
         getOpenSelections(),
         getInscriptions(),
+        getFormularioGeralStatus(),
       ]).finally(() => setLoading(false));
     }
   }, [userId]);
@@ -203,8 +215,10 @@ export default function PortalAluno() {
 
               <div className="selections-container">
                 <div className="card-container">
-
-                  <OpenSelections editais={openSelections} />
+                  <OpenSelections
+                    editais={openSelections}
+                    podeSeInscreverEmOutros={podeSeInscreverEmOutros}
+                  />
                 </div>
               </div>
             </div>
@@ -217,8 +231,8 @@ export default function PortalAluno() {
               <h2 className="section-title">Minhas Inscrições</h2>
               <div className="section-actions">
                 <span className="section-count">
-                  {inscriptions?.length || 0} inscrição
-                  {(inscriptions?.length || 0) !== 1 ? "ões" : ""}
+                  {inscriptions?.length || 0}{" "}
+                  {(inscriptions?.length || 0) !== 1 ? "inscrições" : "inscrição"}
                 </span>
               </div>
             </div>

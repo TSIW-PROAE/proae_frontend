@@ -21,6 +21,8 @@ export default function ProtectedRouteProae() {
           processIconRedirect={"/portal-proae/processos"}
           docsIconRedirect={""}
           configIconRedirect={"/portal-proae/configuracao"}
+          pendenciasIconRedirect={""}
+          formularioGeralRedirect={"/portal-proae/formulario-geral"}
           logoutIconRedirect={"/"}
           logoutOnClick={logout}
         />

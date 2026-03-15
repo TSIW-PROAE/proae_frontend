@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FormProvider } from 'react-hook-form';
 import { useFormBuilder } from '@/hooks/useFormBuilder';
 import { DynamicField } from './DynamicField';
@@ -13,6 +13,8 @@ import { VagaResponse as Vaga } from '@/types/vaga';
 import { InscricaoService } from "@/services/InscricaoService/inscricao.service.ts"
 import { useNavigate } from "react-router-dom"
 import BarraProgresso  from '@/components/BarraProgresso/BarraProgresso';
+import type { PaginaConfig } from "@/types/dynamicForm";
+
 interface FormularioDinamicoProps {
   editalId?: string | number;
   titulo?: string;
@@ -22,13 +24,20 @@ interface FormularioDinamicoProps {
   onError?: (error: string) => void;
   onStepChange?: (stepIndex: number, totalSteps: number) => void;
   onSubmit?: (data: Record<string, any>) => void;
+  /** URL para redirecionar após envio com sucesso (default: /portal-aluno) */
+  successRedirectUrl?: string;
+  /** Páginas/perguntas já carregadas (ex.: steps do GET /formulario-geral). Quando informado, não busca steps na API. */
+  initialPaginas?: PaginaConfig[];
+  /** Vagas já carregadas (ex.: do GET /formulario-geral). Quando informado, não busca vagas na API — evita dessincronia. */
+  initialVagas?: Array<{ id: number; beneficio?: string; descricao_beneficio?: string; numero_vagas?: number }>;
   loading?: React.ReactNode;
   className?: string;
   initialData?: Record<string, any>;
 }
 
 export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => {
-  const { editalId } = useParams<{ editalId: string }>();
+  const { editalId: editalIdParam } = useParams<{ editalId: string }>();
+  const editalId = props.editalId != null ? String(props.editalId) : (editalIdParam ?? "");
   const vagasService = new VagasService(new FetchAdapter());
 
   const [vagas, setVagas] = useState<Vaga[]>([]);
@@ -43,20 +52,38 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     editalId: editalId || "",
     titulo: props.titulo,
     subtitulo: props.subtitulo,
+    initialPaginas: props.initialPaginas,
     onSubmit: async (data: Record<string, any>) => {
       try {
-        
         await inscricaoService.submeterRespostas(data);
-        props.onSuccess?.(data);
-        navigate("/portal-aluno");
+        if (props.onSuccess) {
+          props.onSuccess(data);
+        } else {
+          navigate(props.successRedirectUrl ?? "/portal-aluno");
+        }
       } catch (err: any) {
-        props.onError?.(err.message);
-        throw err;
+        const msg =
+          err?.message ||
+          err?.mensagem ||
+          (typeof err === "string" ? err : "Não foi possível enviar o formulário.");
+        props.onError?.(msg);
+        throw new Error(msg);
       }
     }
   };
 
   useEffect(() => {
+    if (props.initialVagas?.length) {
+      const vagasData = props.initialVagas as Vaga[];
+      setVagas(vagasData);
+      setVagasError(null);
+      setIsLoadingVagas(false);
+      if (vagasData.length === 1) {
+        setVagaSelecionada(vagasData[0].id);
+      }
+      return;
+    }
+
     const carregarVagas = async () => {
       try {
         setIsLoadingVagas(true);
@@ -81,7 +108,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     if (editalId) {
       carregarVagas();
     }
-  }, [editalId]);
+  }, [editalId, props.initialVagas]);
 
   const {
     form,
@@ -124,16 +151,24 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     }
   }, [form, vagaSelecionada, setSelectedVagaId, loadFromCache]);
 
-  const handleNextPage = async () => {
-    const success = await nextPage();
+  const navigatingRef = useRef(false);
 
-    if (!success) {
-      if (pageErrors !== null && pageErrors[currentPage] && pageErrors[currentPage].length > 0) {
-        const errorMessage = `Corrija os seguintes campos: ${pageErrors[currentPage].join(", ")}`;
-        toast.error(errorMessage);
-      } else {
-        toast.error("Por favor, preencha todos os campos obrigatórios");
+  const handleNextPage = async () => {
+    if (navigatingRef.current) return;
+    navigatingRef.current = true;
+    try {
+      const success = await nextPage();
+
+      if (!success) {
+        if (pageErrors !== null && pageErrors[currentPage] && pageErrors[currentPage].length > 0) {
+          const errorMessage = `Corrija os seguintes campos: ${pageErrors[currentPage].join(", ")}`;
+          toast.error(errorMessage);
+        } else {
+          toast.error("Por favor, preencha todos os campos obrigatórios");
+        }
       }
+    } finally {
+      setTimeout(() => { navigatingRef.current = false; }, 300);
     }
   }
 
@@ -141,8 +176,9 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     try {
       await submitForm();
       toast.success("Formulário enviado com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao enviar formulário");
+    } catch (err: any) {
+      const msg = err?.message || "Não foi possível enviar o formulário.";
+      toast.error(msg, { duration: 6000 });
     }
   }
 
@@ -242,7 +278,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
       `}>
         <Toaster position="top-right" />
 
-        <div className="w-full mx-auto flex flex-col flex-1 justify-between" style={{ width: '75%', maxWidth: '1200px' }}>
+        <div className="w-full mx-auto flex flex-col flex-1 justify-between max-w-3xl px-4">
           <div className="w-full">
             <BarraProgresso
               currentStep={currentStep}
@@ -251,7 +287,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
             />
           </div>
 
-          <div className="formulario-conteudo text-center px-8 flex-1 flex flex-col justify-center">
+          <div className="formulario-conteudo text-center flex-1 flex flex-col justify-center">
             <h1 className="text-3xl font-bold mb-4">{props.titulo}</h1>
             {props.subtitulo && <p className="text-lg text-gray-600 mb-6">{props.subtitulo}</p>}
 
@@ -312,8 +348,22 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
   }
 
   const currentPageConfig = paginasVisiveis[currentPage - 1];
+  if (!currentPageConfig) {
+    const safePageIdx = Math.min(currentPage, paginasVisiveis.length);
+    if (safePageIdx !== currentPage) {
+      setTimeout(() => prevPage(), 0);
+    }
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <span className="ml-2">Carregando...</span>
+      </div>
+    );
+  }
+
   const formData = form.watch();
-  const inputsVisiveis = filtrarInputsCondicionais(currentPageConfig.inputs, formData);
+  const inputsDaPagina = currentPageConfig.inputs ?? [];
+  const inputsVisiveis = filtrarInputsCondicionais(inputsDaPagina, formData);
 
   return (
     <FormProvider {...form}>
@@ -322,7 +372,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
         min-h-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
       `}>
 
-        <div className="w-full mx-auto flex flex-col flex-1 justify-between" style={{ width: '75%', maxWidth: '1200px' }}>
+        <div className="w-full mx-auto flex flex-col flex-1 justify-between max-w-3xl px-4">
           <div className="w-full">
             <BarraProgresso
               currentStep={currentStep}
@@ -331,9 +381,9 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
             />
           </div>
 
-          <section className={`flex flex-col w-full gap-8 justify-start items-start px-8 flex-1`}>
+          <section className="flex flex-col w-full gap-8 justify-start items-start flex-1">
           <section className='formulario-conteudo'>
-            <h1>{currentPageConfig.titulo}</h1>
+            <h1>{currentPageConfig.titulo ?? 'Formulário'}</h1>
           </section>
           {inputsVisiveis.map((input) => (
             <DynamicField
@@ -398,7 +448,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
                 color="success"
                 onPress={handleSubmit}
                 disabled={isSubmitting}
-                className="flex-1 max-w-48"
+                className="flex-1 max-w-64 whitespace-nowrap"
               >
                 {isSubmitting ? 'Enviando...' : (props.botaoFinal || 'Finalizar')}
               </Button>

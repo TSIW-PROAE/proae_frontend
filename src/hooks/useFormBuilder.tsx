@@ -17,7 +17,7 @@ import { MinioService } from "@/services/MinioService/minio.service";
 import { useFormCache } from "./useFormCache";
 
 export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn {
-  const { editalId, initialData, onSubmit: backendOnSubmit } = props;
+  const { editalId, initialData, onSubmit: backendOnSubmit, initialPaginas } = props;
 
   const [paginas, setPaginas] = useState<PaginaConfig[]>([]);
   const [isLoadingFromBackend, setIsLoadingFromBackend] = useState(false);
@@ -65,9 +65,15 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
 
   useEffect(() => {
     loadFormConfiguration();
-  }, [editalId]);
+  }, [editalId, initialPaginas]);
 
   const loadFormConfiguration = async () => {
+    if (initialPaginas?.length) {
+      setPaginas(initialPaginas);
+      setBackendError(null);
+      setIsLoadingFromBackend(false);
+      return;
+    }
     try {
       setIsLoadingFromBackend(true);
       setBackendError(null);
@@ -151,31 +157,34 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     setIsSubmitting(true);
 
     try {
+      if (selectedVagaId == null) {
+        throw new Error("Nenhuma vaga selecionada. Recarregue a página e tente novamente.");
+      }
+
       const isValid = await form.trigger();
       if (!isValid) throw new Error("Formulário contém erros");
 
       const formData = form.getValues();
       const dadosAdicionais = extractDadosAdicionais(formData);
+      const vagaId = Number(dadosAdicionais.vaga_id) || selectedVagaId;
 
       const respostas = await prepareRespostasForSubmit(
         formData,
         paginasVisiveis,
-        selectedVagaId!,
+        vagaId,
         minioService
       );
 
+      const payload = { vaga_id: vagaId, respostas };
+
       if (backendOnSubmit) {
-        await backendOnSubmit({ respostas, ...dadosAdicionais });
+        await backendOnSubmit(payload);
       } else {
-        await InscricaoService.getInstance().submeterRespostas({
-          respostas,
-          ...dadosAdicionais
-        });
+        await InscricaoService.getInstance().submeterRespostas(payload);
       }
 
       clearCacheState();
     } catch (error) {
-      console.error('Erro ao enviar formulário', error);
       throw error;
     } finally {
       setIsSubmitting(false);
