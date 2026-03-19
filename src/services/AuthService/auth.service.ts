@@ -8,8 +8,9 @@ import {
   UserLogin,
 } from "@/types/auth";
 import { CadastroFormData } from "@/pages/paginaProae/CadastroProae/CadastroProae";
+import { API_BASE_URL } from "@/config/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/auth";
+const BASE_URL = API_BASE_URL + "/auth";
 
 export default class AuthService {
   private httpClient: FetchAdapter;
@@ -19,7 +20,7 @@ export default class AuthService {
   }
 
   async login(data: UserLogin): Promise<UserLoginResponse> {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/login`;
+    const url = BASE_URL + "/login";
     const response = await this.httpClient.post<UserLoginResponse>(url, data);
     const tokenFromCookie = extractCookieFromHeaders(
       response.headers,
@@ -48,31 +49,31 @@ export default class AuthService {
   }
 
   async signupAluno(data: UserSignup): Promise<DefaultResponse> {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/signup`;
+    const url = `${BASE_URL}/signup`;
     const response = await this.httpClient.post<DefaultResponse>(url, data);
     return response.data;
   }
 
   async validateToken() {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/validate-token`;
+    const url = `${BASE_URL}/validate-token`;
     const response = await this.httpClient.post(url, {});
     return response.data;
   }
 
   async logout() {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/logout`;
+    const url = `${BASE_URL}/logout`;
     const response = await this.httpClient.post(url, {});
     return response.data;
   }
 
   async forgotPassword(email: string) {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/forgot-password`;
+    const url = `${BASE_URL}/forgot-password`;
     const response = await this.httpClient.post(url, { email });
     return response.data;
   }
 
   async resetPassword(data: IResetPassword) {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/auth/reset-password`;
+    const url = `${BASE_URL}/reset-password`;
     const response = await this.httpClient.post(url, data);
     return response.data;
   }

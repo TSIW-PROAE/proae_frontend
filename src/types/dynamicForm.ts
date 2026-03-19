@@ -83,6 +83,8 @@ export interface UseFormBuilderProps {
   titulo?: string;
   subtitulo?: string;
   initialData?: FormData;
+  /** Quando informado (ex.: steps do GET /formulario-geral), usa em vez de buscar steps da API */
+  initialPaginas?: PaginaConfig[];
 }
 
 export interface UseFormBuilderReturn {

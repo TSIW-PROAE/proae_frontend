@@ -16,6 +16,7 @@ export default function DesignSystem() {
         homeIconRedirect={""}
         processIconRedirect={""}
         configIconRedirect={""}
+        pendenciasIconRedirect={""}
         logoutIconRedirect={"/"}
         logoutOnClick={handleLogout}
         docsIconRedirect={""}

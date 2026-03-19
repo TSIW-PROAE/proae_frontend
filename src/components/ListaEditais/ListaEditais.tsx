@@ -13,7 +13,14 @@ import {
 } from "lucide-react";
 import { Edital, Vaga } from "../../types/edital";
 import { editalService } from "../../services/EditalService/editalService";
+import { toInternalStatus } from "@/components/ModalEditarEdital/utils";
+import type { StatusEdital } from "@/components/ModalEditarEdital/types";
 import "./ListaEditais.css";
+
+/** Normaliza status do backend (ABERTO, EM_ANDAMENTO, "Edital em andamento", etc.) para comparação. */
+function normalizeStatus(status: string | undefined): StatusEdital {
+  return toInternalStatus(status || "");
+}
 
 interface ListaEditaisProps {
   editais: Edital[];
@@ -34,13 +41,11 @@ const EditalTableRow: React.FC<{
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loadingVagas, setLoadingVagas] = useState(false);
 
-  const statusLower = edital.status_edital
-    ? edital.status_edital.toLowerCase()
-    : "";
-  const isOpen = statusLower === "edital em aberto";
-  const isClosed = statusLower === "edital encerrado";
-  const isInProgress = statusLower === "edital em andamento";
-  const isDraft = statusLower === "rascunho";
+  const statusNorm = normalizeStatus(edital.status_edital);
+  const isOpen = statusNorm === "ABERTO";
+  const isClosed = statusNorm === "ENCERRADO";
+  const isInProgress = statusNorm === "EM_ANDAMENTO";
+  const isDraft = statusNorm === "RASCUNHO";
 
   const loadVagas = useCallback(async () => {
     if (!edital.id || loadingVagas) return;
@@ -168,13 +173,11 @@ const EditalCard: React.FC<{
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loadingVagas, setLoadingVagas] = useState(false);
 
-  const statusLower = edital.status_edital
-    ? edital.status_edital.toLowerCase()
-    : "";
-  const isOpen = statusLower === "edital em aberto";
-  const isClosed = statusLower === "edital encerrado";
-  const isInProgress = statusLower === "edital em andamento";
-  const isDraft = statusLower === "rascunho";
+  const statusNorm = normalizeStatus(edital.status_edital);
+  const isOpen = statusNorm === "ABERTO";
+  const isClosed = statusNorm === "ENCERRADO";
+  const isInProgress = statusNorm === "EM_ANDAMENTO";
+  const isDraft = statusNorm === "RASCUNHO";
 
   const loadVagas = useCallback(async () => {
     if (!edital.id || loadingVagas) return;
@@ -356,24 +359,16 @@ export default function ListaEditais({
   }
 
   const openEditais =
-    editais?.filter(
-      (edital) => edital.status_edital?.toLowerCase() === "edital em aberto"
-    ) || [];
+    editais?.filter((edital) => normalizeStatus(edital.status_edital) === "ABERTO") || [];
 
   const closedEditais =
-    editais?.filter(
-      (edital) => edital.status_edital?.toLowerCase() === "edital encerrado"
-    ) || [];
+    editais?.filter((edital) => normalizeStatus(edital.status_edital) === "ENCERRADO") || [];
 
   const inProgressEditais =
-    editais?.filter(
-      (edital) => edital.status_edital?.toLowerCase() === "edital em andamento"
-    ) || [];
+    editais?.filter((edital) => normalizeStatus(edital.status_edital) === "EM_ANDAMENTO") || [];
 
   const draftEditais =
-    editais?.filter(
-      (edital) => edital.status_edital?.toLowerCase() === "rascunho"
-    ) || [];
+    editais?.filter((edital) => normalizeStatus(edital.status_edital) === "RASCUNHO") || [];
 
   if (!editais || editais.length === 0) {
     return (

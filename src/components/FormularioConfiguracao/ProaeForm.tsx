@@ -23,9 +23,13 @@ const ProaeForm = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [perfilNaoEncontrado, setPerfilNaoEncontrado] = useState(false);
+  const [carregandoPerfil, setCarregandoPerfil] = useState(true);
 
   useEffect(() => {
     const fetchPerfil = async () => {
+      setCarregandoPerfil(true);
+      setPerfilNaoEncontrado(false);
       try {
         const httpClient = new FetchAdapter();
         const service = new EditarPerfilService();
@@ -33,11 +37,13 @@ const ProaeForm = () => {
           string,
           any
         >;
-        const admin = data.dados?.admin || data.dados || {};
+        const admin = data?.dados?.admin ?? data?.dados ?? data ?? {};
         setFormData(admin);
         setOriginalFormData(admin);
-      } catch (error) {
-        console.error("Erro ao buscar perfil do admin:", error);
+      } catch {
+        setPerfilNaoEncontrado(true);
+      } finally {
+        setCarregandoPerfil(false);
       }
     };
 
@@ -134,6 +140,25 @@ const ProaeForm = () => {
       setShowErrorModal(true);
     }
   };
+
+  if (carregandoPerfil) {
+    return (
+      <div className="aluno-form-wrapper flex items-center justify-center p-8 text-gray-500">
+        Carregando perfil...
+      </div>
+    );
+  }
+
+  if (perfilNaoEncontrado) {
+    return (
+      <div className="aluno-form-wrapper rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+        <p className="text-amber-800 font-medium">Perfil não encontrado</p>
+        <p className="mt-2 text-sm text-amber-700">
+          O cadastro de servidor PROAE pode não existir para este usuário. Entre em contato com o suporte se acredita que deveria ter acesso.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>

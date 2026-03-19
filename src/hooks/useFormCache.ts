@@ -149,8 +149,7 @@ export function useFormCache({ form, vagaId, currentPage }: UseFormCacheProps): 
       
       toast.success('Progresso anterior restaurado!', { duration: 3000 });
       return true;
-    } catch (error) {
-      console.error('Erro ao carregar cache:', error);
+    } catch {
       return false;
     }
   }, [form]);

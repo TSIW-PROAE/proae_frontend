@@ -46,9 +46,8 @@ export async function prepareRespostasForSubmit(
           try {
             const urlArquivo = await minioService.uploadDocument(value, vagaId);
             return { perguntaId, urlArquivo };
-          } catch (error) {
-            console.error('Erro no upload:', error);
-            throw new Error(`Falha no upload do arquivo: ${value.name}`);
+          } catch {
+            throw new Error("Não foi possível enviar um dos arquivos. Tente novamente.");
           }
         }
 

@@ -14,11 +14,13 @@ function AuthProvider({children}: {children: React.ReactNode}){
   const login = useCallback(async (data: UserLogin) => {
     try {
       const response = await authService.login(data);
+      const aprovado = response.user?.aprovado ?? response.user?.adminAprovado ?? response.adminAprovado;
       const fillUserInfo: UserInfo = {
         email: response.user.email,
         id: String(response.user.usuario_id),
         nome: response.user.nome,
-        roles: response.user.roles
+        roles: response.user.roles,
+        aprovado: response.user.roles?.includes("admin") ? Boolean(aprovado) : undefined
       }
       setUserInfo(fillUserInfo);
       setIsAuthenticated(true);
@@ -63,12 +65,13 @@ function AuthProvider({children}: {children: React.ReactNode}){
               throw new Error("Token inválido");
             }
             console.log(response, "checkout response")
+            const aprovado = response.user?.aprovado ?? response.user?.adminAprovado ?? response.adminAprovado;
              const fillUserInfo: UserInfo = {
                 email: response.user.email,
                 id: response.user.usuario_id,
                 nome: response.user.nome,
                 roles: response.user.roles,
-                aprovado: response.user.admin.aprovado
+                aprovado: response.user.roles?.includes("admin") ? Boolean(aprovado) : undefined
               }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);

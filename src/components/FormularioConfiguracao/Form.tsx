@@ -23,9 +23,13 @@ const AlunoForm = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [perfilNaoEncontrado, setPerfilNaoEncontrado] = useState(false);
+  const [carregandoPerfil, setCarregandoPerfil] = useState(true);
 
   useEffect(() => {
     const fetchPerfil = async () => {
+      setCarregandoPerfil(true);
+      setPerfilNaoEncontrado(false);
       try {
         const httpClient = new FetchAdapter();
         const service = new EditarPerfilService();
@@ -33,15 +37,17 @@ const AlunoForm = () => {
           string,
           any
         >;
-        const aluno = data.dados.aluno || {};
+        const aluno = data?.dados?.aluno ?? data?.aluno ?? data ?? {};
         const alunoFormatado = {
           ...aluno,
-          matricula: aluno.matricula?.substring(2) || "",
+          matricula: aluno.matricula?.substring?.(2) ?? aluno.matricula ?? "",
         };
         setFormData(alunoFormatado);
         setOriginalFormData(alunoFormatado);
-      } catch (error) {
-        console.error("Erro ao buscar perfil do aluno:", error);
+      } catch {
+        setPerfilNaoEncontrado(true);
+      } finally {
+        setCarregandoPerfil(false);
       }
     };
 
@@ -152,6 +158,25 @@ const AlunoForm = () => {
       setShowErrorModal(true);
     }
   };
+
+  if (carregandoPerfil) {
+    return (
+      <div className="aluno-form-wrapper flex items-center justify-center p-8 text-gray-500">
+        Carregando perfil...
+      </div>
+    );
+  }
+
+  if (perfilNaoEncontrado) {
+    return (
+      <div className="aluno-form-wrapper rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+        <p className="text-amber-800 font-medium">Perfil não encontrado</p>
+        <p className="mt-2 text-sm text-amber-700">
+          O cadastro de aluno pode não existir para este usuário. Entre em contato com o suporte se acredita que deveria ter acesso.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>

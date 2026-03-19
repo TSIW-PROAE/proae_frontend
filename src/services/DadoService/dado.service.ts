@@ -1,6 +1,7 @@
 import { FetchAdapter } from "../api";
+import { API_BASE_URL } from "@/config/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/dado";
+const BASE_URL = API_BASE_URL + "/dado";
 
 export interface Dado {
   id?: string;

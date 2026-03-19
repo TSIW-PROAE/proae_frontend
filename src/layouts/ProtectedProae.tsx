@@ -20,6 +20,8 @@ export default function ProtectedRouteProae() {
           alunosIconRedirect={"/portal-proae/alunos"}
           docsIconRedirect={""}
           configIconRedirect={"/portal-proae/configuracao"}
+          pendenciasIconRedirect={""}
+          formularioGeralRedirect={"/portal-proae/formulario-geral"}
           logoutIconRedirect={"/"}
           logoutOnClick={logout}
         />

@@ -238,19 +238,19 @@ export default function ParecerQuestionarios() {
                   startContent={<Filter className="w-4 h-4" />}
                   className="status-filter"
                 >
-                  <SelectItem key="todos" value="todos">
+                  <SelectItem key="todos">
                     Todos os status
                   </SelectItem>
-                  <SelectItem key="sem-parecer" value="sem-parecer">
+                  <SelectItem key="sem-parecer">
                     Sem parecer
                   </SelectItem>
-                  <SelectItem key="pendente" value="pendente">
+                  <SelectItem key="pendente">
                     Pendente
                   </SelectItem>
-                  <SelectItem key="aprovado" value="aprovado">
+                  <SelectItem key="aprovado">
                     Aprovado
                   </SelectItem>
-                  <SelectItem key="reprovado" value="reprovado">
+                  <SelectItem key="reprovado">
                     Reprovado
                   </SelectItem>
                 </Select>

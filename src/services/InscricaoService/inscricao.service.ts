@@ -1,5 +1,6 @@
 import { PagesResponse, Answers } from "@/pages/Enrollment/Inscricao";
 import IHttpClient, { FetchAdapter } from "../api";
+import { API_BASE_URL } from "@/config/api";
 
 export interface CacheRespostasResponse {
   message: string;
@@ -21,7 +22,7 @@ export class InscricaoService {
 
   private constructor() {
     this.httpClient = new FetchAdapter();
-    this.url = import.meta.env.VITE_API_URL_SERVICES;
+    this.url = API_BASE_URL;
   }
 
   static getInstance(): InscricaoService {
@@ -43,15 +44,15 @@ export class InscricaoService {
   }
 
   async submeterRespostas(data: any) {
-    const url = import.meta.env.VITE_API_URL_SERVICES + `/inscricoes`;
+    const url = this.url + "/inscricoes";
     const response = await this.httpClient.post(url, data);
-    return response.data;
+    return (response as any).data;
   }
 
   async salvarRespostas(vaga_id: string, respostas: any[]): Promise<{ message: string }> {
     const url = this.url + `/inscricoes/cache/save/respostas`;
     const response = await this.httpClient.post(url, { vaga_id, respostas });
-    return response.data;
+    return (response as any).data ?? response;
   }
 
   async buscarRespostas(vagaId: string): Promise<CacheRespostasResponse> {

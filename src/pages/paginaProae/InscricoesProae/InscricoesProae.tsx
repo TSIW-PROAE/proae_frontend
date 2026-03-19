@@ -803,16 +803,17 @@ export default function InscricoesProae() {
               <label className="selector-label">Selecione um Edital</label>
               <select
                 className="edital-select"
-                value={editalSelecionado?.id || ""}
+                value={editalSelecionado ? String(editalSelecionado.id) : ""}
                 onChange={(e) => {
-                  const edital = editais.find((ed) => ed.id === e.target.value);
+                  const selectedId = e.target.value;
+                  const edital = editais.find((ed) => String(ed.id) === selectedId);
                   setEditalSelecionado(edital || null);
                 }}
                 disabled={isLoadingEditais}
               >
                 <option value="">Selecione um edital...</option>
                 {editais.map((edital) => (
-                  <option key={edital.id} value={edital.id}>
+                  <option key={String(edital.id)} value={String(edital.id)}>
                     {edital.titulo_edital}
                   </option>
                 ))}

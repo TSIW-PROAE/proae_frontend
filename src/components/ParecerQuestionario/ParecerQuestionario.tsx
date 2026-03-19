@@ -190,13 +190,13 @@ export const ParecerQuestionario: React.FC<ParecerQuestionarioProps> = ({
                   setNovoStatus(selectedKey as 'pendente' | 'aprovado' | 'reprovado');
                 }}
               >
-                <SelectItem key="pendente" value="pendente">
+                <SelectItem key="pendente">
                   Pendente
                 </SelectItem>
-                <SelectItem key="aprovado" value="aprovado">
+                <SelectItem key="aprovado">
                   Aprovado
                 </SelectItem>
-                <SelectItem key="reprovado" value="reprovado">
+                <SelectItem key="reprovado">
                   Reprovado
                 </SelectItem>
               </Select>

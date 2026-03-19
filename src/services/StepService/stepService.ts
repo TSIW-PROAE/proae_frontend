@@ -1,7 +1,8 @@
 import { FetchAdapter } from "../api";
 import { StepResponseDto } from "@/types/step";
+import { API_BASE_URL } from "@/config/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/steps";
+const BASE_URL = API_BASE_URL + "/steps";
 
 export class StepService {
   private httpClient: FetchAdapter;

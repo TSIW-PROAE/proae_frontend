@@ -10,6 +10,7 @@ export interface ISideBarProps {
   pendenciasIconRedirect: string;
   docsIconRedirect: string;
   pareceresIconRedirect?: string;
+  formularioGeralRedirect?: string;
   alunosIconRedirect?: string;
   inscricoesIconRedirect?: string;
   logoutIconRedirect: string;
@@ -32,8 +33,8 @@ const SideBar: React.FC<ISideBarProps> = ({
   logoutIconRedirect,
   logoutOnClick,
   pendenciasIconRedirect = "",
+  formularioGeralRedirect = "",
   alunosIconRedirect = "",
-  inscricoesIconRedirect = "",
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,6 +79,13 @@ const SideBar: React.FC<ISideBarProps> = ({
       label: "Alunos",
       redirect: alunosIconRedirect,
       shouldShowIcon: alunosIconRedirect !== "",
+    },
+    {
+      icon: ClipboardList,
+      alt: "Formulário Geral",
+      label: "Form. Geral",
+      redirect: formularioGeralRedirect,
+      shouldShowIcon: formularioGeralRedirect !== "",
     },
     {
       icon: BookOpen,

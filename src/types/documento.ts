@@ -13,3 +13,7 @@ export interface DocumentoInscricao {
   status_documento: DocumentoStatus;
   validacoes?: DocumentoValidacaoResumo[];
 }
+
+// Aliases usados por serviços antigos
+export type TipoDocumento = string;
+export type RDocumento = DocumentoInscricao;

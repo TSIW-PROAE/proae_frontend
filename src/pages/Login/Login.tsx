@@ -30,14 +30,16 @@ const loginProaeSchema = z.object({
 
 type LoginProaeFormData = z.infer<typeof loginProaeSchema>;
 
+export type LoginAs = "aluno" | "admin";
 
 export default function LoginProae() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, login } = useContext(AuthContext);
+  const { isAuthenticated, userInfo, login } = useContext(AuthContext);
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginAs, setLoginAs] = useState<LoginAs>("aluno");
 
   const { 
     control, 
@@ -54,6 +56,9 @@ export default function LoginProae() {
     mode: "onBlur"
   });
 
+  // Flag para impedir que o useEffect redirecione durante o onSubmit
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const emailParam = params.get("email");
@@ -61,20 +66,60 @@ export default function LoginProae() {
     if (emailParam) {
       setValue("email", emailParam);
     }
-    // Removed automatic redirect - allow users to access login page even when authenticated
-    // This allows them to logout or switch accounts if needed
-  }, [location, setValue]);
+
+    // Só redireciona automaticamente se o usuário já estava logado ao abrir /login
+    // (NÃO logo após um login feito nesta tela — o onSubmit cuida disso)
+    if (isAuthenticated && userInfo && !justLoggedIn) {
+      const isAdmin = userInfo.roles?.includes("admin");
+      const isAluno = userInfo.roles?.includes("aluno");
+
+      if (loginAs === "admin") {
+        if (isAdmin && userInfo.aprovado) {
+          navigate("/portal-proae/inscricoes");
+        } else if (isAdmin && !userInfo.aprovado) {
+          navigate("/tela-de-espera");
+        } else if (isAluno) {
+          navigate("/portal-aluno");
+        }
+      } else {
+        // loginAs === "aluno": sempre portal-aluno (completar cadastro se necessário)
+        navigate("/portal-aluno");
+      }
+    }
+  }, [location, navigate, isAuthenticated, userInfo, setValue, loginAs, justLoggedIn]);
 
   const onSubmit = async (data: LoginProaeFormData) => {
     if (isLoading) return;
     
     setIsLoading(true);
+    setJustLoggedIn(true);
     try {
-      await login({ email: data.email, senha: data.senha });
+      const response = await login({ email: data.email, senha: data.senha });
       toast.success("Login realizado com sucesso!");
-      navigate("/portal-proae/inscricoes");
+      const isAdmin = response?.user?.roles?.includes("admin");
+      const aprovado = response?.user?.aprovado ?? response?.user?.adminAprovado ?? response?.adminAprovado;
+      const isAluno = response?.user?.roles?.includes("aluno");
+
+      if (loginAs === "admin") {
+        if (isAdmin && aprovado) {
+          navigate("/portal-proae/inscricoes");
+        } else if (isAdmin && !aprovado) {
+          navigate("/tela-de-espera");
+        } else if (isAluno) {
+          toast("Você não tem acesso como Servidor PROAE. Redirecionando ao Portal do Aluno.", { icon: "ℹ️" });
+          navigate("/portal-aluno");
+        } else {
+          navigate("/");
+        }
+      } else {
+        // loginAs === "aluno": sempre direcionar para portal-aluno.
+        // Se ainda não tem perfil de aluno, o ProtectedAlunoRoute mostrará
+        // o formulário de completar cadastro.
+        navigate("/portal-aluno");
+      }
     } catch (err: any) {
       console.error("Erro no login:", err);
+      setJustLoggedIn(false);
       if (err?.message) {
         toast.error(err.message);
       } else {
@@ -103,14 +148,37 @@ export default function LoginProae() {
           
 
           <div className="h-full md:p-12 p-6 w-full">
-            <div className="mb-6 text-center">
+            <div className="mb-4 text-center">
               <h2 className="login-title">Faça Login</h2>
               <p className="login-subtitle">
-                Tenha acesso às informações do seu cadastro PROAE
+                {loginAs === "aluno"
+                  ? "Acesse seu portal de benefícios e inscrições"
+                  : "Acesse o painel de gerenciamento de editais PROAE"}
               </p>
             </div>
 
-            <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)}>
+            <div className="login-as-toggle" role="tablist" aria-label="Tipo de acesso">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginAs === "aluno"}
+                className={`login-as-tab ${loginAs === "aluno" ? "login-as-tab-active" : ""}`}
+                onClick={() => setLoginAs("aluno")}
+              >
+                Sou Aluno
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginAs === "admin"}
+                className={`login-as-tab ${loginAs === "admin" ? "login-as-tab-active" : ""}`}
+                onClick={() => setLoginAs("admin")}
+              >
+                Sou Servidor PROAE
+              </button>
+            </div>
+
+            <form className="flex flex-col gap-5 mt-4" onSubmit={handleSubmit(onSubmit)}>
               <div className="h-20">
                 <Controller
                   name="email"
@@ -119,7 +187,7 @@ export default function LoginProae() {
                     <Input
                       {...field}
                       id="email"
-                      label="Email"
+                      label={loginAs === "aluno" ? "Email (acesso aluno)" : "Email (acesso servidor @ufba.br)"}
                       variant="bordered"
                       radius="lg"
                       type="email"
@@ -209,7 +277,13 @@ export default function LoginProae() {
                 isLoading={isLoading || isSubmitting}
                 disabled={isLoading || isSubmitting}
               >
-                {isLoading || isSubmitting ? <Spinner size="md" className="text-white" /> : "Entrar"}
+                {isLoading || isSubmitting ? (
+                  <Spinner size="md" className="text-white" />
+                ) : loginAs === "aluno" ? (
+                  "Entrar como Aluno"
+                ) : (
+                  "Entrar como Servidor PROAE"
+                )}
               </Button>
 
               <div className="mt-6 pt-6 border-t border-gray-200">
