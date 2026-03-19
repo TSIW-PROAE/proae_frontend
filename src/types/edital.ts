@@ -11,8 +11,8 @@ export interface DocumentoEdital {
 }
 
 export interface Vaga {
-  id?: number;
-  edital_id: number;
+  id?: string;
+  edital_id: string;
   beneficio: string;
   descricao_beneficio: string;
   numero_vagas: number;
@@ -21,13 +21,15 @@ export interface Vaga {
 }
 
 export interface Edital {
-  id?: number;
+  id?: string;
   titulo_edital: string;
   descricao?: string;
   edital_url?: DocumentoEdital[];
   status_edital: "RASCUNHO" | "ABERTO" | "ENCERRADO" | "EM_ANDAMENTO";
   etapa_edital?: EtapaEdital[];
   vagas?: Vaga[];
+  possui_inscricoes?: boolean;
+  total_inscricoes?: number;
   created_at?: string;
   updated_at?: string;
 }

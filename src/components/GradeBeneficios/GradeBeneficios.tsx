@@ -4,7 +4,7 @@ import { VagaResponse } from '@/types/vaga';
 
 interface GradeBeneficiosProps {
   vagas: VagaResponse[];
-  onSelect: (vaga_id: number) => void;
+  onSelect: (vaga_id: string) => void;
   onCancel: () => void;
 }
 

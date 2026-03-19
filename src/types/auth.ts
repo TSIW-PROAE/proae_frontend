@@ -1,7 +1,7 @@
 
 import { CadastroFormData } from "@/pages/paginaProae/CadastroProae/CadastroProae";
 export interface UserInfo {
-  id: number;
+  id: string;
   nome: string;
   email: string;
   roles: UserRole[];

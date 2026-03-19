@@ -6,7 +6,7 @@ import { AuthContext } from '@/context/AuthContext';
 import './ParecerQuestionario.css';
 
 interface ParecerQuestionarioProps {
-  questionarioId: number;
+  questionarioId: string;
   tituloQuestionario: string;
   onParecerCriado?: (validacao: Validacao) => void;
   onParecerAtualizado?: (validacao: Validacao) => void;
@@ -86,7 +86,7 @@ export const ParecerQuestionario: React.FC<ParecerQuestionarioProps> = ({
     }
   };
 
-  const handleAprovar = async (validacaoId: number) => {
+  const handleAprovar = async (validacaoId: string) => {
     try {
       const validacaoAtualizada = await validacaoService.aprovarValidacao(validacaoId);
       setValidacoes(prev => 
@@ -102,7 +102,7 @@ export const ParecerQuestionario: React.FC<ParecerQuestionarioProps> = ({
     }
   };
 
-  const handleReprovar = async (validacaoId: number) => {
+  const handleReprovar = async (validacaoId: string) => {
     try {
       const validacaoAtualizada = await validacaoService.reprovarValidacao(validacaoId);
       setValidacoes(prev => 

@@ -2,12 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { createDynamicSchema } from "@/components/FormularioDinamico/dynamicSchema";
-import { 
-  UseFormBuilderProps, 
-  UseFormBuilderReturn, 
-  InputConfig, 
-  PaginaConfig 
-} from "@/types/dynamicForm";
+import { UseFormBuilderProps, UseFormBuilderReturn, InputConfig, PaginaConfig } from "@/types/dynamicForm";
 import { filtrarPaginasCondicionais } from "@/utils/conditionalLogic";
 import { mapStepsToPaginas } from "@/utils/formAdapter";
 import { prepareRespostasForSubmit, extractDadosAdicionais } from "@/utils/formSubmitHelpers";
@@ -27,7 +22,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pageErrors, setPageErrors] = useState<Record<number, string[]> | null>(null);
 
-  const [selectedVagaId, setSelectedVagaId] = useState<number | null>(null);
+  const [selectedVagaId, setSelectedVagaId] = useState<string | null>(null);
 
   const minioService = useMemo(() => new MinioService(), []);
 
@@ -40,7 +35,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {},
     mode: "onChange",
-    reValidateMode: "onChange"
+    reValidateMode: "onChange",
   });
 
   const formData = form.watch();
@@ -53,15 +48,11 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
   const progress = totalPages > 0 ? ((currentPage + 1) / totalPages) * 100 : 0;
   const isLastPage = currentPage === totalPages;
 
-  const {
-    saveToCache,
-    loadFromCache,
-    isSavingCache,
-    lastSavedAt,
-    hasUnsavedChanges,
-    clearCacheState
-  } = useFormCache({ form, vagaId: selectedVagaId, currentPage });
-
+  const { saveToCache, loadFromCache, isSavingCache, lastSavedAt, hasUnsavedChanges, clearCacheState } = useFormCache({
+    form,
+    vagaId: selectedVagaId,
+    currentPage,
+  });
 
   useEffect(() => {
     loadFormConfiguration();
@@ -74,15 +65,14 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
 
       const steps = await stepService.listarStepsPorEdital(editalId);
       const paginasConfig = mapStepsToPaginas(steps);
-      
+
       setPaginas(paginasConfig);
     } catch (err: any) {
-      setBackendError(err.message || 'Erro ao carregar formulário');
+      setBackendError(err.message || "Erro ao carregar formulário");
     } finally {
       setIsLoadingFromBackend(false);
     }
   };
-
 
   const validateCurrentPage = useCallback(async (): Promise<boolean> => {
     if (currentPage === 0 || paginasVisiveis.length === 0) {
@@ -95,22 +85,19 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     const isValid = await form.trigger(fieldsToValidate as any);
 
     if (!isValid) {
-      const errorFields = fieldsToValidate.filter(
-        (field: string) => form.formState.errors[field]
-      );
+      const errorFields = fieldsToValidate.filter((field: string) => form.formState.errors[field]);
       const errorTitles = errorFields.map((field: string) => {
         const input = currentPageConfig.inputs.find((q: InputConfig) => q.nome === field);
         return input?.titulo || field;
       });
 
-      setPageErrors(prev => ({ ...prev, [currentPage]: errorTitles }));
+      setPageErrors((prev) => ({ ...prev, [currentPage]: errorTitles }));
       return false;
     }
 
-    setPageErrors(prev => ({ ...prev, [currentPage]: [] }));
+    setPageErrors((prev) => ({ ...prev, [currentPage]: [] }));
     return true;
   }, [currentPage, form, paginasVisiveis]);
-
 
   const nextPage = useCallback(async (): Promise<boolean> => {
     const isValid = await validateCurrentPage();
@@ -121,7 +108,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     }
 
     if (currentPage < paginasVisiveis.length) {
-      setCurrentPage(prev => prev + 1);
+      setCurrentPage((prev) => prev + 1);
       window.scrollTo(0, 0);
     }
 
@@ -134,18 +121,20 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     }
 
     if (currentPage > 0) {
-      setCurrentPage(prev => prev - 1);
+      setCurrentPage((prev) => prev - 1);
       window.scrollTo(0, 0);
     }
   }, [currentPage, selectedVagaId, saveToCache]);
 
-  const goToPage = useCallback((page: number) => {
-    if (page >= 0 && page < paginasVisiveis.length) {
-      setCurrentPage(page);
-      window.scrollTo(0, 0);
-    }
-  }, [paginasVisiveis.length]);
-
+  const goToPage = useCallback(
+    (page: number) => {
+      if (page >= 0 && page < paginasVisiveis.length) {
+        setCurrentPage(page);
+        window.scrollTo(0, 0);
+      }
+    },
+    [paginasVisiveis.length],
+  );
 
   const submitForm = useCallback(async () => {
     setIsSubmitting(true);
@@ -157,31 +146,28 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
       const formData = form.getValues();
       const dadosAdicionais = extractDadosAdicionais(formData);
 
-      const respostas = await prepareRespostasForSubmit(
-        formData,
-        paginasVisiveis,
-        selectedVagaId!,
-        minioService
-      );
+      const respostas = await prepareRespostasForSubmit(formData, paginasVisiveis, selectedVagaId!, minioService);
+
+      const payload = {
+        vaga_id: selectedVagaId,
+        respostas,
+        ...dadosAdicionais,
+      };
 
       if (backendOnSubmit) {
-        await backendOnSubmit({ respostas, ...dadosAdicionais });
+        await backendOnSubmit(payload);
       } else {
-        await InscricaoService.getInstance().submeterRespostas({
-          respostas,
-          ...dadosAdicionais
-        });
+        await InscricaoService.getInstance().submeterRespostas(payload);
       }
 
       clearCacheState();
     } catch (error) {
-      console.error('Erro ao enviar formulário', error);
+      console.error("Erro ao enviar formulário", error);
       throw error;
     } finally {
       setIsSubmitting(false);
     }
   }, [form, paginasVisiveis, selectedVagaId, backendOnSubmit, minioService, clearCacheState]);
-
 
   const resetForm = useCallback(() => {
     form.reset(initialData || {});
@@ -189,7 +175,6 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     setPageErrors({});
     clearCacheState();
   }, [form, initialData, clearCacheState]);
-
 
   const saveProgress = useCallback(async () => {
     await saveToCache(true);
@@ -216,6 +201,6 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     isSavingCache,
     lastSavedAt,
     hasUnsavedChanges,
-    setSelectedVagaId
+    setSelectedVagaId,
   };
 }

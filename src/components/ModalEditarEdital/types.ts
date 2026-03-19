@@ -18,7 +18,7 @@ export interface EditableVaga {
 export type StatusEdital = "RASCUNHO" | "ABERTO" | "EM_ANDAMENTO" | "ENCERRADO";
 
 export interface QuestionarioItem {
-  id?: number;
+  id?: string;
   titulo: string;
   nome: string;
   previewPerguntas: string[];
@@ -30,7 +30,7 @@ export interface EditableQuestionario {
 }
 
 export interface DadoAluno {
-  id?: number; // ID do dado no backend
+  id?: string; // ID do dado no backend
   nome: string;
   tipo: "text" | "number" | "date" | "select" | "file";
   obrigatorio: boolean;
@@ -38,7 +38,7 @@ export interface DadoAluno {
 }
 
 export interface PerguntaEditorItem {
-  id?: number; // ID da pergunta no backend
+  id?: string; // ID da pergunta no backend
   texto: string;
   tipo:
     | "texto"
@@ -53,7 +53,7 @@ export interface PerguntaEditorItem {
   opcoes: string[];
   vincularDadosAluno?: boolean;
   dadoVinculado?: string; // nome do dado do aluno vinculado
-  dadoId?: number; // ID do dado vinculado no backend
+  dadoId?: string; // ID do dado vinculado no backend
   isEditing?: boolean;
 }
 

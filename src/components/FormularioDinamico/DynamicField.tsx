@@ -81,6 +81,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             return (
               <Input
                 label={titulo}
+                labelPlacement="outside"
                 description={subtitulo}
                 type={tipo === "number" ? "text" : tipo}
                 value={value !== undefined ? String(value) : String(field.value || "")}
@@ -107,6 +108,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             return (
               <Textarea
                 label={titulo}
+                labelPlacement="outside"
                 description={subtitulo}
                 value={value !== undefined ? String(value) : String(field.value || "")}
                 onChange={(e) => {
@@ -125,6 +127,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             return (
               <Select
                 label={titulo}
+                labelPlacement="outside"
                 description={subtitulo}
                 selectedKeys={field.value ? [String(field.value)] : []}
                 onSelectionChange={(keys) => {
@@ -170,6 +173,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             return (
               <DatePicker
                 label={titulo}
+                labelPlacement="outside"
                 description={subtitulo}
                 value={field.value as any}
                 onChange={(value) => {
@@ -193,23 +197,27 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               />
             );
 
-          case "selectGroup":
+          case "selectGroup": {
             return(
               <SelectGroup
                 title={titulo}
-                questions={input.questions?.map((q) => ({ id: q, label: q })) || []}
                 options={options as SelectOption[]}
                 required={obrigatorio}
                 error={error?.message}
                 values={field.value as Record<string, string> || {}}
-                onChange={(questionId, value) => {
-                  const newValues = { ...(field.value || {}), [questionId]: value };
-                  const finalValue = formatValue ? formatValue(newValues) : newValues;
+                onChange={(optionValue, checked) => {
+                  const current = { ...(field.value as Record<string, string> || {}) };
+                  if (checked) {
+                    current[optionValue] = optionValue;
+                  } else {
+                    delete current[optionValue];
+                  }
+                  const finalValue = formatValue ? formatValue(current) : current;
                   field.onChange(finalValue);
                 }}
-              >
-              </SelectGroup>
+              />
             )
+          }
 
           case "textInputGroup":
             return (

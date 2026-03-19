@@ -3,7 +3,7 @@ import { FetchAdapter } from "../api";
 const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/dado";
 
 export interface Dado {
-  id?: number;
+  id?: string;
   nome: string;
   tipo: "text" | "number" | "date" | "select" | "file";
   obrigatorio: boolean;
@@ -23,7 +23,7 @@ export class DadoService {
     return this.httpClient.get<Dado[]>(BASE_URL);
   }
 
-  async buscarDadoPorId(id: number): Promise<Dado> {
+  async buscarDadoPorId(id: string): Promise<Dado> {
     return this.httpClient.get<Dado>(`${BASE_URL}/${id}`);
   }
 

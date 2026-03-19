@@ -16,7 +16,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
       const response = await authService.login(data);
       const fillUserInfo: UserInfo = {
         email: response.user.email,
-        id: response.user.usuario_id,
+        id: String(response.user.usuario_id),
         nome: response.user.nome,
         roles: response.user.roles
       }
@@ -68,7 +68,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
                 id: response.user.usuario_id,
                 nome: response.user.nome,
                 roles: response.user.roles,
-                aprovado: response.user.roles.includes("admin") ? response.user.aprovado : false
+                aprovado: response.user.admin.aprovado
               }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);

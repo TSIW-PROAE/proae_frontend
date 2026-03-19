@@ -61,10 +61,9 @@ export default function LoginProae() {
     if (emailParam) {
       setValue("email", emailParam);
     }
-    if (isAuthenticated) {
-      navigate("/portal-proae/inscricoes");
-    }
-  }, [location, navigate, isAuthenticated, setValue]);
+    // Removed automatic redirect - allow users to access login page even when authenticated
+    // This allows them to logout or switch accounts if needed
+  }, [location, setValue]);
 
   const onSubmit = async (data: LoginProaeFormData) => {
     if (isLoading) return;

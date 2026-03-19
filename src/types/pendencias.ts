@@ -10,13 +10,13 @@ export interface RPendenciasAluno {
 }
 
 export interface Pendencia {
-  inscricao_id: number;
+  inscricao_id: string;
   titulo_edital: string;
   documentos: Documento[];
 }
 
 export interface Documento {
-  documento_id: number;
+  documento_id: string;
   tipo_documento: string;
   documento_url: string;
   status_documento: StatusDocumento;

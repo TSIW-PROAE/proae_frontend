@@ -4,7 +4,7 @@ import IHttpClient, { FetchAdapter } from "../api";
 export interface CacheRespostasResponse {
   message: string;
   respostas: Array<{
-    perguntaId: number;
+    perguntaId: string;
     valorTexto?: string;
     valorOpcoes?: string[];
     isFile?: boolean;
@@ -31,7 +31,7 @@ export class InscricaoService {
     return InscricaoService.instance;
   }
 
-  async fetchPagesInformation(editalId: number): Promise<PagesResponse[]> {
+  async fetchPagesInformation(editalId: string): Promise<PagesResponse[]> {
     return await this.httpClient.get<PagesResponse[]>(
       this.url + "/steps/edital/" + editalId);
   }
@@ -48,19 +48,19 @@ export class InscricaoService {
     return response.data;
   }
 
-  async salvarRespostas(vaga_id: number, respostas: any[]): Promise<{ message: string }> {
+  async salvarRespostas(vaga_id: string, respostas: any[]): Promise<{ message: string }> {
     const url = this.url + `/inscricoes/cache/save/respostas`;
     const response = await this.httpClient.post(url, { vaga_id, respostas });
     return response.data;
   }
 
-  async buscarRespostas(vagaId: number): Promise<CacheRespostasResponse> {
+  async buscarRespostas(vagaId: string): Promise<CacheRespostasResponse> {
     const url = this.url + `/inscricoes/cache/respostas/vaga/${vagaId}`;
     const response = await this.httpClient.get<CacheRespostasResponse>(url);
     return response; // get() returns data directly
   }
 
-  async atualizarInscricao(id: number, answers: Answers) {
+  async atualizarInscricao(id: string, answers: Answers) {
     const url = this.url + `/inscricoes/${id}`;
     const response: any = await this.httpClient.put(url, answers);
     return response.data;

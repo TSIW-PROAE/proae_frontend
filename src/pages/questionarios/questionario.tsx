@@ -19,7 +19,7 @@ export const Questionario: React.FC = () => {
 
   useEffect(() => {
     const edital = async () => {
-      const response = await editalService.buscarEditalPorId(Number(editalId));
+      const response = await editalService.buscarEditalPorId(editalId!);
       setEditalData(response);
     }
 
@@ -28,7 +28,7 @@ export const Questionario: React.FC = () => {
 
   return (
     <FormularioDinamico
-      editalId={Number(editalId)}
+      editalId={editalId}
       titulo={`Formulário ${editalData ? editalData.titulo_edital : ""}`}
       subtitulo={`${editalData ? editalData.descricao : ""}`}
       botaoFinal="Enviar Formulário"

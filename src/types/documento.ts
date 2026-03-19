@@ -1,23 +1,15 @@
+export type DocumentoStatus = "Não Enviado" | "Pendente" | "Aprovado" | "Reprovado" | "Em Análise";
 
-export enum TipoDocumento{
-  CPF = 'Comprovante de situação cadastral do cpf',
-  HISTORICO_ESCOLAR = 'Cert. de conclusão ou Hist. escolar do ensino médio',
-  RG = 'Documento de Identidade',
-  COMPROVANTE_MATRICULA = 'Comprovante de matrícula',
-  OUTROS = 'Outros'
+export interface DocumentoValidacaoResumo {
+  parecer: string;
+  data_validacao?: string;
+  status?: "pendente" | "aprovado" | "reprovado";
 }
 
-export type StatusDocumento = 'PENDENTE' | 'APROVADO' | 'REJEITADO';
-
-export type RDocumento = {
-    success: boolean;
-    documento: {
-        documento_id: number;
-        tipo_documento: TipoDocumento;
-        status: StatusDocumento;
-        documento_url: string;
-    }
+export interface DocumentoInscricao {
+  documento_id: string;
+  tipo_documento: string;
+  documento_url?: string | null;
+  status_documento: DocumentoStatus;
+  validacoes?: DocumentoValidacaoResumo[];
 }
-
-
-

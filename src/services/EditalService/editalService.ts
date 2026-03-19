@@ -23,11 +23,11 @@ export class EditalService {
     return this.httpClient.get<Edital[]>(`${BASE_URL}/abertos`);
   }
 
-  async buscarEditalPorId(id: number): Promise<Edital> {
+  async buscarEditalPorId(id: string): Promise<Edital> {
     return this.httpClient.get<Edital>(`${BASE_URL}/${id}`);
   }
 
-  async buscarVagasDoEdital(editalId: number): Promise<Vaga[]> {
+  async buscarVagasDoEdital(editalId: string): Promise<Vaga[]> {
     const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
     return this.httpClient.get<Vaga[]>(`${baseUrl}/vagas/edital/${editalId}`);
   }
@@ -41,14 +41,14 @@ export class EditalService {
   }
 
   async atualizarVaga(
-    id: number,
+    id: string,
     vaga: Partial<Omit<Vaga, "id" | "created_at" | "updated_at">>
   ): Promise<Vaga> {
     const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
   return this.httpClient.patch<Vaga>(`${baseUrl}/vagas/${id}`, vaga);
   }
 
-  async deletarVaga(id: number): Promise<void> {
+  async deletarVaga(id: string): Promise<void> {
     const baseUrl = import.meta.env.VITE_API_URL_SERVICES;
   return this.httpClient.delete<void>(`${baseUrl}/vagas/${id}`);
   }
@@ -58,14 +58,14 @@ export class EditalService {
   }
 
   async atualizarEdital(
-    id: number,
+    id: string,
     edital: UpdateEditalRequest
   ): Promise<Edital> {
     return this.httpClient.patch<Edital>(`${BASE_URL}/${id}`, edital);
   }
 
   async alterarStatusEdital(
-    id: number,
+    id: string,
     status: Edital["status_edital"]
   ): Promise<Edital> {
     return this.httpClient.patch<Edital>(
@@ -74,7 +74,7 @@ export class EditalService {
     );
   }
 
-  async deletarEdital(id: number): Promise<void> {
+  async deletarEdital(id: string): Promise<void> {
     return this.httpClient.delete<void>(`${BASE_URL}/${id}`);
   }
 }

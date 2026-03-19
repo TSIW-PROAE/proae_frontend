@@ -7,11 +7,8 @@ export default function ProtectedRouteProae() {
   const location = useLocation();
   const { logout } = useContext(AuthContext);
 
-
   const routesToNotRenderSideBar = ["/portal-proae/cadastro-edital"];
-  const shouldShowSideBar = !routesToNotRenderSideBar.includes(
-    location.pathname
-  );
+  const shouldShowSideBar = !routesToNotRenderSideBar.includes(location.pathname);
 
   return (
     <div className="app-layout">
@@ -19,6 +16,8 @@ export default function ProtectedRouteProae() {
         <SideBar
           homeIconRedirect={"/portal-proae/inscricoes"}
           processIconRedirect={"/portal-proae/processos"}
+          inscricoesIconRedirect={"/portal-proae/inscricoes-gerenciar"}
+          alunosIconRedirect={"/portal-proae/alunos"}
           docsIconRedirect={""}
           configIconRedirect={"/portal-proae/configuracao"}
           logoutIconRedirect={"/"}
@@ -26,9 +25,7 @@ export default function ProtectedRouteProae() {
         />
       )}
 
-      <main
-        className={`main-content ${shouldShowSideBar ? "with-sidebar" : "without-sidebar"}`}
-      >
+      <main className={`main-content ${shouldShowSideBar ? "with-sidebar" : "without-sidebar"}`}>
         <Outlet />
       </main>
     </div>

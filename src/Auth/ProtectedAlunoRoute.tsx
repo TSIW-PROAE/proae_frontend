@@ -4,7 +4,12 @@ import { AuthContext } from "@/context/AuthContext";
 import ProtectedAluno from "@/layouts/ProtectedAluno";
 
 export default function ProtectedAlunoRoute() {
-    const { userInfo, isAuthenticated } = useContext(AuthContext);
+    const { userInfo, isAuthenticated, loading } = useContext(AuthContext);
+
+    // Wait for auth check to complete before making navigation decisions
+    if (loading) {
+        return null; // or a loading spinner
+    }
 
     if (!isAuthenticated) {
         return <Navigate to="/" replace />;
