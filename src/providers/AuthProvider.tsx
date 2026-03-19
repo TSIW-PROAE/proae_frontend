@@ -17,7 +17,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
       const aprovado = response.user?.aprovado ?? response.user?.adminAprovado ?? response.adminAprovado;
       const fillUserInfo: UserInfo = {
         email: response.user.email,
-        id: response.user.usuario_id,
+        id: String(response.user.usuario_id),
         nome: response.user.nome,
         roles: response.user.roles,
         aprovado: response.user.roles?.includes("admin") ? Boolean(aprovado) : undefined

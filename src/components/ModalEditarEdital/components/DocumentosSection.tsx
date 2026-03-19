@@ -7,6 +7,7 @@ interface DocumentosSectionProps {
   openLinks: boolean;
   onDocumentosChange: (documentos: EditableDocumento[]) => void;
   onToggleOpen: () => void;
+  onPersist?: (documentos: EditableDocumento[]) => void;
 }
 
 const DocumentosSection: React.FC<DocumentosSectionProps> = ({
@@ -14,6 +15,7 @@ const DocumentosSection: React.FC<DocumentosSectionProps> = ({
   openLinks,
   onDocumentosChange,
   onToggleOpen,
+  onPersist,
 }) => {
   const updateDocumento = (
     index: number,
@@ -34,6 +36,7 @@ const DocumentosSection: React.FC<DocumentosSectionProps> = ({
   const deleteDocumento = (index: number) => {
     const newDocs = documentos.filter((_, i) => i !== index);
     onDocumentosChange(newDocs);
+    onPersist?.(newDocs);
   };
 
   const addDocumento = () => {
@@ -47,7 +50,10 @@ const DocumentosSection: React.FC<DocumentosSectionProps> = ({
   const saveDocumento = (index: number) => {
     const documento = documentos[index];
     if (documento.value.titulo_documento && documento.value.url_documento) {
-      toggleDocumentoEditing(index, false);
+      const newDocs = [...documentos];
+      newDocs[index].isEditing = false;
+      onDocumentosChange(newDocs);
+      onPersist?.(newDocs);
     }
   };
 

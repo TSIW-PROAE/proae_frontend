@@ -89,7 +89,7 @@ export default function ProcessosProae() {
     }
   };
 
-  const handleDeletarEdital = async (id: number) => {
+  const handleDeletarEdital = async (id: string) => {
     const edital = editais.find((e) => e.id === id);
     if (!edital) return;
 
@@ -122,7 +122,8 @@ export default function ProcessosProae() {
     setError(null);
   };
 
-  const handleCloseEditModal = () => {
+  const handleCloseEditModal = async () => {
+    await carregarEditais();
     setShowEditModal(false);
     setEditingEdital(undefined);
     setError(null);

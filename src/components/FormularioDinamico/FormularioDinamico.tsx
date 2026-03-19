@@ -16,7 +16,7 @@ import BarraProgresso  from '@/components/BarraProgresso/BarraProgresso';
 import type { PaginaConfig } from "@/types/dynamicForm";
 
 interface FormularioDinamicoProps {
-  editalId?: string | number;
+  editalId?: string;
   titulo?: string;
   subtitulo?: string;
   botaoFinal?: string;
@@ -41,7 +41,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
   const vagasService = new VagasService(new FetchAdapter());
 
   const [vagas, setVagas] = useState<Vaga[]>([]);
-  const [vagaSelecionada, setVagaSelecionada] = useState<number | null>(null);
+  const [vagaSelecionada, setVagaSelecionada] = useState<string | null>(null);
   const [isLoadingVagas, setIsLoadingVagas] = useState(true);
   const [vagasError, setVagasError] = useState<string | null>(null);
 
@@ -74,7 +74,10 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
 
   useEffect(() => {
     if (props.initialVagas?.length) {
-      const vagasData = props.initialVagas as Vaga[];
+      const vagasData: Vaga[] = (props.initialVagas as any[]).map((v) => ({
+        ...(v as any),
+        id: String((v as any).id),
+      }));
       setVagas(vagasData);
       setVagasError(null);
       setIsLoadingVagas(false);
@@ -182,7 +185,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     }
   }
 
-  const handleSelectVaga = (vaga_id: number) => {
+  const handleSelectVaga = (vaga_id: string) => {
     setVagaSelecionada(vaga_id);
   };
 

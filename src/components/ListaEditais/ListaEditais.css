@@ -812,7 +812,7 @@
 .vagas-info {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
   gap: 0.25rem;
   font-weight: 500;
   color: #6b7280;
@@ -825,7 +825,7 @@
 .table-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
   gap: 0.25rem;
 }
 

@@ -7,7 +7,6 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Tag,
   Copy,
   Grid3X3,
   List,
@@ -26,7 +25,7 @@ function normalizeStatus(status: string | undefined): StatusEdital {
 interface ListaEditaisProps {
   editais: Edital[];
   onEdit: (edital: Edital) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   isLoading?: boolean;
   onRequestDuplicate?: (edital: Edital) => void;
 }
@@ -36,7 +35,7 @@ type ViewMode = "grid" | "list";
 const EditalTableRow: React.FC<{
   edital: Edital;
   onEdit: (edital: Edital) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   onRequestDuplicate?: (edital: Edital) => void;
 }> = ({ edital, onEdit, onDelete, onRequestDuplicate }) => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
@@ -106,7 +105,6 @@ const EditalTableRow: React.FC<{
 
   return (
     <tr className="table-row" onClick={() => onEdit(edital)}>
-      <td className="table-cell id-cell">#{edital.id || 0}</td>
       <td className="table-cell title-cell">
         <div className="table-title">
           {edital.titulo_edital || "Título não informado"}
@@ -169,7 +167,7 @@ const EditalTableRow: React.FC<{
 const EditalCard: React.FC<{
   edital: Edital;
   onEdit: (edital: Edital) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   onRequestDuplicate?: (edital: Edital) => void;
 }> = ({ edital, onEdit, onDelete, onRequestDuplicate }) => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
@@ -292,10 +290,6 @@ const EditalCard: React.FC<{
 
       <div className="selection-card-body">
         <div className="selection-card-meta">
-          <div className="meta-item">
-            <Tag className="w-3 h-3" />
-            <span>#{edital.id || 0}</span>
-          </div>
           <div className="meta-item">
             <Users className="w-3 h-3" />
             <span>{totalVagas} vagas total</span>
@@ -452,7 +446,6 @@ export default function ListaEditais({
         <table className="editais-table-header">
           <thead>
             <tr>
-              <th className="table-header-cell">ID</th>
               <th className="table-header-cell">Título</th>
               <th className="table-header-cell">Status</th>
               <th className="table-header-cell">Vagas</th>

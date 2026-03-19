@@ -12,7 +12,7 @@ export default class DocumentoService{
         this.httpClient = new FetchAdapter();
     }
 
-    async uploadDocumento(file: File, inscricaoId: number, tipo_documento: TipoDocumento): Promise<RDocumento>{
+    async uploadDocumento(file: File, inscricaoId: string, tipo_documento: TipoDocumento): Promise<RDocumento>{
             const url = `${BASE_URL}/upload`; 
             
             const data = new FormData();

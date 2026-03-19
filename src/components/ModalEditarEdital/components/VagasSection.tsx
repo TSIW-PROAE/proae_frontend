@@ -5,9 +5,11 @@ import { EditableVaga } from "../types";
 interface VagasSectionProps {
   vagas: EditableVaga[];
   openVagas: boolean;
-  editalId: number;
+  editalId: string;
   onVagasChange: (vagas: EditableVaga[]) => void;
   onToggleOpen: () => void;
+  onSaveVaga?: (index: number) => Promise<void>;
+  onDeleteVaga?: (index: number) => Promise<void>;
 }
 
 const VagasSection: React.FC<VagasSectionProps> = ({
@@ -16,6 +18,8 @@ const VagasSection: React.FC<VagasSectionProps> = ({
   editalId,
   onVagasChange,
   onToggleOpen,
+  onSaveVaga,
+  onDeleteVaga,
 }) => {
   const updateVaga = (
     index: number,
@@ -33,7 +37,15 @@ const VagasSection: React.FC<VagasSectionProps> = ({
     onVagasChange(newVagas);
   };
 
-  const deleteVaga = (index: number) => {
+  const deleteVaga = async (index: number) => {
+    const vaga = vagas[index];
+    if (vaga.value.id && onDeleteVaga) {
+      try {
+        await onDeleteVaga(index);
+      } catch {
+        return; // Não remove da UI se falhar no backend
+      }
+    }
     const newVagas = vagas.filter((_, i) => i !== index);
     onVagasChange(newVagas);
   };
@@ -51,10 +63,17 @@ const VagasSection: React.FC<VagasSectionProps> = ({
     onVagasChange([...vagas, newVaga]);
   };
 
-  const saveVaga = (index: number) => {
+  const saveVaga = async (index: number) => {
     const vaga = vagas[index];
     if (vaga.value.beneficio && vaga.value.numero_vagas > 0) {
       toggleVagaEditing(index, false);
+      if (onSaveVaga) {
+        try {
+          await onSaveVaga(index);
+        } catch {
+          // Erro tratado pelo pai
+        }
+      }
     }
   };
 

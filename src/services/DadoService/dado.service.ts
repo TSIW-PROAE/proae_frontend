@@ -4,7 +4,7 @@ import { API_BASE_URL } from "@/config/api";
 const BASE_URL = API_BASE_URL + "/dado";
 
 export interface Dado {
-  id?: number;
+  id?: string;
   nome: string;
   tipo: "text" | "number" | "date" | "select" | "file";
   obrigatorio: boolean;
@@ -24,7 +24,7 @@ export class DadoService {
     return this.httpClient.get<Dado[]>(BASE_URL);
   }
 
-  async buscarDadoPorId(id: number): Promise<Dado> {
+  async buscarDadoPorId(id: string): Promise<Dado> {
     return this.httpClient.get<Dado>(`${BASE_URL}/${id}`);
   }
 

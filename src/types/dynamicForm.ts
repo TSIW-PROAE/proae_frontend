@@ -104,11 +104,11 @@ export interface UseFormBuilderReturn {
   isLoadingFromBackend?: boolean;
   backendError?: string | null;
   saveProgress: () => Promise<void>;
-  loadFromCache: (vagaId: number) => Promise<boolean>;
+  loadFromCache: (vagaId: string) => Promise<boolean>;
   isSavingCache: boolean;
   lastSavedAt: Date | null;
   hasUnsavedChanges: boolean;
-  setSelectedVagaId: (vagaId: number | null) => void;
+  setSelectedVagaId: (vagaId: string | null) => void;
 }
 
 export interface DynamicFieldProps {

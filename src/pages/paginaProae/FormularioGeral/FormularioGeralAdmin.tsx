@@ -228,13 +228,13 @@ export default function FormularioGeralAdmin() {
       const currentBackendStepIds = new Set(steps.filter((s) => s._backendId).map((s) => s._backendId!));
 
       for (const id of originalStepIds) {
-        if (!currentBackendStepIds.has(id)) await stepService.deletarStep(id);
+        if (!currentBackendStepIds.has(id)) await stepService.deletarStep(String(id));
       }
 
       for (const step of steps) {
         if (!step._backendId) {
           if (!step.texto.trim()) continue;
-          const created = await stepService.criarStep(data.id, step.texto.trim());
+          const created = await stepService.criarStep(String(data.id), step.texto.trim());
           for (const p of step.perguntas) {
             if (!p.pergunta.trim()) continue;
             await perguntaService.criarPergunta({
@@ -246,12 +246,12 @@ export default function FormularioGeralAdmin() {
         } else {
           const origStep = originalSteps.find((s) => s.id === step._backendId);
           if (origStep && origStep.texto !== step.texto.trim() && step.texto.trim()) {
-            await stepService.atualizarStep(step._backendId, step.texto.trim());
+            await stepService.atualizarStep(String(step._backendId), step.texto.trim());
           }
           const origPerguntaIds = new Set((origStep?.perguntas ?? []).map((p) => p.id));
           const curPerguntaIds = new Set(step.perguntas.filter((p) => p._backendId).map((p) => p._backendId!));
           for (const id of origPerguntaIds) {
-            if (!curPerguntaIds.has(id)) await perguntaService.deletarPergunta(id);
+            if (!curPerguntaIds.has(id)) await perguntaService.deletarPergunta(String(id));
           }
           for (const p of step.perguntas) {
             if (!p._backendId && p.pergunta.trim()) {

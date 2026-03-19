@@ -11,23 +11,23 @@ export class PerguntaService {
     this.httpClient = new FetchAdapter();
   }
 
-  async listarPerguntasPorStep(stepId: number): Promise<Pergunta[]> {
+  async listarPerguntasPorStep(stepId: string): Promise<Pergunta[]> {
     return this.httpClient.get<Pergunta[]>(`${BASE_URL}/step/${stepId}`);
   }
 
-  async buscarPerguntaPorId(id: number): Promise<Pergunta> {
+  async buscarPerguntaPorId(id: string): Promise<Pergunta> {
     return this.httpClient.get<Pergunta>(`${BASE_URL}/${id}`);
   }
 
   async criarPergunta(
-    data: Omit<Pergunta, "id" | "created_at" | "updated_at">
+    data: Omit<Pergunta, "id" | "created_at" | "updated_at"> & { prazoResposta?: string }
   ): Promise<Pergunta> {
   const resp = await this.httpClient.post<Pergunta>(`${BASE_URL}`, data);
   return resp.data;
   }
 
   async atualizarPergunta(
-    id: number,
+    id: string,
     data: Partial<
       Omit<Pergunta, "id" | "created_at" | "updated_at" | "step_id">
     >
@@ -35,7 +35,7 @@ export class PerguntaService {
   return this.httpClient.patch<Pergunta>(`${BASE_URL}/${id}`, data);
   }
 
-  async deletarPergunta(id: number): Promise<{ message: string }> {
+  async deletarPergunta(id: string): Promise<{ message: string }> {
   return this.httpClient.delete<{ message: string }>(`${BASE_URL}/${id}`);
   }
 }

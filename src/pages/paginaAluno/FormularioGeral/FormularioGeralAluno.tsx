@@ -89,6 +89,10 @@ export default function FormularioGeralAluno() {
     );
   }
 
+  if (!data) {
+    return null;
+  }
+
   const { minha_inscricao, pode_se_inscrever_em_outros } = data;
   const statusLower = minha_inscricao?.status_inscricao?.toLowerCase() ?? "";
   const aprovada = statusLower === STATUS_APROVADA.toLowerCase();
@@ -124,7 +128,7 @@ export default function FormularioGeralAluno() {
   if (emAjuste && corrigindo && data.vagas?.length) {
     return (
       <FormularioDinamico
-        editalId={data.id}
+        editalId={String(data.id)}
         titulo={data.titulo_edital || "Formulário Geral — Correção"}
         subtitulo="Preencha novamente as informações solicitadas e reenvie o formulário."
         botaoFinal="Reenviar correção"
@@ -133,7 +137,7 @@ export default function FormularioGeralAluno() {
         initialVagas={data.vagas}
         onSuccess={() => {
           setCorrigindo(false);
-          setData(undefined);
+          setData(null);
           reload();
         }}
         onError={(msg) => {
@@ -302,7 +306,7 @@ export default function FormularioGeralAluno() {
 
   return (
     <FormularioDinamico
-      editalId={data.id}
+      editalId={String(data.id)}
       titulo={data.titulo_edital || "Formulário Geral"}
       subtitulo={data.descricao}
       botaoFinal="Enviar formulário geral"

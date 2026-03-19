@@ -50,19 +50,19 @@ export default function ParecerQuestionarios() {
       
       const questionariosData: QuestionarioComValidacao[] = [
         {
-          id: 1,
+          id: "1",
           titulo: "Questionário de Documentação",
           texto: "Questionário para validação de documentos",
           perguntas: []
         },
         {
-          id: 2,
+          id: "2",
           titulo: "Questionário Socioeconômico",
           texto: "Avaliação da situação socioeconômica do candidato",
           perguntas: []
         },
         {
-          id: 3,
+          id: "3",
           titulo: "Questionário de Residência",
           texto: "Questionário para candidatos à residência universitária",
           perguntas: []
@@ -238,19 +238,19 @@ export default function ParecerQuestionarios() {
                   startContent={<Filter className="w-4 h-4" />}
                   className="status-filter"
                 >
-                  <SelectItem key="todos" value="todos">
+                  <SelectItem key="todos">
                     Todos os status
                   </SelectItem>
-                  <SelectItem key="sem-parecer" value="sem-parecer">
+                  <SelectItem key="sem-parecer">
                     Sem parecer
                   </SelectItem>
-                  <SelectItem key="pendente" value="pendente">
+                  <SelectItem key="pendente">
                     Pendente
                   </SelectItem>
-                  <SelectItem key="aprovado" value="aprovado">
+                  <SelectItem key="aprovado">
                     Aprovado
                   </SelectItem>
-                  <SelectItem key="reprovado" value="reprovado">
+                  <SelectItem key="reprovado">
                     Reprovado
                   </SelectItem>
                 </Select>

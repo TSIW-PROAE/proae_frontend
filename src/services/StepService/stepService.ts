@@ -11,7 +11,7 @@ export class StepService {
     this.httpClient = new FetchAdapter();
   }
 
-  async criarStep(editalId: number, texto: string): Promise<StepResponseDto> {
+  async criarStep(editalId: string, texto: string): Promise<StepResponseDto> {
     // Cria um Step para um edital
     const payload = { texto, edital_id: editalId } as const;
     const resp = await this.httpClient.post<StepResponseDto>(`${BASE_URL}`, payload);
@@ -22,11 +22,11 @@ export class StepService {
     return this.httpClient.get<StepResponseDto[]>(`${BASE_URL}/edital/${editalId}/with-perguntas`);
   }
 
-  async deletarStep(stepId: number): Promise<{ message?: string }> {
+  async deletarStep(stepId: string): Promise<{ message?: string }> {
      return this.httpClient.delete<{ message?: string }>(`${BASE_URL}/${stepId}`);
   }
 
-  async atualizarStep(stepId: number, texto: string): Promise<StepResponseDto> {
+  async atualizarStep(stepId: string, texto: string): Promise<StepResponseDto> {
     return this.httpClient.patch<StepResponseDto>(`${BASE_URL}/${stepId}`, { texto });
   }
 

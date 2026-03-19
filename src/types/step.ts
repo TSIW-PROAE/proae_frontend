@@ -1,7 +1,7 @@
 import { TipoInput, FormatacaoInput } from "./dynamicForm";
 
 export interface Step {
-  id: number;
+  id: string;
   texto: string;
   perguntas: Pergunta[];
 }
@@ -9,7 +9,7 @@ export interface Step {
 export interface Pergunta {
   obrigatoria: any;
   tipo_pergunta: any;
-  id: number;
+  id: string;
   pergunta: string;
   tipo_Pergunta: TipoInput;
   obrigatoriedade: boolean;
@@ -20,13 +20,13 @@ export interface Pergunta {
 
 export interface StepResponseDto {
   titulo: string;
-  id: number;
+  id: string;
   texto: string;
   perguntas: PerguntaResponseDto[];
 }
 
 export interface PerguntaResponseDto {
-  id: number;
+  id: string;
   pergunta: string;
   tipo_Pergunta: TipoInput;
   obrigatoriedade: boolean;
@@ -36,12 +36,12 @@ export interface PerguntaResponseDto {
 }
 
 export interface CreateRespostaDto {
-  pergunta_id: number;
+  pergunta_id: string;
   texto: string;
 }
 
 export interface UpdateRespostaDto {
-  id: number;
-  pergunta_id?: number;
+  id: string;
+  pergunta_id?: string;
   texto?: string;
 }

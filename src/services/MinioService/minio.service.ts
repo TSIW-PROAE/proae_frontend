@@ -4,13 +4,13 @@ import { API_BASE_URL } from "@/config/api";
 
 const BASE_URL = API_BASE_URL + "/documents";
 
-/** Resposta do POST /documents/upload (R2) */
 export interface UploadResponse {
   mensagem?: string;
-  arquivos: Array<{ nome_do_arquivo?: string; tipo?: string; url: string }>;
+  arquivos?: Array<{ nome_do_arquivo?: string; tipo?: string; url: string }>;
+  objectKey?: string;
+  urlArquivo?: string;
 }
 
-/** Resposta do GET /documents/:filename (URL assinada) */
 export interface DocumentUrlResponse {
   nome_do_arquivo?: string;
   url: string;
@@ -23,60 +23,63 @@ export class MinioService {
     this.httpClient = new FetchAdapter();
   }
 
-  /**
-   * Upload de arquivo via POST /documents/upload.
-   * Body: multipart/form-data com campo `files` (array) ou `file` (um arquivo).
-   * Resposta: { mensagem, arquivos: [{ nome_do_arquivo, tipo, url }] }.
-   * Retorna arquivos[0].url para usar em urlArquivo nas respostas do formulário.
-   */
-  async uploadDocument(file: File, vagaId?: number): Promise<string> {
+  async uploadDocument(file: File, vagaId?: number | string): Promise<string> {
     const url = `${BASE_URL}/upload`;
     const formData = new FormData();
     formData.append("files", file);
-    if (vagaId) {
-      formData.append("vagaId", vagaId.toString());
+
+    if (vagaId !== undefined && vagaId !== null && String(vagaId).trim() !== "") {
+      formData.append("vagaId", String(vagaId));
     }
 
-    try {
-      const response = await axios.post<UploadResponse>(url, formData, {
-        withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+    const response = await axios.post<UploadResponse>(url, formData, {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
-      if (response.status !== 201 && response.status !== 200) {
-        const msg =
-          response.data?.mensagem ?? "Erro ao fazer upload do arquivo";
-        throw new Error(msg);
-      }
-
-      const { arquivos } = response.data ?? {};
-      const primeiro = Array.isArray(arquivos) ? arquivos[0] : null;
-      const urlArquivo = primeiro?.url;
-
-      if (!urlArquivo || typeof urlArquivo !== "string") {
-        throw new Error(
-          response.data?.mensagem ?? "Resposta do servidor não contém URL do arquivo. Tente novamente."
-        );
-      }
-      return urlArquivo;
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.mensagem ??
-        err?.response?.data?.message ??
-        (typeof err?.response?.data === "string" ? err.response.data : null) ??
-        err?.message ??
-        "Erro ao fazer upload do arquivo";
+    if (response.status !== 201 && response.status !== 200) {
+      const msg = response.data?.mensagem ?? "Erro ao fazer upload do arquivo";
       throw new Error(msg);
     }
+
+    const data = response.data ?? {};
+    const first = Array.isArray(data.arquivos) ? data.arquivos[0] : undefined;
+    const urlFromArquivos = first?.url;
+    const reference = data.objectKey ?? data.urlArquivo ?? urlFromArquivos;
+
+    if (!reference || typeof reference !== "string") {
+      throw new Error(data.mensagem ?? "Upload retornou sem referência do arquivo.");
+    }
+
+    return reference;
   }
 
-  /**
-   * GET /documents/:filename — retorna URL assinada do arquivo.
-   * Resposta: { nome_do_arquivo, url }.
-   */
   async downloadDocument(fileName: string): Promise<DocumentUrlResponse> {
     const url = `${BASE_URL}/${fileName}`;
     const response = await this.httpClient.get<DocumentUrlResponse>(url);
-    return response;
+    return response as unknown as DocumentUrlResponse;
+  }
+
+  static getViewUrl(objectKeyOrFilename: string): string {
+    if (!objectKeyOrFilename) return "";
+    if (
+      objectKeyOrFilename.startsWith("http://") ||
+      objectKeyOrFilename.startsWith("https://")
+    ) {
+      return objectKeyOrFilename;
+    }
+    // backend proxy
+    return `${BASE_URL}/view?key=${encodeURIComponent(objectKeyOrFilename)}`;
+  }
+
+  static isFileReference(value?: string | null): boolean {
+    if (!value) return false;
+    if (value === "https://example.com/fake-url") return false;
+    return value.includes("/") || value.includes(".");
+  }
+
+  static isObjectKey(value?: string | null): boolean {
+    return MinioService.isFileReference(value);
   }
 }
+

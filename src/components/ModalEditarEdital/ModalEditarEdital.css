@@ -1397,7 +1397,7 @@ select:focus {
 
 /* Footer */
 .modal-footer-horizontal {
-  padding: 24px 32px;
+  padding: 16px 32px;
   border-top: 1px solid #f1f5f9;
   background: #f8fafc;
   display: flex;
@@ -1406,6 +1406,68 @@ select:focus {
   position: sticky;
   bottom: 0;
   z-index: 5;
+}
+
+.auto-save-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.auto-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.auto-save-status.saving {
+  color: #6366f1;
+  background: #eef2ff;
+}
+
+.auto-save-status.saved {
+  color: #16a34a;
+  background: #f0fdf4;
+}
+
+.auto-save-status.error {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.btn-close-footer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.btn-close-footer:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
 .footer-buttons {
@@ -4582,4 +4644,281 @@ select:focus {
   margin: 0;
   font-size: 14px;
   font-weight: 500;
+}
+
+/* ── Modal de confirmação: nova pergunta em edital com inscrições ── */
+.nova-pergunta-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+
+.nova-pergunta-confirm-modal {
+  max-width: 560px;
+  width: 90%;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: fadeInScale 0.2s ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.nova-pergunta-confirm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-bottom: 1px solid #f59e0b33;
+}
+
+.nova-pergunta-confirm-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f59e0b;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nova-pergunta-confirm-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.nova-pergunta-confirm-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nova-pergunta-confirm-alert {
+  margin: 0;
+  font-size: 14px;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.nova-pergunta-confirm-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.nova-pergunta-confirm-info p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.nova-pergunta-confirm-info ul {
+  margin: 0;
+  padding: 0 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nova-pergunta-confirm-info li {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.nova-pergunta-confirm-prazo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nova-pergunta-confirm-prazo label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.nova-pergunta-confirm-prazo .required {
+  color: #ef4444;
+}
+
+.nova-pergunta-prazo-input {
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.nova-pergunta-prazo-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px #3b82f620;
+}
+
+.nova-pergunta-prazo-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.nova-pergunta-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-cancel-nova-pergunta {
+  padding: 10px 20px;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-cancel-nova-pergunta:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-confirm-nova-pergunta {
+  padding: 10px 20px;
+  border: none;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-confirm-nova-pergunta:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  box-shadow: 0 2px 8px #d9770640;
+}
+
+.btn-confirm-nova-pergunta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Modal de confirmação: deletar pergunta em edital com inscrições ── */
+.delete-pergunta-confirm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #fef2f2, #fecaca);
+  border-bottom: 1px solid #f8717133;
+}
+
+.delete-pergunta-confirm-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #dc2626;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-pergunta-confirm-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.delete-pergunta-confirm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delete-pergunta-nome {
+  margin: 0;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.delete-pergunta-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  color: #be123c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.delete-pergunta-aviso svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #e11d48;
+}
+
+.btn-delete-pergunta-confirm {
+  padding: 10px 20px;
+  border: none;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-delete-pergunta-confirm:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  box-shadow: 0 2px 8px #dc262640;
 }

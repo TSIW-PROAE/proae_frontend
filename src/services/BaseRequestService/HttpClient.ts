@@ -38,7 +38,6 @@ export class FetchAdapter implements IHttpClient {
 
   async get<T>(url: string): Promise<T> {
     try {
-
       const response = await this.axiosInstance.get<T>(url, {
         withCredentials: true,
       });
@@ -51,7 +50,6 @@ export class FetchAdapter implements IHttpClient {
 
   async post<T>(url: string, data: unknown): Promise<HttpResponse<T>> {
     try {
-
       const response = await this.axiosInstance.post<T>(url, data, {
         withCredentials: true,
       });
@@ -78,7 +76,6 @@ export class FetchAdapter implements IHttpClient {
 
   async delete<T>(url: string): Promise<T> {
     try {
-
       const response = await this.axiosInstance.delete<T>(url, {
         withCredentials: true,
       });
