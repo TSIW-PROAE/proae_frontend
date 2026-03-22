@@ -41,11 +41,12 @@ export default function PortalAluno() {
 
   const getBenefits = async () => {
     try {
-      const response = await portalAlunoService.getBenefts();
-      const data = (response as ResponseData).dados.beneficios;
-      setBenefits(data);
+      const response = (await portalAlunoService.getBenefts()) as ResponseData | null;
+      const data = response?.dados?.beneficios ?? [];
+      setBenefits(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao obter benefícios:", error);
+      setBenefits([]);
     }
   };
 
@@ -99,7 +100,7 @@ export default function PortalAluno() {
   const stats = [
     {
       icon: Award,
-      label: "Benefícios Ativos",
+      label: "Benefícios no edital",
       value: benefits?.filter((b) => b.beneficio?.toLowerCase().includes("ativo")).length || 0,
       color: "bg-emerald-500",
       bgColor: "bg-emerald-50",
@@ -167,6 +168,19 @@ export default function PortalAluno() {
             </div>
           </div>
         </header>
+
+        <div className="mb-4 p-4 rounded-xl border border-slate-200 bg-white/90 text-slate-800 text-sm leading-relaxed shadow-sm">
+          <p className="font-semibold text-slate-900 m-0 mb-1">Como ler o portal</p>
+          <ul className="list-disc pl-5 m-0 space-y-1">
+            <li>
+              <strong>Minhas inscrições</strong>: situação da sua inscrição no processo (análise, pendências, etc.).
+            </li>
+            <li>
+              <strong>Benefícios no edital</strong>: aparece quando a inscrição está <strong>aprovada na análise</strong> e você foi{" "}
+              <strong>homologado como beneficiário da vaga</strong> naquele edital — são duas etapas diferentes.
+            </li>
+          </ul>
+        </div>
 
         {renovacaoPendente && (
           <div className="mb-4 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-950 flex flex-wrap items-center gap-3 justify-between">
@@ -291,11 +305,10 @@ export default function PortalAluno() {
               <div className="status-card info">
                 <TrendingUp className="w-6 h-6 text-blue-600" />
                 <div className="status-content">
-                  <h3 className="status-title">Progresso</h3>
+                  <h3 className="status-title">Homologações</h3>
                   <p className="status-description">
-                    {benefits.length} benefício
-                    {benefits.length !== 1 ? "s" : ""} conquistado
-                    {benefits.length !== 1 ? "s" : ""}
+                    {benefits.length} processo
+                    {benefits.length !== 1 ? "s" : ""} com inscrição aprovada e benefício homologado no edital
                   </p>
                 </div>
               </div>

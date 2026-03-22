@@ -50,6 +50,8 @@ interface EditalAPI {
   status_edital: string;
   etapa_edital: EtapaEdital[];
   status_inscricao: string;
+  /** Homologação da vaga no edital (API `status_beneficio_edital`) */
+  status_beneficio_edital?: string;
   data_inscricao: string;
   vaga: Vaga;
   possui_pendencias: boolean;
@@ -76,11 +78,12 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
   const {
     titulo_edital,
     status_inscricao,
+    status_beneficio_edital,
     possui_pendencias,
-    etapa_edital,
+    etapa_edital: etapaEditalProp,
     data_inscricao,
     vaga,
-    total_pendencias,
+    total_pendencias: totalPendenciasProp,
     pendencias_por_step,
     possui_novas_perguntas_pendentes,
     total_novas_perguntas,
@@ -89,24 +92,47 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
     observacao_admin,
   } = edital;
 
+  /** API antiga mandava `etapas_edital`; a correta é `etapa_edital`. */
+  const etapa_edital =
+    etapaEditalProp ??
+    (edital as { etapas_edital?: typeof etapaEditalProp }).etapas_edital ??
+    [];
+  const total_pendencias = totalPendenciasProp ?? 0;
+
+  const benLower = (status_beneficio_edital ?? "").toLowerCase();
+  const ehBeneficiario =
+    benLower.includes("beneficiário") || benLower.includes("beneficiario");
+  const ehPendenteSelecao =
+    benLower.includes("pendente seleção") || benLower.includes("pendente selecao");
+  const ehNaoBeneficiario =
+    benLower.includes("não beneficiário") ||
+    benLower.includes("nao beneficiário") ||
+    benLower.includes("nao beneficiario");
+
   const statusLower = (status_inscricao ?? "").toLowerCase();
   const isAjuste = status_inscricao === "Ajuste Necessário";
   const isNegada = statusLower.includes("negada") || statusLower.includes("rejeitada") || statusLower.includes("reprovada");
   const isFG = is_formulario_geral === true;
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString("pt-BR", {
+  const formatDate = (dateStr: string | undefined | null) => {
+    if (dateStr == null || String(dateStr).trim() === "") return "—";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
+  };
 
   const normalizarData = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const hoje = normalizarData(new Date());
 
   const getEtapaStatus = (etapa: EtapaEdital): "completed" | "current" | "upcoming" => {
+    if (!etapa?.data_inicio || !etapa?.data_fim) return "upcoming";
     const [ai, mi, di] = etapa.data_inicio.split("-").map(Number);
     const [af, mf, df] = etapa.data_fim.split("-").map(Number);
+    if ([ai, mi, di, af, mf, df].some((n) => Number.isNaN(n))) return "upcoming";
     const inicio = new Date(ai, mi - 1, di);
     const fim = new Date(af, mf - 1, df);
     if (hoje.getTime() > fim.getTime()) return "completed";
@@ -172,6 +198,43 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
       </div>
 
       <div className="status-content">
+        {!isFG && status_beneficio_edital && (
+          <div
+            className={`mb-3 rounded-lg border px-3 py-2.5 text-sm ${
+              ehBeneficiario
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                : ehNaoBeneficiario
+                  ? "bg-slate-50 border-slate-200 text-slate-800"
+                  : "bg-amber-50 border-amber-200 text-amber-950"
+            }`}
+          >
+            <p className="font-semibold m-0 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0" />
+              Sua participação neste edital
+            </p>
+            <p className="m-0 mt-1 opacity-95">
+              <span className="font-medium">Inscrição:</span> você está inscrito desde {formatDate(data_inscricao)}.{" "}
+              <span className="font-medium">Análise da inscrição:</span>{" "}
+              {status_inscricao || "—"}.
+            </p>
+            {ehBeneficiario && statusLower.includes("aprovada") && (
+              <p className="m-0 mt-2 font-medium text-emerald-900">
+                Você foi <strong>homologado como beneficiário da vaga</strong> neste edital (além da inscrição aprovada na análise).
+              </p>
+            )}
+            {ehPendenteSelecao && !ehBeneficiario && statusLower.includes("aprovada") && (
+              <p className="m-0 mt-2">
+                Sua inscrição está aprovada na análise; o próximo passo é a <strong>homologação como beneficiário</strong> no edital — aguarde a divulgação ou acompanhe a PROAE.
+              </p>
+            )}
+            {ehNaoBeneficiario && statusLower.includes("aprovada") && (
+              <p className="m-0 mt-2">
+                Neste edital você <strong>não foi selecionado como beneficiário da vaga</strong>. Sua inscrição segue o status da análise acima.
+              </p>
+            )}
+          </div>
+        )}
+
         {isAjuste && (
           <div className="alert alert-warning">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
@@ -216,6 +279,11 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
 
         <div className="timeline-section">
           <h4 className="timeline-title">Linha do Tempo do Processo</h4>
+          {etapasOrdenadas.length === 0 ? (
+            <p className="text-sm text-gray-500 px-1 py-2 m-0">
+              Não há etapas com datas cadastradas para este edital. Se o processo já deveria aparecer aqui, entre em contato com a PROAE.
+            </p>
+          ) : null}
           <div className="timeline-container">
             {etapasOrdenadas.map((etapa, index) => {
               const status = getEtapaStatus(etapa);
