@@ -12,7 +12,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   userInfo: UserInfo | null;
   login: (data: UserLogin) => Promise<UserLoginResponse>;
-  logout: () => void;
+  logout: () => Promise<void>;
   registerAluno: (data: UserSignup) => Promise<DefaultResponse>;
   registerAdmin: (data: CadastroFormData) => Promise<DefaultResponse>;
   checkAuth: () => Promise<void>;

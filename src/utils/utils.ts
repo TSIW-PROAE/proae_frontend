@@ -7,14 +7,16 @@ export function getCookie(name: string): string | null {
 
 export function setCookie(name: string, value: string, days?: number) {
   Cookie.set(name, value, {
+    path: "/",
     expires: import.meta.env.VITE_COOKIE_EXPIRATION_DAYS ? parseInt(import.meta.env.VITE_COOKIE_EXPIRATION_DAYS) : days,
     secure: true,
     sameSite: "Strict",
   })
 }
 
+/** Mesmos atributos de path (e quando possível secure/sameSite) para o browser realmente remover o cookie. */
 export function deleteCookie(name: string) {
-  Cookie.remove(name);
+  Cookie.remove(name, { path: "/" })
 }
 
 export function extractCookieFromHeaders(headers: Record<string, string>, cookieName: string): string | null {

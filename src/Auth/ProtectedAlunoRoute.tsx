@@ -34,13 +34,26 @@ function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
     try {
       const httpClient = new FetchAdapter();
       const url = `${API_BASE_URL}/aluno/complete-cadastro`;
-      await httpClient.post(url, {
+      const res = await httpClient.post(url, {
         matricula,
         curso,
         campus,
         data_ingresso: dataIngresso,
       });
-      toast.success("Cadastro de aluno vinculado com sucesso!");
+      const data = res.data as {
+        aguardando_confirmacao_email?: boolean;
+        mensagem?: string;
+      };
+      if (data.aguardando_confirmacao_email) {
+        toast.success(
+          data.mensagem ||
+            "Enviamos um link de confirmação para seu email. Abra o link para liberar o portal."
+        );
+      } else {
+        toast.success(
+          data.mensagem || "Cadastro de aluno vinculado com sucesso!"
+        );
+      }
       onSuccess();
     } catch (err: any) {
       const msg = err?.message || err?.mensagem || "Erro ao completar cadastro.";
@@ -129,10 +142,33 @@ function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
+function AguardandoConfirmacaoEmail() {
+  return (
+    <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6 overflow-y-auto">
+      <Toaster position="top-right" />
+      <div className="max-w-lg w-full rounded-2xl border border-blue-200 bg-white p-8 shadow-sm my-auto text-center">
+        <h1 className="text-xl font-semibold text-[#183b4e] mb-3">
+          Confirme seu email
+        </h1>
+        <p className="text-gray-600 text-sm mb-6">
+          Enviamos um link para seu email institucional. Clique no link para
+          ativar seu cadastro de estudante e acessar editais e o portal.
+          Verifique também a pasta de spam.
+        </p>
+        <p className="text-xs text-gray-500">
+          Depois de confirmar, atualize esta página ou faça login novamente.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function ProtectedAlunoRoute() {
   const { userInfo, isAuthenticated, loading, checkAuth } = useContext(AuthContext);
   const [loadingAlunoCheck, setLoadingAlunoCheck] = useState(true);
   const [alunoExiste, setAlunoExiste] = useState(false);
+  const [aguardandoConfirmacaoEmail, setAguardandoConfirmacaoEmail] =
+    useState(false);
 
   const verificarAluno = () => {
     if (!isAuthenticated) {
@@ -144,8 +180,19 @@ export default function ProtectedAlunoRoute() {
     const service = new EditarPerfilService();
     service
       .getAlunoPerfil(httpClient)
-      .then(() => setAlunoExiste(true))
-      .catch(() => setAlunoExiste(false))
+      .then(() => {
+        setAlunoExiste(true);
+        setAguardandoConfirmacaoEmail(false);
+      })
+      .catch((err: { statusCode?: number; message?: string }) => {
+        if (err?.statusCode === 403) {
+          setAguardandoConfirmacaoEmail(true);
+          setAlunoExiste(false);
+          return;
+        }
+        setAlunoExiste(false);
+        setAguardandoConfirmacaoEmail(false);
+      })
       .finally(() => setLoadingAlunoCheck(false));
   };
 
@@ -173,6 +220,10 @@ export default function ProtectedAlunoRoute() {
         <span className="ml-2 text-gray-600">Verificando cadastro...</span>
       </div>
     );
+  }
+
+  if (aguardandoConfirmacaoEmail) {
+    return <AguardandoConfirmacaoEmail />;
   }
 
   if (!alunoExiste) {

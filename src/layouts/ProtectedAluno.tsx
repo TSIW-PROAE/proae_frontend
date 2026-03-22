@@ -22,6 +22,7 @@ export default function ProtectedRouteAluno() {
           pendenciasIconRedirect={"/portal-aluno/pendencias"}
           docsIconRedirect={""}
           formularioGeralRedirect={"/portal-aluno/formulario-geral"}
+          formularioRenovacaoRedirect={"/portal-aluno/formulario-renovacao"}
           logoutIconRedirect={"/"}
           logoutOnClick={logout}
         />

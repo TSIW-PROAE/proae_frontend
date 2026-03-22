@@ -6,7 +6,8 @@ import { formularioGeralService } from "@/services/FormularioGeralService/formul
 import { useEffect, useState, useContext } from "react";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
-import { User, BookOpen, FileText, Award, TrendingUp, Clock, CheckCircle, AlertCircle, Bell } from "lucide-react";
+import { User, BookOpen, FileText, Award, TrendingUp, Clock, CheckCircle, AlertCircle, Bell, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingSpin } from "@/components/Loading/LoadingScreen";
 
@@ -17,6 +18,7 @@ interface ResponseData {
 }
 
 export default function PortalAluno() {
+  const navigate = useNavigate();
   const { userInfo: user } = useContext(AuthContext);
   const [firstName, setFirstName] = useState("");
   const [userId, setUserId] = useState("");
@@ -24,6 +26,7 @@ export default function PortalAluno() {
   const [openSelections, setOpenSelections] = useState<any[]>([]);
   const [inscriptions, setInscriptions] = useState<any[]>([]);
   const [podeSeInscreverEmOutros, setPodeSeInscreverEmOutros] = useState<boolean>(true);
+  const [renovacaoPendente, setRenovacaoPendente] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -74,8 +77,10 @@ export default function PortalAluno() {
     try {
       const fg = await formularioGeralService.getFormularioGeralOrNull();
       setPodeSeInscreverEmOutros(fg?.pode_se_inscrever_em_outros ?? true);
+      setRenovacaoPendente(!!fg?.renovacao_pendente);
     } catch {
       setPodeSeInscreverEmOutros(true);
+      setRenovacaoPendente(false);
     }
   };
 
@@ -162,6 +167,27 @@ export default function PortalAluno() {
             </div>
           </div>
         </header>
+
+        {renovacaoPendente && (
+          <div className="mb-4 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-950 flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-start gap-2">
+              <RefreshCw className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Renovação obrigatória</p>
+                <p className="text-sm opacity-90">
+                  Há um formulário de renovação aberto. Conclua-o para voltar a se inscrever em editais e benefícios.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/portal-aluno/formulario-renovacao")}
+              className="px-4 py-2 rounded-lg bg-amber-800 text-white text-sm font-medium hover:bg-amber-900"
+            >
+              Preencher renovação
+            </button>
+          </div>
+        )}
 
         {/* Estatísticas Cards */}
         <section className="stats-section">

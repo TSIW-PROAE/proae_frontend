@@ -604,3 +604,105 @@
     align-items: flex-start;
   }
 }
+
+/* Botão hub na tabela */
+.central-hub-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.central-hub-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+/* Filtros Central — edital / benefício */
+.central-filtros-bar {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.central-filtros-bar-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+}
+
+.central-filtros-bar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+}
+
+.central-filtros-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  min-width: min(100%, 280px);
+}
+
+.central-filtros-select {
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fff;
+  max-width: 100%;
+}
+
+.central-filtros-check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #334155;
+  cursor: pointer;
+  user-select: none;
+}
+
+.central-filtros-check--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.central-filtros-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.email-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-align: left;
+}
+
+.nome-sobre-email {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.8rem;
+}

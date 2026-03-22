@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
-import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
+import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X, History, Loader2 } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { Edital } from "@/types/edital";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
 import { AlunoInscrito } from "@/types/inscricao";
+import type { InscricaoStatusAuditEntry } from "@/types/inscricaoStatusAudit";
 import { respostaService } from "@/services/RespostaService/respostaService";
 import "./InscricoesProae.css";
 
@@ -70,7 +72,51 @@ interface StepsCompletos {
   steps: StepComStatus[];
 }
 
+function formatActorIdAudit(id: string | null): string {
+  if (!id) return "—";
+  if (id.length <= 12) return id;
+  return `${id.slice(0, 8)}…${id.slice(-4)}`;
+}
+
+/** Evita deslocamento de fuso em strings só data (YYYY-MM-DD). */
+function formatDataHoraOuDataBr(iso: string | undefined | null): string {
+  if (iso == null || String(iso).trim() === "") return "—";
+  const s = String(iso).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if (m) {
+    const [, y, mo, d] = m;
+    if (!s.includes("T") && !/\d{2}:\d{2}/.test(s)) {
+      return `${d}/${mo}/${y}`;
+    }
+  }
+  const t = new Date(s);
+  if (Number.isNaN(t.getTime())) return s || "—";
+  const hasTime = /\d{2}:\d{2}/.test(s) || s.includes("T");
+  return hasTime
+    ? t.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+    : t.toLocaleDateString("pt-BR");
+}
+
+function mergeAlunoInformacoesGerais(ins: AlunoInscrito, sc?: StepsCompletos["aluno"] | null) {
+  return {
+    nome: ins.nome?.trim() || sc?.nome?.trim() || "",
+    email: ins.email?.trim() || sc?.email?.trim() || "",
+    matricula: ins.matricula?.trim() || sc?.matricula?.trim() || "",
+    cpf: ins.cpf?.trim() || "",
+    celular: ins.celular?.trim() || "",
+    curso: ins.curso?.trim() || "",
+    campus: ins.campus?.trim() || "",
+    data_nascimento: ins.data_nascimento?.trim() || "",
+    data_ingresso: ins.data_ingresso?.trim() || "",
+  };
+}
+
 export default function InscricoesProae() {
+  const [searchParams] = useSearchParams();
+  const editalIdFromUrl = searchParams.get("editalId");
+  const expandInscricaoFromUrl = searchParams.get("expandInscricao");
+  const deepLinkExpandHandled = useRef(false);
+
   const [editais, setEditais] = useState<Edital[]>([]);
   const [editalSelecionado, setEditalSelecionado] = useState<Edital | null>(null);
   const [inscricoes, setInscricoes] = useState<AlunoInscrito[]>([]);
@@ -85,7 +131,13 @@ export default function InscricoesProae() {
   const [questionarioSelecionado, setQuestionarioSelecionado] = useState<string | null>(null);
   const [isLoadingModal, setIsLoadingModal] = useState(false);
   const [validandoRespostas, setValidandoRespostas] = useState<Record<string, boolean>>({});
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingPdfAnalise, setDownloadingPdfAnalise] = useState(false);
+  const [downloadingPdfBeneficio, setDownloadingPdfBeneficio] = useState(false);
+
+  /** Aba Informações Gerais — auditoria de status */
+  const [auditEntries, setAuditEntries] = useState<InscricaoStatusAuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditErro, setAuditErro] = useState(false);
 
   // Estado do modal de confirmação de validação
   const [modalValidarOpen, setModalValidarOpen] = useState(false);
@@ -134,6 +186,12 @@ export default function InscricoesProae() {
       carregarInscricoes();
     }
   }, [editalSelecionado]);
+
+  useEffect(() => {
+    if (!editais.length || !editalIdFromUrl) return;
+    const ed = editais.find((e) => String(e.id) === String(editalIdFromUrl));
+    if (ed) setEditalSelecionado(ed);
+  }, [editais, editalIdFromUrl]);
 
   const carregarEditais = async () => {
     try {
@@ -212,8 +270,10 @@ export default function InscricoesProae() {
     const s = status?.toUpperCase();
     switch (s) {
       case "APROVADA":
+      case "INSCRIÇÃO APROVADA":
         return "status-badge status-aprovada";
       case "REJEITADA":
+      case "INSCRIÇÃO NEGADA":
         return "status-badge status-rejeitada";
       case "EM ANÁLISE":
       case "EM_ANALISE":
@@ -233,6 +293,9 @@ export default function InscricoesProae() {
       case "REJEITADA_POR_PRAZO_COMPLEMENTO":
         return "status-badge status-rejeitada-prazo-complemento";
       case "PENDENTE":
+      case "INSCRIÇÃO PENDENTE":
+      case "AJUSTE NECESSÁRIO":
+        return "status-badge status-pendente";
       default:
         return "status-badge status-pendente";
     }
@@ -242,8 +305,10 @@ export default function InscricoesProae() {
     const s = status?.toUpperCase();
     switch (s) {
       case "APROVADA":
+      case "INSCRIÇÃO APROVADA":
         return "Aprovada";
       case "REJEITADA":
+      case "INSCRIÇÃO NEGADA":
         return "Rejeitada";
       case "EM ANÁLISE":
       case "EM_ANALISE":
@@ -263,8 +328,12 @@ export default function InscricoesProae() {
       case "REJEITADA_POR_PRAZO_COMPLEMENTO":
         return "Rejeitada por Prazo";
       case "PENDENTE":
-      default:
+      case "INSCRIÇÃO PENDENTE":
         return "Pendente";
+      case "AJUSTE NECESSÁRIO":
+        return "Ajuste necessário";
+      default:
+        return status?.trim() ? status : "Pendente";
     }
   };
 
@@ -274,13 +343,54 @@ export default function InscricoesProae() {
     await carregarStepsCompletos(inscricao.aluno_id);
   };
 
+  useEffect(() => {
+    if (!expandInscricaoFromUrl || !inscricoes.length || deepLinkExpandHandled.current) return;
+    const ins = inscricoes.find((i) => String(i.inscricao_id) === String(expandInscricaoFromUrl));
+    if (ins) {
+      deepLinkExpandHandled.current = true;
+      void handleVerDetalhes(ins);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deep link uma vez ao carregar a lista
+  }, [inscricoes, expandInscricaoFromUrl]);
+
+  useEffect(() => {
+    if (!isModalOpen || abaAtiva !== "informacoes" || !inscricaoSelecionada?.inscricao_id) {
+      return;
+    }
+    let cancelled = false;
+    setAuditLoading(true);
+    setAuditErro(false);
+    inscricaoServiceManager
+      .listarStatusAuditAdmin(String(inscricaoSelecionada.inscricao_id))
+      .then((data) => {
+        if (!cancelled) {
+          const asc = [...(data || [])].sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+          );
+          setAuditEntries(asc);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuditErro(true);
+          setAuditEntries([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAuditLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isModalOpen, abaAtiva, inscricaoSelecionada?.inscricao_id]);
+
   const carregarStepsCompletos = async (alunoId: string) => {
     if (!editalSelecionado?.id || !alunoId) return;
 
     try {
       setIsLoadingModal(true);
       const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/aluno/${alunoId}/edital/${editalSelecionado.id}/steps-completos`;
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: "include" });
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -333,6 +443,7 @@ export default function InscricoesProae() {
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ validada: true }),
       });
 
@@ -486,6 +597,7 @@ export default function InscricoesProae() {
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body),
       });
 
@@ -519,6 +631,7 @@ export default function InscricoesProae() {
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           invalidada: true,
           requerReenvio: true,
@@ -554,17 +667,25 @@ export default function InscricoesProae() {
     setModalReabrirComplementoOpen(true);
   };
 
-  // ── Documento: buscar URL presigned ──
-  const extrairNomeArquivo = (urlArquivo: string): string => {
-    // Se for uma URL completa, pegar último segmento
+  // ── Documento: chave no R2 (object key) ou URL antiga ──
+  /** Chave completa para a API (ex.: userId/documentos/arquivo.pdf) */
+  const resolveStorageKeyForApi = (urlArquivo: string): string => {
+    const t = urlArquivo.trim();
+    if (!t) return "";
+    if (!/^https?:\/\//i.test(t)) return t;
     try {
-      const url = new URL(urlArquivo);
-      const segments = url.pathname.split("/").filter(Boolean);
-      return segments[segments.length - 1] || urlArquivo;
+      const u = new URL(t);
+      return u.pathname.replace(/^\/+/, "");
     } catch {
-      // Se não for URL válida, usar como está (já é o nome do arquivo)
-      return urlArquivo;
+      return t;
     }
+  };
+
+  /** Nome amigável para exibir (último segmento da chave) */
+  const extrairNomeArquivo = (urlArquivo: string): string => {
+    const key = resolveStorageKeyForApi(urlArquivo);
+    const parts = key.split("/").filter(Boolean);
+    return parts[parts.length - 1] || key;
   };
 
   const getExtensaoArquivo = (nome: string): string => {
@@ -579,9 +700,12 @@ export default function InscricoesProae() {
     return extensao === "pdf";
   };
 
-  const buscarDocumentoPresignedUrl = async (nomeArquivo: string): Promise<{ nome_do_arquivo: string; url: string } | null> => {
+  const buscarDocumentoPresignedUrl = async (
+    objectKey: string,
+  ): Promise<{ nome_do_arquivo?: string; url: string; objectKey?: string } | null> => {
     try {
-      const url = `${import.meta.env.VITE_API_URL_SERVICES}/documents/${encodeURIComponent(nomeArquivo)}`;
+      const base = import.meta.env.VITE_API_URL_SERVICES;
+      const url = `${base}/documents/presigned?key=${encodeURIComponent(objectKey)}`;
       const response = await fetch(url, { credentials: "include" });
       if (!response.ok) throw new Error("Erro ao buscar documento");
       return await response.json();
@@ -592,13 +716,14 @@ export default function InscricoesProae() {
   };
 
   const abrirVisualizadorDocumento = async (urlArquivo: string) => {
+    const storageKey = resolveStorageKeyForApi(urlArquivo);
     const nomeArquivo = extrairNomeArquivo(urlArquivo);
     setDocumentoNome(nomeArquivo);
     setDocumentoLoading(true);
     setDocumentoErro(null);
     setDocumentoViewerOpen(true);
 
-    const result = await buscarDocumentoPresignedUrl(nomeArquivo);
+    const result = await buscarDocumentoPresignedUrl(storageKey);
     if (result?.url) {
       setDocumentoUrl(result.url);
     } else {
@@ -615,8 +740,9 @@ export default function InscricoesProae() {
   };
 
   const baixarDocumento = async (urlArquivo: string) => {
+    const storageKey = resolveStorageKeyForApi(urlArquivo);
     const nomeArquivo = extrairNomeArquivo(urlArquivo);
-    const result = await buscarDocumentoPresignedUrl(nomeArquivo);
+    const result = await buscarDocumentoPresignedUrl(storageKey);
     if (result?.url) {
       const a = document.createElement("a");
       a.href = result.url;
@@ -652,6 +778,7 @@ export default function InscricoesProae() {
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ novoPrazo: prazoDate.toISOString() }),
       });
 
@@ -675,44 +802,39 @@ export default function InscricoesProae() {
     }
   };
 
-  const baixarPdfAprovados = async () => {
+  const baixarPdfInscricoesAprovadasAnalise = async () => {
     if (!editalSelecionado?.id) {
       window.alert("Selecione um edital primeiro.");
       return;
     }
 
-    setDownloadingPdf(true);
+    setDownloadingPdfAnalise(true);
     try {
-      const url = `${import.meta.env.VITE_API_URL_SERVICES}/inscricoes/aprovados/pdf?editalId=${editalSelecionado.id}`;
-      const response = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Sessão expirada. Faça login novamente.");
-        }
-        if (response.status === 404) {
-          throw new Error("Nenhum estudante aprovado encontrado para este edital.");
-        }
-        throw new Error(`Erro ao baixar PDF: ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = `estudantes-aprovados-${editalSelecionado.titulo_edital || "edital"}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (err: any) {
+      await inscricaoServiceManager.downloadPdfAprovados(String(editalSelecionado.id));
+    } catch (err: unknown) {
       console.error("Erro ao baixar PDF:", err);
-      window.alert(err.message || "Não foi possível baixar o PDF. Tente novamente.");
+      const msg = err instanceof Error ? err.message : "Não foi possível baixar o PDF.";
+      window.alert(msg);
     } finally {
-      setDownloadingPdf(false);
+      setDownloadingPdfAnalise(false);
+    }
+  };
+
+  const baixarPdfBeneficiariosEdital = async () => {
+    if (!editalSelecionado?.id) {
+      window.alert("Selecione um edital primeiro.");
+      return;
+    }
+
+    setDownloadingPdfBeneficio(true);
+    try {
+      await inscricaoServiceManager.downloadPdfBeneficiarios(String(editalSelecionado.id));
+    } catch (err: unknown) {
+      console.error("Erro ao baixar PDF de beneficiários:", err);
+      const msg = err instanceof Error ? err.message : "Não foi possível baixar o PDF.";
+      window.alert(msg);
+    } finally {
+      setDownloadingPdfBeneficio(false);
     }
   };
 
@@ -850,10 +972,26 @@ export default function InscricoesProae() {
                     <option value="rejeitada_prazo_complemento">Rejeitada por Prazo de Complemento</option>
                   </select>
                 </div>
-                <button onClick={baixarPdfAprovados} disabled={downloadingPdf} className="download-pdf-button" title="Baixar PDF dos aprovados">
-                  <Download className="w-4 h-4" />
-                  <span>{downloadingPdf ? "Baixando..." : "PDF Aprovados"}</span>
-                </button>
+                <div className="download-pdf-button-group" style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+                  <button
+                    onClick={() => void baixarPdfInscricoesAprovadasAnalise()}
+                    disabled={downloadingPdfAnalise || downloadingPdfBeneficio}
+                    className="download-pdf-button"
+                    title="PDF: inscrições com status Inscrição Aprovada (análise documental / parecer)"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{downloadingPdfAnalise ? "Baixando..." : "PDF — Aprovados (análise)"}</span>
+                  </button>
+                  <button
+                    onClick={() => void baixarPdfBeneficiariosEdital()}
+                    disabled={downloadingPdfAnalise || downloadingPdfBeneficio}
+                    className="download-pdf-button download-pdf-button--secondary"
+                    title="PDF: estudantes homologados como Beneficiário no edital"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{downloadingPdfBeneficio ? "Baixando..." : "PDF — Beneficiários"}</span>
+                  </button>
+                </div>
               </div>
             </section>
           )}
@@ -887,7 +1025,8 @@ export default function InscricoesProae() {
                         <th>Curso</th>
                         <th>Campus</th>
                         <th>Data Inscrição</th>
-                        <th>Status</th>
+                        <th title="Análise da inscrição (documentos / parecer)">Análise</th>
+                        <th title="Homologação do benefício no edital (vaga)">Benefício</th>
                         <th style={{ width: "20px" }}></th>
                       </tr>
                     </thead>
@@ -936,6 +1075,22 @@ export default function InscricoesProae() {
                             <div className={getStatusBadgeClass(inscricao.status_inscricao || "PENDENTE")}>
                               {getStatusLabel(inscricao.status_inscricao || "PENDENTE")}
                             </div>
+                          </td>
+                          <td>
+                            <span
+                              style={{
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                color: inscricao.status_beneficio_edital?.includes("Beneficiário")
+                                  ? "#047857"
+                                  : inscricao.status_beneficio_edital?.includes("Não")
+                                    ? "#b91c1c"
+                                    : "#64748b",
+                              }}
+                              title={inscricao.beneficio_nome ? `Vaga: ${inscricao.beneficio_nome}` : undefined}
+                            >
+                              {inscricao.status_beneficio_edital?.replace(" no edital", "") || "Pendente seleção"}
+                            </span>
                           </td>
                           <td>
                             <ChevronRight className="w-5 h-5" style={{ color: "#64748b" }} />
@@ -1896,10 +2051,187 @@ export default function InscricoesProae() {
                     )}
                   </div>
                 ) : (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
-                    <FileText style={{ width: "64px", height: "64px", margin: "0 auto 16px", opacity: 0.3 }} />
-                    <h3 style={{ color: "#64748b", marginBottom: "8px" }}>Informações Gerais</h3>
-                    <p>Seção em desenvolvimento. Informações adicionais serão exibidas aqui.</p>
+                  <div
+                    style={{
+                      padding: "8px 4px 24px",
+                      maxHeight: "min(70vh, 640px)",
+                      overflowY: "auto",
+                      textAlign: "left",
+                    }}
+                  >
+                    {inscricaoSelecionada && (() => {
+                      const alunoInfo = mergeAlunoInformacoesGerais(inscricaoSelecionada, stepsCompletos?.aluno);
+                      const idInsc = String(inscricaoSelecionada.inscricao_id || "").trim();
+                      const fmtIngresso = (v: string) => {
+                        const t = v?.trim();
+                        if (!t) return "—";
+                        if (/^\d{2}\/\d{2}\/\d{4}$/.test(t)) return t;
+                        return formatDataHoraOuDataBr(t);
+                      };
+                      return (
+                      <>
+                        <h3 style={{ margin: "0 0 16px 0", fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>
+                          Informações Gerais
+                        </h3>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                            gap: "12px 20px",
+                            marginBottom: "24px",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Edital</div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px" }}>
+                              {stepsCompletos?.edital?.titulo_edital ||
+                                stepsCompletos?.edital?.titulo ||
+                                editalSelecionado?.titulo_edital ||
+                                "—"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Inscrição</div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px" }}>
+                              {idInsc ? `#${idInsc}` : "—"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                              Análise da inscrição
+                            </div>
+                            <div style={{ marginTop: "4px" }}>
+                              <span className={getStatusBadgeClass(inscricaoSelecionada.status_inscricao)}>
+                                {getStatusLabel(inscricaoSelecionada.status_inscricao)}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                              Benefício no edital
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px", fontWeight: 600 }}>
+                              {inscricaoSelecionada.status_beneficio_edital || "Pendente seleção"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Vaga / benefício</div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px" }}>
+                              {inscricaoSelecionada.beneficio_nome || "—"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Data da inscrição</div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px" }}>
+                              {formatDataHoraOuDataBr(inscricaoSelecionada.data_inscricao)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: 700, color: "#334155", display: "flex", alignItems: "center", gap: "8px" }}>
+                          <User style={{ width: "18px", height: "18px", color: "#2563eb" }} />
+                          Dados do estudante
+                        </h4>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                            gap: "10px 16px",
+                            marginBottom: "28px",
+                            padding: "16px",
+                            background: "#f8fafc",
+                            borderRadius: "10px",
+                            border: "1px solid #e2e8f0",
+                          }}
+                        >
+                          {[
+                            { label: "Nome", value: alunoInfo.nome },
+                            { label: "E-mail", value: alunoInfo.email },
+                            { label: "Matrícula", value: alunoInfo.matricula },
+                            { label: "CPF", value: alunoInfo.cpf },
+                            { label: "Celular", value: alunoInfo.celular },
+                            { label: "Curso", value: alunoInfo.curso },
+                            { label: "Campus", value: alunoInfo.campus },
+                            {
+                              label: "Data de nascimento",
+                              value: alunoInfo.data_nascimento ? formatDataHoraOuDataBr(alunoInfo.data_nascimento) : "—",
+                            },
+                            {
+                              label: "Data de ingresso",
+                              value: fmtIngresso(alunoInfo.data_ingresso),
+                            },
+                          ].map((row) => (
+                            <div key={row.label}>
+                              <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b" }}>{row.label}</div>
+                              <div style={{ fontSize: "14px", color: "#0f172a", marginTop: "2px", wordBreak: "break-word" }}>{row.value || "—"}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: 700, color: "#334155", display: "flex", alignItems: "center", gap: "8px" }}>
+                          <History style={{ width: "18px", height: "18px", color: "#2563eb" }} />
+                          Histórico de status (auditoria)
+                        </h4>
+                        {auditLoading ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#64748b", padding: "12px 0" }}>
+                            <Loader2 style={{ width: "18px", height: "18px", animation: "spin 0.8s linear infinite" }} />
+                            <span>Carregando histórico…</span>
+                          </div>
+                        ) : auditErro ? (
+                          <p style={{ color: "#b91c1c", fontSize: "14px", margin: 0 }}>Não foi possível carregar o histórico de auditoria.</p>
+                        ) : auditEntries.length === 0 ? (
+                          <p style={{ color: "#64748b", fontSize: "14px", margin: 0 }}>Nenhuma alteração de status registrada ainda.</p>
+                        ) : (
+                          <ul style={{ listStyle: "none", margin: 0, padding: 0, borderLeft: "2px solid #e2e8f0" }}>
+                            {auditEntries.map((ev) => (
+                              <li
+                                key={ev.id}
+                                style={{
+                                  position: "relative",
+                                  paddingLeft: "20px",
+                                  paddingBottom: "16px",
+                                  marginLeft: "6px",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    position: "absolute",
+                                    left: "-7px",
+                                    top: "4px",
+                                    width: "10px",
+                                    height: "10px",
+                                    borderRadius: "50%",
+                                    background: "#2563eb",
+                                    border: "2px solid #fff",
+                                    boxShadow: "0 0 0 1px #e2e8f0",
+                                  }}
+                                  aria-hidden
+                                />
+                                <time
+                                  style={{ fontSize: "12px", color: "#64748b", display: "block", marginBottom: "6px" }}
+                                  dateTime={ev.created_at}
+                                >
+                                  {new Date(ev.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                                </time>
+                                <p style={{ margin: "0 0 6px 0", fontSize: "14px", color: "#1e293b" }}>
+                                  <span style={{ color: "#64748b" }}>{ev.status_anterior ?? "—"}</span>
+                                  <span style={{ margin: "0 8px", color: "#94a3b8" }}>→</span>
+                                  <strong>{ev.status_novo}</strong>
+                                </p>
+                                <p style={{ margin: "0 0 4px 0", fontSize: "12px", color: "#64748b" }}>
+                                  Por: <code style={{ fontSize: "12px", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px" }}>{formatActorIdAudit(ev.actor_usuario_id)}</code>
+                                </p>
+                                {ev.observacao ? (
+                                  <p style={{ margin: 0, fontSize: "13px", color: "#475569", fontStyle: "italic" }}>Obs.: {ev.observacao}</p>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

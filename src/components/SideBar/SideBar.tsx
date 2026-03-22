@@ -1,6 +1,6 @@
 import "./sidebar.css";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, FileText, Settings, BookOpen, LogOut, Users, ClipboardList } from "lucide-react";
+import { Home, FileText, Settings, BookOpen, LogOut, Users, ClipboardList, RefreshCw } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
 export interface ISideBarProps {
@@ -11,6 +11,8 @@ export interface ISideBarProps {
   docsIconRedirect: string;
   pareceresIconRedirect?: string;
   formularioGeralRedirect?: string;
+  /** Recadastro / renovação (alunos já aprovados) */
+  formularioRenovacaoRedirect?: string;
   alunosIconRedirect?: string;
   inscricoesIconRedirect?: string;
   logoutIconRedirect: string;
@@ -34,6 +36,7 @@ const SideBar: React.FC<ISideBarProps> = ({
   logoutOnClick,
   pendenciasIconRedirect = "",
   formularioGeralRedirect = "",
+  formularioRenovacaoRedirect = "",
   alunosIconRedirect = "",
 }) => {
   const navigate = useNavigate();
@@ -75,8 +78,8 @@ const SideBar: React.FC<ISideBarProps> = ({
     // },
     {
       icon: Users,
-      alt: "Alunos",
-      label: "Alunos",
+      alt: "Central de estudantes",
+      label: "Central",
       redirect: alunosIconRedirect,
       shouldShowIcon: alunosIconRedirect !== "",
     },
@@ -86,6 +89,13 @@ const SideBar: React.FC<ISideBarProps> = ({
       label: "Form. Geral",
       redirect: formularioGeralRedirect,
       shouldShowIcon: formularioGeralRedirect !== "",
+    },
+    {
+      icon: RefreshCw,
+      alt: "Renovação",
+      label: "Renovação",
+      redirect: formularioRenovacaoRedirect,
+      shouldShowIcon: formularioRenovacaoRedirect !== "",
     },
     {
       icon: BookOpen,

@@ -13,7 +13,8 @@ export interface RespostaStep {
 
 export interface AlunoInscrito {
   aluno_id: string;
-  usuario_id: number;
+  /** UUID (backend) ou número legado */
+  usuario_id: string | number;
   email: string;
   nome: string;
   matricula: string;
@@ -25,8 +26,20 @@ export interface AlunoInscrito {
   data_ingresso: string;
   inscricao_id: string;
   status_inscricao: string;
+  /** Benefício no edital (só editais comuns; FG/FR não usam) */
+  status_beneficio_edital?: string;
+  beneficio_nome?: string | null;
   data_inscricao: string;
   respostas_step?: RespostaStep[];
+  /** Resposta antiga do GET /editais/:id/inscritos (achatar no service) */
+  usuario?: {
+    usuario_id?: string;
+    email?: string;
+    nome?: string;
+    cpf?: string;
+    celular?: string;
+    data_nascimento?: string;
+  };
 }
 
 export interface EditalInfo {

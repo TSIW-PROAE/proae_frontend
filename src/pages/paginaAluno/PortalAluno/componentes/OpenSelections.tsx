@@ -2,7 +2,6 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Calendar,
-  ExternalLink,
   Clock,
   Users,
   ArrowRight,
@@ -20,6 +19,8 @@ interface Edital {
   quantidade_bolsas: number;
   status_edital: string;
   etapas: any[];
+  /** ISO date (YYYY-MM-DD) — após esta data o vínculo com o edital não está mais ativo */
+  data_fim_vigencia?: string | null;
 }
 
 interface InscricaoAluno {
@@ -41,9 +42,10 @@ const OpenSelectionCard: React.FC<
   id,
   titulo_edital,
   status_edital,
-  edital_url,
+  edital_url: _edital_url,
   descricao,
   quantidade_bolsas,
+  data_fim_vigencia,
   podeSeInscreverEmOutros = true,
   jaInscrito = false,
 }) => {
@@ -73,15 +75,6 @@ const OpenSelectionCard: React.FC<
             {isOpen ? "Aberto" : isClosed ? "Fechado" : "Em Breve"}
           </span>
         </div>
-        <a
-          href={edital_url && edital_url[0] ? edital_url[0] : "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="external-link-icon"
-          title="Ver Edital"
-        >
-          <ExternalLink className="w-3 h-3" />
-        </a>
       </div>
 
       <div className="selection-card-body">
@@ -95,6 +88,15 @@ const OpenSelectionCard: React.FC<
         <h3 className="selection-card-title">
           {titulo_edital || "Título não informado"}
         </h3>
+        {data_fim_vigencia && (
+          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-2">
+            Vigência até{" "}
+            <strong>
+              {new Date(data_fim_vigencia + "T12:00:00").toLocaleDateString("pt-BR")}
+            </strong>
+            . Após essa data você não participa mais deste edital.
+          </p>
+        )}
         <p className="selection-card-description">
           {descricao && descricao.length > 90
             ? `${descricao.substring(0, 90)}...`
@@ -154,10 +156,18 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
     (inscricoesAluno || []).map((insc) => insc.edital_id || insc.id),
   );
 
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
   const openEditais =
-    editais?.filter((edital) =>
-      edital.status_edital?.toLowerCase().includes("aberto"),
-    ) || [];
+    editais?.filter((edital) => {
+      if (!edital.status_edital?.toLowerCase().includes("aberto")) return false;
+      if (edital.data_fim_vigencia) {
+        const fim = new Date(edital.data_fim_vigencia + "T23:59:59");
+        if (fim < hoje) return false;
+      }
+      return true;
+    }) || [];
 
   const closedEditais =
     editais?.filter((edital) =>

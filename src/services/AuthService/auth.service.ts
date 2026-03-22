@@ -1,4 +1,4 @@
-import { extractCookieFromHeaders, setCookie } from "@/utils/utils";
+import { deleteCookie, extractCookieFromHeaders, setCookie } from "@/utils/utils";
 import { FetchAdapter } from "../api";
 import {
   UserLoginResponse,
@@ -62,8 +62,14 @@ export default class AuthService {
 
   async logout() {
     const url = `${BASE_URL}/logout`;
-    const response = await this.httpClient.post(url, {});
-    return response.data;
+    const cookieName = import.meta.env.VITE_COOKIE_NAME || "token";
+    try {
+      const response = await this.httpClient.post(url, {});
+      return response.data;
+    } finally {
+      // Cópia legível via js-cookie (login) — precisa ser removida para o refresh não “voltar” logado.
+      deleteCookie(cookieName);
+    }
   }
 
   async forgotPassword(email: string) {

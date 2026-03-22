@@ -109,12 +109,11 @@ const AlunoForm = () => {
 
     const camposPermitidos = [
       "nome",
-      "sobrenome",
       "email",
-      "pronome",
       "data_nascimento",
       "curso",
       "campus",
+      "cpf",
       "data_ingresso",
       "celular",
     ];
@@ -153,7 +152,13 @@ const AlunoForm = () => {
       setOriginalFormData(formData);
     } catch (error: any) {
       console.error("Erro ao atualizar dados do aluno:", error);
-      const errorMsg = error?.response?.data?.message || error?.message || "Erro ao atualizar dados. Tente novamente.";
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        (typeof error === "object" && error !== null && "message" in error
+          ? String((error as { message?: string }).message)
+          : null) ||
+        "Erro ao atualizar dados. Tente novamente.";
       setErrorMessage(errorMsg);
       setShowErrorModal(true);
     }

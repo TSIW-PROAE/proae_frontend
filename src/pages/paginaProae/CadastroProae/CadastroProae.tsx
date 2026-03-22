@@ -11,6 +11,7 @@ import {  useNavigate } from 'react-router-dom';
 import { Spinner } from '@heroui/react';
 import { AuthContext } from '@/context/AuthContext';
 import { useContext, useEffect, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export const cadastroProaeFormSchema = z.object({
     cargo: z.string({error: 'Cargo não pode estar vazio'}).min(5, "O campo cargo é obrigatório"),
@@ -37,6 +38,8 @@ export default function CadastroProae() {
         mode: "onBlur",
     }); 
     const [isLoading, setIsLoading] = useState(false);
+    const [showSenha, setShowSenha] = useState(false);
+    const [showConfirmarSenha, setShowConfirmarSenha] = useState(false);
     const { isAuthenticated, registerAdmin} = useContext(AuthContext);
 
     const navigate = useNavigate();
@@ -175,10 +178,16 @@ export default function CadastroProae() {
                         <Input {...field}
                             placeholder='Digite sua senha'
                             label='Senha'
-                            type='password'
+                            type={showSenha ? 'text' : 'password'}
                             variant='bordered'
                             isInvalid={!!errors.senha}
                             errorMessage={errors.senha?.message}
+                            classNames={{ innerWrapper: "items-center", input: "pr-10" }}
+                            endContent={
+                              <button type="button" className="p-1 focus:outline-none" onClick={() => setShowSenha(!showSenha)} aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}>
+                                {showSenha ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                              </button>
+                            }
                         />
                     }
                     />
@@ -193,10 +202,16 @@ export default function CadastroProae() {
                         <Input {...field}
                             placeholder='Digite sua senha'
                             label='Confirmar Senha'
-                            type='password'
+                            type={showConfirmarSenha ? 'text' : 'password'}
                             variant='bordered'
                             isInvalid={!!errors.confirmarSenha}
                             errorMessage={errors.confirmarSenha?.message}
+                            classNames={{ innerWrapper: "items-center", input: "pr-10" }}
+                            endContent={
+                              <button type="button" className="p-1 focus:outline-none" onClick={() => setShowConfirmarSenha(!showConfirmarSenha)} aria-label={showConfirmarSenha ? "Ocultar senha" : "Mostrar senha"}>
+                                {showConfirmarSenha ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                              </button>
+                            }
                         />
                     }
                     />
