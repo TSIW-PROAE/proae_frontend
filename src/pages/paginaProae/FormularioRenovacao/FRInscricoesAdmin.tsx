@@ -45,10 +45,15 @@ const FILTER_OPTIONS = [
 
 interface InscricaoDetailPanelProps {
   inscricaoId: number;
+  nivelAcademico: string;
   onStatusChanged: () => void;
 }
 
-function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailPanelProps) {
+function InscricaoDetailPanel({
+  inscricaoId,
+  nivelAcademico,
+  onStatusChanged,
+}: InscricaoDetailPanelProps) {
   const [detail, setDetail] = useState<FGInscricaoDetalhe | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,7 +63,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
     let cancelled = false;
     setLoading(true);
     formularioRenovacaoService
-      .detalheInscricaoFR(inscricaoId)
+      .detalheInscricaoFR(inscricaoId, nivelAcademico)
       .then((d: FGInscricaoDetalhe) => {
         if (cancelled) return;
         setDetail(d);
@@ -69,7 +74,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [inscricaoId]);
+  }, [inscricaoId, nivelAcademico]);
 
   const handleAction = async (status: string) => {
     if (status === "Ajuste Necessário" && !observacao.trim()) {
@@ -82,6 +87,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
         inscricaoId,
         status,
         observacao.trim() || undefined,
+        nivelAcademico,
       );
       const cfg = STATUS_INSCRICAO_CONFIG[status];
       toast.success(`Inscrição marcada como "${cfg?.label ?? status}".`);
@@ -256,11 +262,14 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
 }
 
 export interface FRInscricoesAdminProps {
+  nivelAcademico: string;
   initialExpandInscricaoId?: number | null;
 }
 
-export default function FRInscricoesAdmin(props?: FRInscricoesAdminProps) {
-  const { initialExpandInscricaoId } = props ?? {};
+export default function FRInscricoesAdmin({
+  nivelAcademico,
+  initialExpandInscricaoId,
+}: FRInscricoesAdminProps) {
   const [inscricoes, setInscricoes] = useState<FGInscricaoResumo[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("todos");
@@ -271,7 +280,9 @@ export default function FRInscricoesAdmin(props?: FRInscricoesAdminProps) {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const res = (await formularioRenovacaoService.listarInscricoesFR()) as {
+      const res = (await formularioRenovacaoService.listarInscricoesFR(
+        nivelAcademico,
+      )) as {
         inscricoes: FGInscricaoResumo[];
       };
       setInscricoes(res.inscricoes ?? []);
@@ -280,7 +291,7 @@ export default function FRInscricoesAdmin(props?: FRInscricoesAdminProps) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [nivelAcademico]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -405,7 +416,11 @@ export default function FRInscricoesAdmin(props?: FRInscricoesAdminProps) {
                 {/* Expanded detail */}
                 {isExpanded && (
                   <div className="border-t border-gray-100">
-                    <InscricaoDetailPanel inscricaoId={insc.id} onStatusChanged={load} />
+                    <InscricaoDetailPanel
+                      inscricaoId={insc.id}
+                      nivelAcademico={nivelAcademico}
+                      onStatusChanged={load}
+                    />
                   </div>
                 )}
               </div>

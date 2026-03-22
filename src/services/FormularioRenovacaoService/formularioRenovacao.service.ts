@@ -1,5 +1,6 @@
 import { FetchAdapter } from "@/services/api";
 import { API_BASE_URL } from "@/config/api";
+import { nivelAcademicoQuery } from "@/constants/nivelAcademico";
 import type {
   FormularioGeralCreateBody,
   FormularioGeralPerguntaCreate,
@@ -38,6 +39,18 @@ export class FormularioRenovacaoService {
     }
   }
 
+  async getFormularioRenovacaoAdmin(
+    nivelAcademico: string,
+  ): Promise<FormularioRenovacaoResponse | null> {
+    try {
+      return await this.httpClient.get<FormularioRenovacaoResponse>(
+        `${BASE_URL}/admin?${nivelAcademicoQuery(nivelAcademico)}`,
+      );
+    } catch {
+      return null;
+    }
+  }
+
   async criarFormularioRenovacao(
     body: FormularioGeralCreateBody
   ): Promise<FormularioRenovacaoResponse> {
@@ -62,25 +75,34 @@ export class FormularioRenovacaoService {
     await this.httpClient.delete(`${BASE_URL}/${id}`);
   }
 
-  async listarInscricoesFR() {
-    return this.httpClient.get(`${BASE_URL}/inscricoes`);
+  async listarInscricoesFR(nivelAcademico: string) {
+    return this.httpClient.get(
+      `${BASE_URL}/inscricoes?${nivelAcademicoQuery(nivelAcademico)}`,
+    );
   }
 
-  async detalheInscricaoFR(inscricaoId: number): Promise<FGInscricaoDetalhe> {
+  async detalheInscricaoFR(
+    inscricaoId: number,
+    nivelAcademico: string,
+  ): Promise<FGInscricaoDetalhe> {
     return this.httpClient.get<FGInscricaoDetalhe>(
-      `${BASE_URL}/inscricoes/${inscricaoId}`
+      `${BASE_URL}/inscricoes/${inscricaoId}?${nivelAcademicoQuery(nivelAcademico)}`,
     );
   }
 
   async alterarStatusInscricaoFR(
     inscricaoId: number,
     status: string,
-    observacao?: string
+    observacao: string | undefined,
+    nivelAcademico: string,
   ) {
-    return this.httpClient.patch(`${BASE_URL}/inscricoes/${inscricaoId}/status`, {
-      status,
-      observacao,
-    });
+    return this.httpClient.patch(
+      `${BASE_URL}/inscricoes/${inscricaoId}/status?${nivelAcademicoQuery(nivelAcademico)}`,
+      {
+        status,
+        observacao,
+      },
+    );
   }
 }
 

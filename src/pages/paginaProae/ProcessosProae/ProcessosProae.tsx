@@ -20,6 +20,10 @@ import {
   Trash2,
 } from "lucide-react";
 import "./ProcessosProae.css";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+} from "@/constants/nivelAcademico";
 
 export default function ProcessosProae() {
   const [editais, setEditais] = useState<Edital[]>([]);
@@ -32,6 +36,7 @@ export default function ProcessosProae() {
   const [editingEdital, setEditingEdital] = useState<Edital | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [tituloEdital, setTituloEdital] = useState("");
+  const [nivelNovoEdital, setNivelNovoEdital] = useState<string>(NIVEL_GRADUACAO);
   const [isCreatingEdital, setIsCreatingEdital] = useState(false);
   const [isDeletingEdital, setIsDeletingEdital] = useState(false);
   const [duplicatingEdital, setDuplicatingEdital] = useState<Edital | null>(null);
@@ -144,6 +149,7 @@ export default function ProcessosProae() {
   const handleNovoEdital = () => {
     setShowCreateModal(true);
     setTituloEdital("");
+    setNivelNovoEdital(NIVEL_GRADUACAO);
     setError(null);
   };
 
@@ -158,10 +164,12 @@ export default function ProcessosProae() {
     try {
       await editalService.criarEdital({
         titulo_edital: tituloEdital.trim(),
+        nivel_academico: nivelNovoEdital,
       });
       await carregarEditais();
       setShowCreateModal(false);
       setTituloEdital("");
+      setNivelNovoEdital(NIVEL_GRADUACAO);
     } catch (err) {
       setError("Não foi possível criar o edital. Tente novamente.");
       console.error("Erro ao criar edital:", err);
@@ -173,6 +181,7 @@ export default function ProcessosProae() {
   const handleCancelarCriacaoEdital = () => {
     setShowCreateModal(false);
     setTituloEdital("");
+    setNivelNovoEdital(NIVEL_GRADUACAO);
     setError(null);
   };
 
@@ -207,8 +216,11 @@ export default function ProcessosProae() {
     setError(null);
     try {
       // 1) Criar novo edital apenas com título
+      const nivelCopia =
+        duplicatingEdital.nivel_academico?.trim() || NIVEL_GRADUACAO;
       const novo = await editalService.criarEdital({
         titulo_edital: `${duplicatingEdital.titulo_edital} (cópia)`,
+        nivel_academico: nivelCopia,
       });
 
       // 2) Atualizar infos do novo (descricao, documentos, etapas básicas se existirem no payload)
@@ -216,6 +228,7 @@ export default function ProcessosProae() {
         await editalService.atualizarEdital(novo.id, {
           descricao: duplicatingEdital.descricao,
           edital_url: duplicatingEdital.edital_url,
+          nivel_academico: nivelCopia,
           // Cronograma (etapa_edital) é parte do edital; duplicamos aqui
           etapa_edital: Array.isArray(duplicatingEdital.etapa_edital)
             ? duplicatingEdital.etapa_edital
@@ -380,6 +393,24 @@ export default function ProcessosProae() {
                     disabled={isCreatingEdital}
                     autoFocus
                   />
+                </div>
+                <div className="input-group">
+                  <label htmlFor="nivel-novo-edital" className="input-label">
+                    Nível acadêmico
+                  </label>
+                  <select
+                    id="nivel-novo-edital"
+                    value={nivelNovoEdital}
+                    onChange={(e) => setNivelNovoEdital(e.target.value)}
+                    className="input-field"
+                    disabled={isCreatingEdital}
+                  >
+                    <option value={NIVEL_GRADUACAO}>Graduação</option>
+                    <option value={NIVEL_POS_GRADUACAO}>Pós-graduação</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Editais e inscrições ficam separados entre Graduação e Pós-graduação.
+                  </p>
                 </div>
               </div>
 
@@ -563,6 +594,13 @@ export default function ProcessosProae() {
                   <p className="warning-message">
                     Será criada uma cópia de <strong>"{duplicatingEdital.titulo_edital}"</strong>
                     {" "}com status Rascunho, incluindo steps e perguntas (quando existirem).
+                    {" "}
+                    <span className="block mt-2 text-sm text-slate-600">
+                      Nível da cópia:{" "}
+                      <strong>
+                        {duplicatingEdital.nivel_academico?.trim() || NIVEL_GRADUACAO}
+                      </strong>
+                    </span>
                   </p>
                 </div>
               </div>

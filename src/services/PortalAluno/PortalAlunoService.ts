@@ -11,8 +11,12 @@ export default class PortalAlunoService {
     return response;
   }
 
-  async getEditals() {
-    const url = API_BASE_URL + "/editais/abertos";
+  /**
+   * @param nivelAcademico Graduação ou Pós-graduação (perfil do aluno).
+   */
+  async getEditals(nivelAcademico: string) {
+    const q = encodeURIComponent(nivelAcademico);
+    const url = `${API_BASE_URL}/editais/abertos?nivel_academico=${q}`;
     const response = await this.httpClient.get(url);
     return response;
   }

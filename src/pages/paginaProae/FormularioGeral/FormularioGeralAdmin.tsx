@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Button, Input, Switch } from "@heroui/react";
+import { Button, Input, Switch, Select, SelectItem } from "@heroui/react";
 import {
   FileText,
   AlertCircle,
@@ -24,6 +24,11 @@ import {
 import { stepService } from "@/services/StepService/stepService";
 import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import FGInscricoesAdmin from "./FGInscricoesAdmin";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+  OPCOES_NIVEL_ACADEMICO,
+} from "@/constants/nivelAcademico";
 
 const TIPOS_PERGUNTA = [
   { value: "text", label: "Texto" },
@@ -94,9 +99,13 @@ function stepsFromBackend(data: FormularioGeralResponse | null): StepLocal[] {
 
 export default function FormularioGeralAdmin() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
   const expandInscricaoFromUrl = searchParams.get("expandInscricao");
+  const nivelFromUrl = searchParams.get("nivel_academico");
+  const [nivelAdmin, setNivelAdmin] = useState<string>(
+    nivelFromUrl === NIVEL_POS_GRADUACAO ? NIVEL_POS_GRADUACAO : NIVEL_GRADUACAO,
+  );
   const [data, setData] = useState<FormularioGeralResponse | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,10 +116,15 @@ export default function FormularioGeralAdmin() {
     { texto: "Dados gerais", perguntas: [{ pergunta: "", tipo_Pergunta: "text", obrigatoriedade: true }] },
   ]);
 
+  useEffect(() => {
+    const p = searchParams.get("nivel_academico");
+    if (p === NIVEL_GRADUACAO || p === NIVEL_POS_GRADUACAO) setNivelAdmin(p);
+  }, [searchParams]);
+
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await formularioGeralService.getFormularioGeralOrNull();
+      const res = await formularioGeralService.getFormularioGeralAdmin(nivelAdmin);
       if (res) {
         setData(res);
         setTitulo(res.titulo_edital ?? "");
@@ -128,7 +142,7 @@ export default function FormularioGeralAdmin() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [nivelAdmin]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -210,6 +224,7 @@ export default function FormularioGeralAdmin() {
       const stepsPayload = buildStepsPayload();
       await formularioGeralService.criarFormularioGeral({
         titulo_edital: titulo.trim(),
+        nivel_academico: nivelAdmin,
         descricao: descricao.trim() || undefined,
         steps: stepsPayload,
       });
@@ -333,6 +348,30 @@ export default function FormularioGeralAdmin() {
         Gerenciamento exclusivo do formulário geral. Status, etapas, perguntas e configuração — tudo nesta página.
       </p>
 
+      <div className="mb-4 max-w-xs">
+        <Select
+          label="Nível acadêmico (FG separado por nível)"
+          selectedKeys={new Set([nivelAdmin])}
+          onSelectionChange={(keys) => {
+            const v = Array.from(keys)[0] as string;
+            if (!v) return;
+            setNivelAdmin(v);
+            setSearchParams(
+              (prev) => {
+                const n = new URLSearchParams(prev);
+                n.set("nivel_academico", v);
+                return n;
+              },
+              { replace: true },
+            );
+          }}
+        >
+          {OPCOES_NIVEL_ACADEMICO.map((o) => (
+            <SelectItem key={o.value}>{o.label}</SelectItem>
+          ))}
+        </Select>
+      </div>
+
       {/* ═══ TABS ═══ */}
       {isEditing && (
         <div className="flex gap-1 border-b border-gray-200 mb-6">
@@ -368,6 +407,7 @@ export default function FormularioGeralAdmin() {
         </div>
       ) : activeTab === "inscricoes" && isEditing ? (
         <FGInscricoesAdmin
+          nivelAcademico={nivelAdmin}
           initialExpandInscricaoId={
             expandInscricaoFromUrl ? parseInt(expandInscricaoFromUrl, 10) : undefined
           }

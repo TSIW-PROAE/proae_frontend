@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { editalService } from "@/services/EditalService/editalService";
 import { mapCadastroEditalFormToPayload } from "@/utils/cadastroEditalMapper";
+import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
 import "./CadastroEdital.css";
 
 const CadastroEdital = () => {
@@ -56,7 +57,10 @@ const CadastroEdital = () => {
             throw new Error("Preencha todas as etapas (nome e datas).");
         }
         try {
-            const created = await editalService.criarEdital({ titulo_edital: payload.titulo_edital.trim() });
+            const created = await editalService.criarEdital({
+              titulo_edital: payload.titulo_edital.trim(),
+              nivel_academico: NIVEL_GRADUACAO,
+            });
             if (!created?.id) {
                 throw new Error("Não foi possível criar o edital.");
             }

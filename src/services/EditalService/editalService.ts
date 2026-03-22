@@ -15,8 +15,12 @@ export class EditalService {
     return this.httpClient.get<Edital[]>(BASE_URL);
   }
 
-  async listarEditaisAbertos(): Promise<Edital[]> {
-    return this.httpClient.get<Edital[]>(`${BASE_URL}/abertos`);
+  async listarEditaisAbertos(nivelAcademico?: string): Promise<Edital[]> {
+    const q =
+      nivelAcademico != null && nivelAcademico !== ""
+        ? `?nivel_academico=${encodeURIComponent(nivelAcademico)}`
+        : "";
+    return this.httpClient.get<Edital[]>(`${BASE_URL}/abertos${q}`);
   }
 
   async buscarEditalPorId(id: string): Promise<Edital> {

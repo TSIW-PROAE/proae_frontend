@@ -13,6 +13,7 @@ import residenciaIcon from "../../assets/dashboard icons/apartamento.svg";
 import renovacaoIcon from "../../assets/dashboard icons/renvação.svg";
 import "./Home.css";
 import { AuthContext } from "@/context/AuthContext";
+import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
 import type { DocumentoEdital } from "@/types/edital";
 import { normalizeUrlForHref } from "@/utils/utils";
 
@@ -58,7 +59,7 @@ export default function Home() {
       try {
         const client = new FetchAdapter();
         const portalAlunoService = new PortalAlunoService(client);
-        const response = await portalAlunoService.getEditals();
+        const response = await portalAlunoService.getEditals(NIVEL_GRADUACAO);
         setEditais(Array.isArray(response) ? response : []);
       } catch (error) {
         setEditais([]);

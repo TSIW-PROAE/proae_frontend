@@ -34,12 +34,16 @@ export interface Edital {
   updated_at?: string;
   is_formulario_geral?: boolean;
   is_formulario_renovacao?: boolean;
+  /** Graduação | Pós-graduação */
+  nivel_academico?: string;
   /** Fim da vigência no portal (YYYY-MM-DD ou ISO) */
   data_fim_vigencia?: string | null;
 }
 
 export interface CreateEditalRequest {
   titulo_edital: string;
+  /** Graduação (padrão API) ou Pós-graduação */
+  nivel_academico?: string;
   descricao?: string;
   edital_url?: DocumentoEdital[];
   etapa_edital?: EtapaEdital[];
@@ -51,4 +55,5 @@ export interface UpdateEditalRequest {
   edital_url?: DocumentoEdital[];
   etapa_edital?: EtapaEdital[];
   data_fim_vigencia?: string | null;
+  nivel_academico?: string;
 }

@@ -44,10 +44,15 @@ const FILTER_OPTIONS = [
 
 interface InscricaoDetailPanelProps {
   inscricaoId: number;
+  nivelAcademico: string;
   onStatusChanged: () => void;
 }
 
-function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailPanelProps) {
+function InscricaoDetailPanel({
+  inscricaoId,
+  nivelAcademico,
+  onStatusChanged,
+}: InscricaoDetailPanelProps) {
   const [detail, setDetail] = useState<FGInscricaoDetalhe | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,7 +62,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
     let cancelled = false;
     setLoading(true);
     formularioGeralService
-      .detalheInscricaoFG(inscricaoId)
+      .detalheInscricaoFG(inscricaoId, nivelAcademico)
       .then((d) => {
         if (cancelled) return;
         setDetail(d);
@@ -68,7 +73,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [inscricaoId]);
+  }, [inscricaoId, nivelAcademico]);
 
   const handleAction = async (status: string) => {
     if (status === "Ajuste Necessário" && !observacao.trim()) {
@@ -81,6 +86,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
         inscricaoId,
         status,
         observacao.trim() || undefined,
+        nivelAcademico,
       );
       const cfg = STATUS_INSCRICAO_CONFIG[status];
       toast.success(`Inscrição marcada como "${cfg?.label ?? status}".`);
@@ -255,12 +261,15 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
 }
 
 export interface FGInscricoesAdminProps {
+  nivelAcademico: string;
   /** Abre o painel de detalhe desta inscrição (ex.: link a partir da Central de estudantes). */
   initialExpandInscricaoId?: number | null;
 }
 
-export default function FGInscricoesAdmin(props?: FGInscricoesAdminProps) {
-  const { initialExpandInscricaoId } = props ?? {};
+export default function FGInscricoesAdmin({
+  nivelAcademico,
+  initialExpandInscricaoId,
+}: FGInscricoesAdminProps) {
   const [inscricoes, setInscricoes] = useState<FGInscricaoResumo[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("todos");
@@ -271,14 +280,14 @@ export default function FGInscricoesAdmin(props?: FGInscricoesAdminProps) {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await formularioGeralService.listarInscricoesFG();
+      const res = await formularioGeralService.listarInscricoesFG(nivelAcademico);
       setInscricoes(res.inscricoes);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar inscrições");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [nivelAcademico]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -403,7 +412,11 @@ export default function FGInscricoesAdmin(props?: FGInscricoesAdminProps) {
                 {/* Expanded detail */}
                 {isExpanded && (
                   <div className="border-t border-gray-100">
-                    <InscricaoDetailPanel inscricaoId={insc.id} onStatusChanged={load} />
+                    <InscricaoDetailPanel
+                      inscricaoId={insc.id}
+                      nivelAcademico={nivelAcademico}
+                      onStatusChanged={load}
+                    />
                   </div>
                 )}
               </div>

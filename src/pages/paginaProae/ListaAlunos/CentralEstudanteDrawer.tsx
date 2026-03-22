@@ -25,13 +25,14 @@ function labelProcesso(row: AdminAlunoResumoInscricao): string {
 }
 
 /** Abre a tela admin com painel de respostas/documentos (mesmo fluxo das telas FG / FR / Inscrições). */
-function hrefDetalheAdmin(row: AdminAlunoResumoInscricao): string {
+function hrefDetalheAdmin(row: AdminAlunoResumoInscricao, nivelAluno: string): string {
   const id = row.inscricao_id;
+  const n = encodeURIComponent(row.nivel_academico ?? nivelAluno);
   if (row.processo_tipo === "FORMULARIO_GERAL") {
-    return `/portal-proae/formulario-geral?tab=inscricoes&expandInscricao=${id}`;
+    return `/portal-proae/formulario-geral?tab=inscricoes&expandInscricao=${id}&nivel_academico=${n}`;
   }
   if (row.processo_tipo === "RENOVACAO") {
-    return `/portal-proae/formulario-renovacao?tab=inscricoes&expandInscricao=${id}`;
+    return `/portal-proae/formulario-renovacao?tab=inscricoes&expandInscricao=${id}&nivel_academico=${n}`;
   }
   const eid = row.edital_id;
   return `/portal-proae/inscricoes?editalId=${eid}&expandInscricao=${id}`;
@@ -123,10 +124,12 @@ function InscricaoAuditTimeline({ inscricaoId }: { inscricaoId: number }) {
 
 function InscricaoRowEditor({
   row,
+  nivelAluno,
   onAtualizado,
   auditGlobalNonce,
 }: {
   row: AdminAlunoResumoInscricao;
+  nivelAluno: string;
   onAtualizado: () => void;
   auditGlobalNonce: number;
 }) {
@@ -217,7 +220,7 @@ function InscricaoRowEditor({
       </div>
       <a
         className="central-detalhe-link"
-        href={hrefDetalheAdmin(row)}
+        href={hrefDetalheAdmin(row, nivelAluno)}
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -384,6 +387,9 @@ export default function CentralEstudanteDrawer({ alunoId, isOpen, onClose }: Cen
                     <strong>Ingresso:</strong>{" "}
                     {a.data_ingresso ? new Date(a.data_ingresso).toLocaleDateString("pt-BR") : "—"}
                   </li>
+                  <li>
+                    <strong>Nível:</strong> {a.nivel_academico ?? "—"}
+                  </li>
                 </ul>
               </section>
 
@@ -399,6 +405,7 @@ export default function CentralEstudanteDrawer({ alunoId, isOpen, onClose }: Cen
                     <InscricaoRowEditor
                       key={row.inscricao_id}
                       row={row}
+                      nivelAluno={a.nivel_academico ?? "Graduação"}
                       auditGlobalNonce={auditGlobalNonce}
                       onAtualizado={() => void carregar()}
                     />

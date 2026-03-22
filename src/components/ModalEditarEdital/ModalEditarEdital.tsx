@@ -6,6 +6,10 @@ import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import { editalService } from "../../services/EditalService/editalService";
 import { dadoService, Dado } from "@/services/DadoService/dado.service";
 import { toast } from "react-hot-toast";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+} from "@/constants/nivelAcademico";
 import "./ModalEditarEdital.css";
 
 // Importar tipos e utilitários
@@ -43,6 +47,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
   const [descricaoEditando, setDescricaoEditando] = useState(false);
   /** YYYY-MM-DD para input date; vazio = sem fim de vigência definido */
   const [dataFimVigencia, setDataFimVigencia] = useState<string>("");
+  const [nivelAcademico, setNivelAcademico] = useState<string>(NIVEL_GRADUACAO);
   const [status, setStatus] = useState<StatusEdital>(edital.status_edital);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showStatusConfirmModal, setShowStatusConfirmModal] = useState(false);
@@ -93,6 +98,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
       setAutoSaveStatus("idle");
       setTitulo(edital.titulo_edital);
       setDescricao(edital.descricao || "");
+      setNivelAcademico(edital.nivel_academico?.trim() || NIVEL_GRADUACAO);
       // Garantir que o status atual esteja refletido ao abrir, normalizando caso venha em outro formato da API
       setStatus(toInternalStatus((edital.status_edital as unknown as string) || ""));
 
@@ -218,6 +224,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
         etapasOverride?: EditableEtapa[];
         /** Se definido, grava este valor como data_fim_vigencia (null limpa no banco) */
         dataFimVigenciaOverride?: string | null;
+        /** Se definido, grava este nível (ex.: ao mudar o select antes do próximo render) */
+        nivelAcademicoOverride?: string;
       } = {},
     ) => {
       if (!edital.id) return;
@@ -244,12 +252,16 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
           data_fim_vigencia = dataFimVigencia.trim() === "" ? null : dataFimVigencia.trim();
         }
 
+        const nivel =
+          overrides.nivelAcademicoOverride ?? nivelAcademico;
+
         await editalService.atualizarEdital(edital.id, {
           titulo_edital: titulo,
           descricao: descricao,
           edital_url: documentosValidos,
           etapa_edital: etapasValidas,
           data_fim_vigencia,
+          nivel_academico: nivel,
         });
 
         showSaved();
@@ -258,7 +270,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
         showError("Erro ao salvar alterações");
       }
     },
-    [edital.id, titulo, descricao, documentos, etapas, dataFimVigencia, showSaved, showError],
+    [edital.id, titulo, descricao, documentos, etapas, dataFimVigencia, nivelAcademico, showSaved, showError],
   );
 
   /** Persiste uma vaga individual (cria ou atualiza). */
@@ -1060,6 +1072,30 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
             onDescricaoSave={handleDescricaoSave}
             onToggleOpen={() => setOpenDescricao(!openDescricao)}
           />
+
+          <section
+            className="modal-nivel-section"
+            style={{ padding: "0 1.25rem 1rem", borderBottom: "1px solid #e5e7eb" }}
+          >
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Nível acadêmico</h3>
+            <p className="text-xs text-slate-500 mb-2">
+              Define se o edital aparece para alunos de <strong>Graduação</strong> ou{" "}
+              <strong>Pós-graduação</strong> (inscrições e formulários seguem esse nível).
+            </p>
+            <select
+              className="border border-slate-300 rounded-md px-2 py-1.5 text-sm min-w-[200px] bg-white"
+              value={nivelAcademico}
+              onChange={(e) => {
+                const v = e.target.value;
+                setNivelAcademico(v);
+                void autoSaveEdital({ nivelAcademicoOverride: v });
+              }}
+              aria-label="Nível acadêmico do edital"
+            >
+              <option value={NIVEL_GRADUACAO}>Graduação</option>
+              <option value={NIVEL_POS_GRADUACAO}>Pós-graduação</option>
+            </select>
+          </section>
 
           <section className="modal-vigencia-section" style={{ padding: "0 1.25rem 1rem", borderBottom: "1px solid #e5e7eb" }}>
             <h3 className="text-sm font-semibold text-slate-700 mb-2">Vigência no portal</h3>

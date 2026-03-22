@@ -2,6 +2,8 @@ import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
 import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
+import { API_BASE_URL } from "@/config/api";
+import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
 import { formularioGeralService } from "@/services/FormularioGeralService/formularioGeral.service";
 import { useEffect, useState, useContext } from "react";
 import "./PortalAluno.css";
@@ -50,18 +52,6 @@ export default function PortalAluno() {
     }
   };
 
-  const getOpenSelections = async () => {
-    try {
-      const response = await portalAlunoService.getEditals();
-      if (!response || !Array.isArray(response)) {
-        throw new Error("Resposta inválida do servidor");
-      }
-      setOpenSelections(response);
-    } catch (error) {
-      console.error("Erro ao obter seleções abertas:", error);
-    }
-  };
-
   const getInscriptions = async () => {
     try {
       const response = await portalAlunoService.getInscriptions();
@@ -86,14 +76,41 @@ export default function PortalAluno() {
   };
 
   useEffect(() => {
-    if (userId) {
-      Promise.all([
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      let nivel: string = NIVEL_GRADUACAO;
+      try {
+        const r = (await client.get(`${API_BASE_URL}/aluno/me`)) as {
+          dados?: { aluno?: { nivel_academico?: string } };
+        };
+        const n = r?.dados?.aluno?.nivel_academico;
+        if (n) nivel = n as string;
+      } catch {
+        nivel = NIVEL_GRADUACAO;
+      }
+      if (cancelled) return;
+      try {
+        const response = await portalAlunoService.getEditals(nivel);
+        if (!cancelled && response && Array.isArray(response)) {
+          setOpenSelections(response);
+        }
+      } catch {
+        if (!cancelled) setOpenSelections([]);
+      }
+      if (cancelled) return;
+      await Promise.all([
         getBenefits(),
-        getOpenSelections(),
         getInscriptions(),
         getFormularioGeralStatus(),
-      ]).finally(() => setLoading(false));
-    }
+      ]);
+    })().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   // Estatísticas do dashboard
