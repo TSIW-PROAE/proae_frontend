@@ -32,6 +32,10 @@ export interface Edital {
   total_inscricoes?: number;
   created_at?: string;
   updated_at?: string;
+  is_formulario_geral?: boolean;
+  is_formulario_renovacao?: boolean;
+  /** Fim da vigência no portal (YYYY-MM-DD ou ISO) */
+  data_fim_vigencia?: string | null;
 }
 
 export interface CreateEditalRequest {
@@ -46,4 +50,5 @@ export interface UpdateEditalRequest {
   descricao?: string;
   edital_url?: DocumentoEdital[];
   etapa_edital?: EtapaEdital[];
+  data_fim_vigencia?: string | null;
 }

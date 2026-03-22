@@ -2,7 +2,7 @@
 import { Button } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
-import { FetchAdapter } from "../../services/BaseRequestService/HttpClient";
+import { FetchAdapter } from "../../services/api";
 import EditarPerfilService from "../../services/EditarPerfil.service/editarPerfil.service";
 import {
   formatarTexto,
@@ -24,12 +24,16 @@ const ProaeForm = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [perfilNaoEncontrado, setPerfilNaoEncontrado] = useState(false);
+  const [erroCarregarPerfil, setErroCarregarPerfil] = useState<string | null>(
+    null
+  );
   const [carregandoPerfil, setCarregandoPerfil] = useState(true);
 
   useEffect(() => {
     const fetchPerfil = async () => {
       setCarregandoPerfil(true);
       setPerfilNaoEncontrado(false);
+      setErroCarregarPerfil(null);
       try {
         const httpClient = new FetchAdapter();
         const service = new EditarPerfilService();
@@ -40,8 +44,19 @@ const ProaeForm = () => {
         const admin = data?.dados?.admin ?? data?.dados ?? data ?? {};
         setFormData(admin);
         setOriginalFormData(admin);
-      } catch {
-        setPerfilNaoEncontrado(true);
+      } catch (err: any) {
+        const code = err?.statusCode ?? err?.status;
+        const msg =
+          typeof err?.message === "string" ? err.message : "Erro ao carregar perfil.";
+        if (code === 404) {
+          setPerfilNaoEncontrado(true);
+        } else if (code === 403) {
+          setErroCarregarPerfil(
+            "Você não tem permissão para editar este perfil. Faça login com uma conta de servidor PROAE."
+          );
+        } else {
+          setErroCarregarPerfil(msg);
+        }
       } finally {
         setCarregandoPerfil(false);
       }
@@ -156,6 +171,15 @@ const ProaeForm = () => {
         <p className="mt-2 text-sm text-amber-700">
           O cadastro de servidor PROAE pode não existir para este usuário. Entre em contato com o suporte se acredita que deveria ter acesso.
         </p>
+      </div>
+    );
+  }
+
+  if (erroCarregarPerfil) {
+    return (
+      <div className="aluno-form-wrapper rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+        <p className="text-red-800 font-medium">Não foi possível carregar o perfil</p>
+        <p className="mt-2 text-sm text-red-700">{erroCarregarPerfil}</p>
       </div>
     );
   }

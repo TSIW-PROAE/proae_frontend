@@ -8,14 +8,15 @@ import {
   AlertTriangle,
   Clock,
   FileText,
-  ExternalLink,
   Search,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
-  formularioGeralService,
-  type FGInscricaoResumo,
-  type FGInscricaoDetalhe,
+  formularioRenovacaoService,
+} from "@/services/FormularioRenovacaoService/formularioRenovacao.service";
+import type {
+  FGInscricaoResumo,
+  FGInscricaoDetalhe,
 } from "@/services/FormularioGeralService/formularioGeral.service";
 
 const STATUS_INSCRICAO_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
@@ -56,9 +57,9 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    formularioGeralService
-      .detalheInscricaoFG(inscricaoId)
-      .then((d) => {
+    formularioRenovacaoService
+      .detalheInscricaoFR(inscricaoId)
+      .then((d: FGInscricaoDetalhe) => {
         if (cancelled) return;
         setDetail(d);
         setObservacao(d.observacao_admin ?? "");
@@ -77,7 +78,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
     }
     setSaving(true);
     try {
-      await formularioGeralService.alterarStatusInscricaoFG(
+      await formularioRenovacaoService.alterarStatusInscricaoFR(
         inscricaoId,
         status,
         observacao.trim() || undefined,
@@ -161,7 +162,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline inline-flex items-center gap-1"
                       >
-                        <FileText className="w-3 h-3" /> Ver arquivo <ExternalLink className="w-3 h-3" />
+                        <FileText className="w-3 h-3" /> Ver arquivo
                       </a>
                     ) : r.valorOpcoes?.length ? (
                       <span className="font-medium">{r.valorOpcoes.join(", ")}</span>
@@ -193,7 +194,7 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline inline-flex items-center gap-1 text-xs"
                   >
-                    Abrir <ExternalLink className="w-3 h-3" />
+                    Abrir
                   </a>
                 )}
               </div>
@@ -254,12 +255,11 @@ function InscricaoDetailPanel({ inscricaoId, onStatusChanged }: InscricaoDetailP
   );
 }
 
-export interface FGInscricoesAdminProps {
-  /** Abre o painel de detalhe desta inscrição (ex.: link a partir da Central de estudantes). */
+export interface FRInscricoesAdminProps {
   initialExpandInscricaoId?: number | null;
 }
 
-export default function FGInscricoesAdmin(props?: FGInscricoesAdminProps) {
+export default function FRInscricoesAdmin(props?: FRInscricoesAdminProps) {
   const { initialExpandInscricaoId } = props ?? {};
   const [inscricoes, setInscricoes] = useState<FGInscricaoResumo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -271,8 +271,10 @@ export default function FGInscricoesAdmin(props?: FGInscricoesAdminProps) {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await formularioGeralService.listarInscricoesFG();
-      setInscricoes(res.inscricoes);
+      const res = (await formularioRenovacaoService.listarInscricoesFR()) as {
+        inscricoes: FGInscricaoResumo[];
+      };
+      setInscricoes(res.inscricoes ?? []);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar inscrições");
     } finally {

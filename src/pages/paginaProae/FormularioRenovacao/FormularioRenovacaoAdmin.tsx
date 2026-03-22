@@ -17,13 +17,13 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import {
-  formularioGeralService,
-  FormularioGeralResponse,
+  formularioRenovacaoService,
+  type FormularioRenovacaoResponse,
   type FormularioGeralStepCreate,
-} from "@/services/FormularioGeralService/formularioGeral.service";
+} from "@/services/FormularioRenovacaoService/formularioRenovacao.service";
 import { stepService } from "@/services/StepService/stepService";
 import { perguntaService } from "@/services/PerguntaService/perguntaService";
-import FGInscricoesAdmin from "./FGInscricoesAdmin";
+import FRInscricoesAdmin from "./FRInscricoesAdmin";
 
 const TIPOS_PERGUNTA = [
   { value: "text", label: "Texto" },
@@ -74,7 +74,7 @@ interface StepLocal {
   perguntas: PerguntaLocal[];
 }
 
-function stepsFromBackend(data: FormularioGeralResponse | null): StepLocal[] {
+function stepsFromBackend(data: FormularioRenovacaoResponse | null): StepLocal[] {
   if (!data?.steps?.length) {
     return [{ texto: "Dados gerais", perguntas: [{ pergunta: "", tipo_Pergunta: "text", obrigatoriedade: true }] }];
   }
@@ -92,12 +92,12 @@ function stepsFromBackend(data: FormularioGeralResponse | null): StepLocal[] {
   }));
 }
 
-export default function FormularioGeralAdmin() {
+export default function FormularioRenovacaoAdmin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
   const expandInscricaoFromUrl = searchParams.get("expandInscricao");
-  const [data, setData] = useState<FormularioGeralResponse | null | undefined>(undefined);
+  const [data, setData] = useState<FormularioRenovacaoResponse | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [titulo, setTitulo] = useState("");
@@ -110,7 +110,7 @@ export default function FormularioGeralAdmin() {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await formularioGeralService.getFormularioGeralOrNull();
+      const res = await formularioRenovacaoService.getFormularioRenovacaoOrNull();
       if (res) {
         setData(res);
         setTitulo(res.titulo_edital ?? "");
@@ -118,7 +118,7 @@ export default function FormularioGeralAdmin() {
         setSteps(stepsFromBackend(res));
       } else {
         setData(null);
-        setTitulo("Formulário Geral");
+        setTitulo("Formulário de Renovação");
         setDescricao("");
         setSteps([{ texto: "Dados gerais", perguntas: [{ pergunta: "", tipo_Pergunta: "text", obrigatoriedade: true }] }]);
       }
@@ -191,7 +191,7 @@ export default function FormularioGeralAdmin() {
     if (!statusValue) return;
     setSaving(true);
     try {
-      await formularioGeralService.atualizarFormularioGeral(data.id, { status_edital: statusValue });
+      await formularioRenovacaoService.atualizarFormularioRenovacao(data.id, { status_edital: statusValue });
       toast.success(`Status alterado para "${STATUS_CONFIG[newStatusKey]?.label ?? newStatusKey}".`);
       await load();
     } catch (e: any) {
@@ -208,12 +208,12 @@ export default function FormularioGeralAdmin() {
     setSaving(true);
     try {
       const stepsPayload = buildStepsPayload();
-      await formularioGeralService.criarFormularioGeral({
+      await formularioRenovacaoService.criarFormularioRenovacao({
         titulo_edital: titulo.trim(),
         descricao: descricao.trim() || undefined,
         steps: stepsPayload,
       });
-      toast.success("Formulário geral criado com status Aberto.");
+      toast.success("Formulário de renovação criado com status Aberto.");
       await load();
     } catch (e: any) {
       toast.error(e?.message ?? e?.mensagem ?? "Erro ao criar");
@@ -228,7 +228,7 @@ export default function FormularioGeralAdmin() {
     if (!data?.id || !titulo.trim()) return;
     setSaving(true);
     try {
-      await formularioGeralService.atualizarFormularioGeral(data.id, {
+      await formularioRenovacaoService.atualizarFormularioRenovacao(data.id, {
         titulo_edital: titulo.trim(),
         descricao: descricao.trim() || undefined,
       });
@@ -287,11 +287,11 @@ export default function FormularioGeralAdmin() {
   /* ── Deactivate ── */
   const handleDesativar = async () => {
     if (!data?.id) return;
-    if (!window.confirm("Desativar o formulário geral? Não é possível desativar se houver inscrições vinculadas.")) return;
+    if (!window.confirm("Desativar o formulário de renovação? Não é possível desativar se houver inscrições vinculadas.")) return;
     setSaving(true);
     try {
-      await formularioGeralService.desativarFormularioGeral(data.id);
-      toast.success("Formulário geral desativado.");
+      await formularioRenovacaoService.desativarFormularioRenovacao(data.id);
+      toast.success("Formulário de renovação desativado.");
       setData(null);
       setTitulo("Formulário Geral");
       setDescricao("");
@@ -327,10 +327,10 @@ export default function FormularioGeralAdmin() {
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
         <FileText className="w-8 h-8 text-[#183b4e]" />
-        <h1 className="text-2xl font-semibold text-gray-900">Formulário Geral</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Formulário de Renovação</h1>
       </div>
       <p className="text-gray-500 text-sm mb-4">
-        Gerenciamento exclusivo do formulário geral. Status, etapas, perguntas e configuração — tudo nesta página.
+        Gerenciamento do formulário de renovação (recadastro). Separado do formulário geral — alunos já aprovados em editais precisam concluí-lo quando estiver aberto.
       </p>
 
       {/* ═══ TABS ═══ */}
@@ -367,7 +367,7 @@ export default function FormularioGeralAdmin() {
           <Button className="mt-4" onPress={() => load()} color="primary">Tentar novamente</Button>
         </div>
       ) : activeTab === "inscricoes" && isEditing ? (
-        <FGInscricoesAdmin
+        <FRInscricoesAdmin
           initialExpandInscricaoId={
             expandInscricaoFromUrl ? parseInt(expandInscricaoFromUrl, 10) : undefined
           }
@@ -433,7 +433,7 @@ export default function FormularioGeralAdmin() {
                 label="Título do edital"
                 value={titulo}
                 onValueChange={setTitulo}
-                placeholder="Ex: Formulário Geral - Edital 2026.1"
+                placeholder="Ex: Renovação PROAE 2026.1"
                 isRequired
                 isDisabled={saving}
               />
@@ -441,7 +441,7 @@ export default function FormularioGeralAdmin() {
                 label="Descrição (opcional)"
                 value={descricao}
                 onValueChange={setDescricao}
-                placeholder="Descrição do formulário geral"
+                placeholder="Descrição do formulário de renovação"
                 isDisabled={saving}
               />
             </div>
@@ -557,13 +557,13 @@ export default function FormularioGeralAdmin() {
             <div className="flex flex-wrap gap-3 pt-4">
               <Button type="submit" color="primary" isLoading={saving} isDisabled={saving}
                 startContent={!saving ? <Save className="w-4 h-4" /> : undefined}>
-                {isEditing ? "Salvar alterações" : "Criar formulário geral"}
+                {isEditing ? "Salvar alterações" : "Criar formulário de renovação"}
               </Button>
               {isEditing && (
                 <Button type="button" color="danger" variant="flat" onPress={handleDesativar}
                   isLoading={saving} isDisabled={saving}
                   startContent={<AlertCircle className="w-4 h-4" />}>
-                  Desativar formulário geral
+                  Desativar formulário de renovação
                 </Button>
               )}
               <Button type="button" variant="light" onPress={() => navigate("/portal-proae/inscricoes")}>

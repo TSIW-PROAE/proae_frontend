@@ -38,10 +38,15 @@ export interface FormularioGeralResponse {
   descricao?: string;
   status_edital: string;
   is_formulario_geral: boolean;
+  /** Fim da vigência do edital (avisos no portal) */
+  data_fim_vigencia?: string | null;
   steps: FormularioGeralStep[];
   vagas: FormularioGeralVaga[];
   minha_inscricao: MinhaInscricaoFG | null;
-  pode_se_inscrever_em_outros: boolean;
+  /** Ausente em alguns endpoints (ex.: renovação) */
+  pode_se_inscrever_em_outros?: boolean;
+  /** Precisa concluir formulário de renovação antes de novas inscrições */
+  renovacao_pendente?: boolean;
 }
 
 /** Pergunta para criar no body do POST /formulario-geral (sem id) */

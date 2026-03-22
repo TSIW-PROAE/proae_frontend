@@ -9,10 +9,6 @@ export const Questionario: React.FC = () => {
 
   const editalService = new EditalService();
 
-  const handleSuccess = (data: any) => {
-    console.log("Dados do formulário enviados com sucesso:", data);
-  }
-
   const handleError = (error: string) => {
     console.error("Erro ao enviar formulário:", error);
   }
@@ -32,7 +28,7 @@ export const Questionario: React.FC = () => {
       titulo={`Formulário ${editalData ? editalData.titulo_edital : ""}`}
       subtitulo={`${editalData ? editalData.descricao : ""}`}
       botaoFinal="Enviar Formulário"
-      onSuccess={handleSuccess}
+      successRedirectUrl="/portal-aluno"
       onError={handleError}
     />
   );

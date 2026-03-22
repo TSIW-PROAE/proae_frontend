@@ -41,6 +41,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
   const [tituloEditando, setTituloEditando] = useState(false);
   const [descricao, setDescricao] = useState(edital.descricao || "");
   const [descricaoEditando, setDescricaoEditando] = useState(false);
+  /** YYYY-MM-DD para input date; vazio = sem fim de vigência definido */
+  const [dataFimVigencia, setDataFimVigencia] = useState<string>("");
   const [status, setStatus] = useState<StatusEdital>(edital.status_edital);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showStatusConfirmModal, setShowStatusConfirmModal] = useState(false);
@@ -210,7 +212,14 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
 
   /** Persiste título, descrição, documentos e etapas do edital (tudo junto num único PUT). */
   const autoSaveEdital = useCallback(
-    async (overrides: { documentosOverride?: EditableDocumento[]; etapasOverride?: EditableEtapa[] } = {}) => {
+    async (
+      overrides: {
+        documentosOverride?: EditableDocumento[];
+        etapasOverride?: EditableEtapa[];
+        /** Se definido, grava este valor como data_fim_vigencia (null limpa no banco) */
+        dataFimVigenciaOverride?: string | null;
+      } = {},
+    ) => {
       if (!edital.id) return;
       setAutoSaveStatus("saving");
       try {
@@ -225,11 +234,22 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
           .sort((a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
           .map((etapa, idx) => ({ ...etapa, ordem_elemento: idx + 1 }));
 
+        let data_fim_vigencia: string | null;
+        if (overrides.dataFimVigenciaOverride !== undefined) {
+          data_fim_vigencia =
+            overrides.dataFimVigenciaOverride === null || overrides.dataFimVigenciaOverride === ""
+              ? null
+              : overrides.dataFimVigenciaOverride;
+        } else {
+          data_fim_vigencia = dataFimVigencia.trim() === "" ? null : dataFimVigencia.trim();
+        }
+
         await editalService.atualizarEdital(edital.id, {
           titulo_edital: titulo,
           descricao: descricao,
           edital_url: documentosValidos,
           etapa_edital: etapasValidas,
+          data_fim_vigencia,
         });
 
         showSaved();
@@ -238,7 +258,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
         showError("Erro ao salvar alterações");
       }
     },
-    [edital.id, titulo, descricao, documentos, etapas, showSaved, showError],
+    [edital.id, titulo, descricao, documentos, etapas, dataFimVigencia, showSaved, showError],
   );
 
   /** Persiste uma vaga individual (cria ou atualiza). */
@@ -1040,6 +1060,32 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
             onDescricaoSave={handleDescricaoSave}
             onToggleOpen={() => setOpenDescricao(!openDescricao)}
           />
+
+          <section className="modal-vigencia-section" style={{ padding: "0 1.25rem 1rem", borderBottom: "1px solid #e5e7eb" }}>
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Vigência no portal</h3>
+            <p className="text-xs text-slate-500 mb-2">
+              Após esta data o vínculo com este edital deixa de ser tratado como ativo para o aluno (avisos e regras de elegibilidade). Opcional.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="date"
+                className="border border-slate-300 rounded-md px-2 py-1.5 text-sm"
+                value={dataFimVigencia}
+                onChange={(e) => setDataFimVigencia(e.target.value)}
+                onBlur={() => autoSaveEdital()}
+              />
+              <button
+                type="button"
+                className="text-xs text-slate-600 underline"
+                onClick={() => {
+                  setDataFimVigencia("");
+                  void autoSaveEdital({ dataFimVigenciaOverride: null });
+                }}
+              >
+                Limpar data
+              </button>
+            </div>
+          </section>
 
           <VagasSection
             vagas={vagas}

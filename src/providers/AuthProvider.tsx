@@ -31,10 +31,15 @@ function AuthProvider({children}: {children: React.ReactNode}){
     }
   }, [])
 
-  const logout = useCallback(() => {
-    authService.logout();
-    setIsAuthenticated(false);
-    setUserInfo(null);
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      console.error("Logout failed:", e);
+    } finally {
+      setIsAuthenticated(false);
+      setUserInfo(null);
+    }
   }, []);
 
   const registerAdmin = useCallback(async (data: CadastroFormData) => {
@@ -79,7 +84,7 @@ function AuthProvider({children}: {children: React.ReactNode}){
           console.error("Auth check failed:", error);
           setIsAuthenticated(false);
           setUserInfo(null);
-          authService.logout();
+          void authService.logout();
         } finally {
           setLoading(false);
         }

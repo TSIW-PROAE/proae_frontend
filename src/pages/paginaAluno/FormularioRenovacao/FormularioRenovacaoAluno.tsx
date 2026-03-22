@@ -12,18 +12,18 @@ import {
 } from "lucide-react";
 import FormularioDinamico from "@/components/FormularioDinamico/FormularioDinamico";
 import {
-  formularioGeralService,
-  FormularioGeralResponse,
-} from "@/services/FormularioGeralService/formularioGeral.service";
+  formularioRenovacaoService,
+  type FormularioRenovacaoResponse,
+} from "@/services/FormularioRenovacaoService/formularioRenovacao.service";
 import { mapFormularioGeralStepsToPaginas } from "@/utils/formAdapter";
 
 const STATUS_APROVADA = "Inscrição Aprovada";
 const STATUS_NEGADA = "Inscrição Negada";
 const STATUS_EM_AJUSTE = "Ajuste Necessário";
 
-export default function FormularioGeralAluno() {
+export default function FormularioRenovacaoAluno() {
   const navigate = useNavigate();
-  const [data, setData] = useState<FormularioGeralResponse | null | undefined>(
+  const [data, setData] = useState<FormularioRenovacaoResponse | null | undefined>(
     undefined
   );
   const [error, setError] = useState<string | null>(null);
@@ -32,13 +32,13 @@ export default function FormularioGeralAluno() {
   const reload = useCallback(async () => {
     try {
       setError(null);
-      const res = await formularioGeralService.getFormularioGeral();
+      const res = await formularioRenovacaoService.getFormularioRenovacao();
       setData(res);
     } catch (e: any) {
       const msg =
         e?.message ||
         e?.mensagem ||
-        (typeof e === "string" ? e : "Erro ao carregar formulário geral.");
+        (typeof e === "string" ? e : "Erro ao carregar formulário de renovação.");
       setError(msg);
       setData(null);
     }
@@ -48,7 +48,7 @@ export default function FormularioGeralAluno() {
     reload();
   }, [reload]);
 
-  const paginasFromFG = useMemo(
+  const paginasFromFR = useMemo(
     () =>
       data && Array.isArray(data.steps)
         ? mapFormularioGeralStepsToPaginas(data.steps)
@@ -71,10 +71,10 @@ export default function FormularioGeralAluno() {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-8">
           <AlertCircle className="w-12 h-12 text-amber-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            Formulário geral não configurado
+            Formulário de renovação não configurado
           </h2>
           <p className="text-gray-600 mb-6">
-            O formulário geral ainda não está disponível. Entre em contato com a
+            O formulário de renovação ainda não está disponível. Entre em contato com a
             equipe PROAE se precisar de ajuda.
           </p>
           <Button
@@ -93,23 +93,49 @@ export default function FormularioGeralAluno() {
     return null;
   }
 
-  const { minha_inscricao, pode_se_inscrever_em_outros } = data;
+  const { minha_inscricao, elegivel_renovacao, renovacao_aprovada } = data;
+
+  if (elegivel_renovacao === false) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-8">
+          <AlertCircle className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">
+            Formulário de renovação não se aplica ao seu caso
+          </h2>
+          <p className="text-gray-600 text-center mb-6">
+            A renovação é para estudantes que já tiveram inscrição <strong>aprovada</strong> em algum edital.
+            Se você ainda não foi aprovado ou precisa do cadastro inicial, utilize o <strong>Formulário Geral</strong>
+            no menu do portal.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Button color="primary" onPress={() => navigate("/portal-aluno/formulario-geral")}>
+              Ir ao Formulário Geral
+            </Button>
+            <Button variant="flat" onPress={() => navigate("/portal-aluno")}>
+              Voltar ao portal
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const statusLower = minha_inscricao?.status_inscricao?.toLowerCase() ?? "";
   const aprovada = statusLower === STATUS_APROVADA.toLowerCase();
   const emAjuste = minha_inscricao?.status_inscricao === STATUS_EM_AJUSTE;
   const negada = minha_inscricao?.status_inscricao === STATUS_NEGADA;
 
-  if (pode_se_inscrever_em_outros && aprovada) {
+  if (renovacao_aprovada) {
     return (
       <div className="max-w-2xl mx-auto p-6">
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-8">
           <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">
-            Formulário geral aprovado
+            Renovação concluída
           </h2>
           <p className="text-gray-600 text-center">
-            Seu formulário geral foi aprovado. Você já pode se inscrever nos
-            demais editais e benefícios.
+            Seu formulário de renovação foi aprovado. Você pode seguir participando dos editais conforme as regras vigentes.
           </p>
           <div className="flex justify-center mt-6">
             <Button
@@ -129,11 +155,11 @@ export default function FormularioGeralAluno() {
     return (
       <FormularioDinamico
         editalId={String(data.id)}
-        titulo={data.titulo_edital || "Formulário Geral — Correção"}
+        titulo={data.titulo_edital || "Renovação — Correção"}
         subtitulo="Preencha novamente as informações solicitadas e reenvie o formulário."
         botaoFinal="Reenviar correção"
         successRedirectUrl="/portal-aluno"
-        initialPaginas={paginasFromFG.length > 0 ? paginasFromFG : undefined}
+        initialPaginas={paginasFromFR.length > 0 ? paginasFromFR : undefined}
         initialVagas={data.vagas}
         onError={(msg) => {
           console.error(msg);
@@ -149,7 +175,7 @@ export default function FormularioGeralAluno() {
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-8">
           <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">
-            Ajustes solicitados no formulário geral
+            Ajustes solicitados na renovação
           </h2>
           <p className="text-gray-600 text-center mb-4">
             A equipe PROAE analisou seu formulário e solicitou correções antes de aprová-lo.
@@ -197,10 +223,10 @@ export default function FormularioGeralAluno() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-8">
           <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">
-            Formulário geral negado
+            Renovação negada
           </h2>
           <p className="text-gray-600 text-center mb-4">
-            Sua inscrição no formulário geral foi negada. Entre em contato com a equipe PROAE
+            Sua inscrição no formulário de renovação foi negada. Entre em contato com a equipe PROAE
             para mais informações.
           </p>
 
@@ -239,11 +265,10 @@ export default function FormularioGeralAluno() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-8">
           <Clock className="w-12 h-12 text-blue-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">
-            Formulário geral em análise
+            Renovação em análise
           </h2>
           <p className="text-gray-600 text-center mb-2">
-            Sua inscrição no formulário geral está em análise. É necessário estar
-            aprovado para se inscrever em outros editais e benefícios.
+            Sua inscrição no formulário de renovação está em análise pela PROAE.
           </p>
           <div className="flex justify-center mt-6">
             <Button
@@ -267,10 +292,10 @@ export default function FormularioGeralAluno() {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-8">
           <AlertCircle className="w-12 h-12 text-amber-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            Formulário geral não disponível para inscrições
+            Renovação não disponível para inscrições
           </h2>
           <p className="text-gray-600 mb-6">
-            O formulário geral está com status <strong>{data.status_edital || "desconhecido"}</strong> e não aceita inscrições no momento. Aguarde a abertura ou entre em contato com a equipe PROAE.
+            O formulário de renovação está com status <strong>{data.status_edital || "desconhecido"}</strong> e não aceita inscrições no momento.
           </p>
           <Button
             color="primary"
@@ -287,7 +312,7 @@ export default function FormularioGeralAluno() {
   if (!data.vagas?.length) {
     return (
       <div className="max-w-2xl mx-auto p-6 text-center">
-        <p className="text-gray-600">Formulário geral sem vagas configuradas.</p>
+        <p className="text-gray-600">Formulário de renovação sem vagas configuradas.</p>
         <Button
           className="mt-4"
           variant="flat"
@@ -302,11 +327,11 @@ export default function FormularioGeralAluno() {
   return (
     <FormularioDinamico
       editalId={String(data.id)}
-      titulo={data.titulo_edital || "Formulário Geral"}
+      titulo={data.titulo_edital || "Formulário de Renovação"}
       subtitulo={data.descricao}
-      botaoFinal="Enviar formulário geral"
+      botaoFinal="Enviar renovação"
       successRedirectUrl="/portal-aluno"
-      initialPaginas={paginasFromFG.length > 0 ? paginasFromFG : undefined}
+      initialPaginas={paginasFromFR.length > 0 ? paginasFromFR : undefined}
       initialVagas={data.vagas}
       onError={(msg) => {
         console.error(msg);

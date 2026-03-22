@@ -56,11 +56,8 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     onSubmit: async (data: Record<string, any>) => {
       try {
         await inscricaoService.submeterRespostas(data);
-        if (props.onSuccess) {
-          props.onSuccess(data);
-        } else {
-          navigate(props.successRedirectUrl ?? "/portal-aluno");
-        }
+        props.onSuccess?.(data);
+        navigate(props.successRedirectUrl ?? "/portal-aluno");
       } catch (err: any) {
         const msg =
           err?.message ||

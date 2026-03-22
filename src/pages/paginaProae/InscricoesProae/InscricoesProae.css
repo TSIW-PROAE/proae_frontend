@@ -204,6 +204,15 @@
   box-shadow: none;
 }
 
+.download-pdf-button--secondary {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+.download-pdf-button--secondary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.45);
+}
+
 .inscricoes-list-section {
   background: white;
   border-radius: 20px;

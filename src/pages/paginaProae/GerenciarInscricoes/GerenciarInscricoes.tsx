@@ -49,6 +49,7 @@ export default function GerenciarInscricoes() {
   const [selectedAluno, setSelectedAluno] = useState<AlunoInscrito | null>(null);
   const [showModalRespostas, setShowModalRespostas] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [isDownloadingPdfBenef, setIsDownloadingPdfBenef] = useState(false);
   
   // Filtros
   const [termoBusca, setTermoBusca] = useState("");
@@ -244,22 +245,40 @@ export default function GerenciarInscricoes() {
     return stats;
   }, [inscricoes]);
 
-  // Download PDF dos aprovados
-  const handleDownloadPdf = async () => {
+  // PDF: inscrições aprovadas na análise vs beneficiários no edital
+  const handleDownloadPdfAprovadosAnalise = async () => {
     if (!editalSelecionado?.id) {
-      toast.error("Selecione um edital para baixar o PDF dos aprovados");
+      toast.error("Selecione um edital para baixar o PDF");
       return;
     }
 
     try {
       setIsDownloadingPdf(true);
       await inscricaoServiceManager.downloadPdfAprovados(editalSelecionado.id);
-      toast.success("PDF dos aprovados baixado com sucesso!");
-    } catch (err: any) {
+      toast.success("PDF de inscrições aprovadas (análise) baixado.");
+    } catch (err: unknown) {
       console.error("Erro ao baixar PDF:", err);
-      toast.error(err.message || "Erro ao baixar PDF dos aprovados");
+      toast.error(err instanceof Error ? err.message : "Erro ao baixar PDF");
     } finally {
       setIsDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadPdfBeneficiarios = async () => {
+    if (!editalSelecionado?.id) {
+      toast.error("Selecione um edital para baixar o PDF");
+      return;
+    }
+
+    try {
+      setIsDownloadingPdfBenef(true);
+      await inscricaoServiceManager.downloadPdfBeneficiarios(editalSelecionado.id);
+      toast.success("PDF de beneficiários no edital baixado.");
+    } catch (err: unknown) {
+      console.error("Erro ao baixar PDF de beneficiários:", err);
+      toast.error(err instanceof Error ? err.message : "Erro ao baixar PDF");
+    } finally {
+      setIsDownloadingPdfBenef(false);
     }
   };
 
@@ -386,16 +405,28 @@ export default function GerenciarInscricoes() {
                   <span>{questionarioSelecionado.texto || questionarioSelecionado.titulo || "Questionário"}</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
-                <div style={{ marginLeft: "auto" }}>
+                <div style={{ marginLeft: "auto", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
                   <Button
                     color="primary"
                     variant="solid"
                     startContent={isDownloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    onPress={handleDownloadPdf}
+                    onPress={() => void handleDownloadPdfAprovadosAnalise()}
                     isLoading={isDownloadingPdf}
-                    isDisabled={estatisticas.aprovadas === 0}
+                    isDisabled={isDownloadingPdfBenef}
+                    title="Inscrições com status Inscrição Aprovada (análise)"
                   >
-                    Baixar PDF Aprovados ({estatisticas.aprovadas})
+                    PDF aprovados — análise ({estatisticas.aprovadas})
+                  </Button>
+                  <Button
+                    color="success"
+                    variant="flat"
+                    startContent={isDownloadingPdfBenef ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    onPress={() => void handleDownloadPdfBeneficiarios()}
+                    isLoading={isDownloadingPdfBenef}
+                    isDisabled={isDownloadingPdf}
+                    title="Estudantes homologados como Beneficiário no edital"
+                  >
+                    PDF beneficiários (edital)
                   </Button>
                 </div>
               </div>
