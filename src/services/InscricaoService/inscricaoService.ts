@@ -1,8 +1,9 @@
 import { FetchAdapter } from "../BaseRequestService/HttpClient";
 import type { InscricaoStatusAuditEntry } from "../../types/inscricaoStatusAudit";
 import { AlunoInscrito, ListaAlunosInscritosResponse } from "../../types/inscricao";
+import { API_BASE_URL } from "@/config/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL_SERVICES;
+const BASE_URL = API_BASE_URL;
 
 /** GET /editais/:id/inscritos pode vir achatado ou com `usuario` aninhado (legado). */
 function normalizeAlunoInscrito(raw: AlunoInscrito & { usuario?: AlunoInscrito["usuario"] }): AlunoInscrito {
