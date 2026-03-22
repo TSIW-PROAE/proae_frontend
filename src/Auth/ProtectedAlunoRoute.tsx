@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import ProtectedAluno from "@/layouts/ProtectedAluno";
 import { FetchAdapter } from "@/services/api";
@@ -18,6 +18,8 @@ const CAMPUS_OPTIONS = [
  * Chama POST /aluno/complete-cadastro para vincular o perfil.
  */
 function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
   const [matricula, setMatricula] = useState("");
   const [curso, setCurso] = useState("");
   const [campus, setCampus] = useState("");
@@ -136,6 +138,18 @@ function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
           >
             {submitting ? "Salvando..." : "Vincular perfil de aluno"}
           </button>
+
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={async () => {
+              await logout();
+              navigate("/login", { replace: true });
+            }}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            Voltar ao login
+          </button>
         </form>
       </div>
     </div>
@@ -143,6 +157,9 @@ function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
 }
 
 function AguardandoConfirmacaoEmail() {
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
+
   return (
     <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6 overflow-y-auto">
       <Toaster position="top-right" />
@@ -155,9 +172,19 @@ function AguardandoConfirmacaoEmail() {
           ativar seu cadastro de estudante e acessar editais e o portal.
           Verifique também a pasta de spam.
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 mb-6">
           Depois de confirmar, atualize esta página ou faça login novamente.
         </p>
+        <button
+          type="button"
+          onClick={async () => {
+            await logout();
+            navigate("/login", { replace: true });
+          }}
+          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Voltar ao login
+        </button>
       </div>
     </div>
   );

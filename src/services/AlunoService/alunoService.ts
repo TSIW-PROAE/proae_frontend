@@ -1,8 +1,10 @@
 import { FetchAdapter } from "../BaseRequestService/HttpClient";
 import type { AdminAlunoResumo } from "../../types/adminAlunoResumo";
 import { Aluno, ListaAlunosResponse } from "../../types/aluno";
+import { API_BASE_URL } from "@/config/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL_SERVICES + "/aluno";
+/** Sempre URL absoluta do backend. Não use só VITE_API_URL_SERVICES: se estiver vazio vira "/aluno" relativo e o browser chama o Vercel → "Cannot GET /aluno/...". */
+const BASE_URL = `${API_BASE_URL}/aluno`;
 
 export class AlunoService {
   private httpClient: FetchAdapter;

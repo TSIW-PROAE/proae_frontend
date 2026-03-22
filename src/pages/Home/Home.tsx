@@ -2,7 +2,7 @@ import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { Button } from "@heroui/button";
 import { useEffect, useState, useContext, useRef, useMemo } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import InfoCard from "../../components/InfoCard/InfoCard";
 import ProcessoSeletivo from "../../components/ProcessoSeletivo/ProcessoSeletivo";
 import restauranteIcon from "../../assets/dashboard icons/alimentação.svg";
@@ -13,6 +13,28 @@ import residenciaIcon from "../../assets/dashboard icons/apartamento.svg";
 import renovacaoIcon from "../../assets/dashboard icons/renvação.svg";
 import "./Home.css";
 import { AuthContext } from "@/context/AuthContext";
+import type { DocumentoEdital } from "@/types/edital";
+import { normalizeUrlForHref } from "@/utils/utils";
+
+/** API envia `edital_url` como `{ titulo_documento, url_documento }[]`, não como string[]. */
+function mapEditalUrlParaDocumentos(
+  editalUrl: unknown,
+): { titulo: string; url: string }[] {
+  if (!Array.isArray(editalUrl)) return [];
+  return editalUrl.map((item, i) => {
+    if (typeof item === "string") {
+      return {
+        titulo: `Documento ${i + 1}`,
+        url: normalizeUrlForHref(item),
+      };
+    }
+    const doc = item as DocumentoEdital;
+    return {
+      titulo: doc.titulo_documento?.trim() || `Documento ${i + 1}`,
+      url: normalizeUrlForHref(doc.url_documento),
+    };
+  });
+}
 
 export default function Home() {
   const { isAuthenticated, userInfo, loading: authLoading } = useContext(AuthContext);
@@ -135,14 +157,7 @@ export default function Home() {
                               }))
                           : []
                       }
-                      documentos={
-                        Array.isArray(edital.edital_url)
-                          ? edital.edital_url.map((url: string, i: number) => ({
-                              titulo: `Documento ${i + 1}`,
-                              url,
-                            }))
-                          : []
-                      }
+                      documentos={mapEditalUrlParaDocumentos(edital.edital_url)}
                       onInscrever={() => navigate("/login")}
                     />
                   ))
@@ -228,9 +243,6 @@ export default function Home() {
               rel="noopener noreferrer"
             >
               Site Oficial
-            </Button>
-            <Button radius="full" className="footer-button secondary-button" as={Link} to="/login-funcionario">
-              Portal do Servidor
             </Button>
           </div>
         </div>
