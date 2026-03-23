@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import toast from "react-hot-toast";
 import {
   Save,
   Trash2,
@@ -57,7 +58,7 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
 
   const handleSolicitarCriacaoDado = async () => {
     if (!novoDado.nome.trim()) {
-      alert("Por favor, informe o nome do dado.");
+      toast.error("Por favor, informe o nome do dado.");
       return;
     }
 
@@ -67,8 +68,8 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
     );
 
     if (dadoDuplicado) {
-      alert(
-        `Já existe um dado com o nome "${novoDado.nome}". Por favor, escolha outro nome.`
+      toast.error(
+        `Já existe um dado com o nome "${novoDado.nome}". Por favor, escolha outro nome.`,
       );
       return;
     }
@@ -103,13 +104,13 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
           undefined
         );
 
-        alert("Dado criado com sucesso!");
+        toast.success("Dado criado com sucesso!");
       } else {
-        alert("Erro ao criar o dado. Tente novamente.");
+        toast.error("Erro ao criar o dado. Tente novamente.");
       }
     } else {
       // Fallback caso não tenha a função (não deveria acontecer)
-      alert("Função de criação de dado não disponível.");
+      toast.error("Função de criação de dado não disponível.");
     }
   };
 

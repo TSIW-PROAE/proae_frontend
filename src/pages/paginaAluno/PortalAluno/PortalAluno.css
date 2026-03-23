@@ -93,6 +93,135 @@
   gap: 1rem;
 }
 
+.notification-wrap {
+  position: relative;
+}
+
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(360px, calc(100vw - 2rem));
+  max-height: min(420px, 70vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.notification-dropdown-header {
+  padding: 12px 16px 4px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #183b4e;
+}
+
+.notification-dropdown-hint {
+  margin: 0;
+  padding: 0 16px 10px;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.notification-dropdown-empty {
+  margin: 0;
+  padding: 20px 16px 24px;
+  font-size: 0.875rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px 8px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  transition: background 0.15s ease;
+}
+
+.notification-item:hover {
+  background: #f8fafc;
+}
+
+.notification-item--static {
+  cursor: default;
+}
+
+.notification-item--static:hover {
+  background: transparent;
+}
+
+.notification-item-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.notification-item-body {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #334155;
+}
+
+.notification-item-cta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #183b4e;
+  margin-top: 2px;
+}
+
+.notification-item--warning {
+  border-left: 3px solid #f59e0b;
+}
+
+.notification-item--warning .notification-item-title {
+  color: #b45309;
+}
+
+.notification-item--danger {
+  border-left: 3px solid #ef4444;
+}
+
+.notification-item--danger .notification-item-title {
+  color: #b91c1c;
+}
+
+.notification-item--success {
+  border-left: 3px solid #22c55e;
+}
+
+.notification-item--success .notification-item-title {
+  color: #15803d;
+}
+
+.notification-item--info {
+  border-left: 3px solid #3b82f6;
+}
+
+.notification-item--info .notification-item-title {
+  color: #1d4ed8;
+}
+
 .notification-icon {
   position: relative;
   background: transparent;

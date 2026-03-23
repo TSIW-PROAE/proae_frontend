@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Button, Input, Switch } from "@heroui/react";
+import { Button, Input, Switch, Select, SelectItem } from "@heroui/react";
 import {
   FileText,
   AlertCircle,
@@ -24,6 +24,11 @@ import {
 import { stepService } from "@/services/StepService/stepService";
 import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import FRInscricoesAdmin from "./FRInscricoesAdmin";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+  OPCOES_NIVEL_ACADEMICO,
+} from "@/constants/nivelAcademico";
 
 const TIPOS_PERGUNTA = [
   { value: "text", label: "Texto" },
@@ -94,9 +99,13 @@ function stepsFromBackend(data: FormularioRenovacaoResponse | null): StepLocal[]
 
 export default function FormularioRenovacaoAdmin() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
   const expandInscricaoFromUrl = searchParams.get("expandInscricao");
+  const nivelFromUrl = searchParams.get("nivel_academico");
+  const [nivelAdmin, setNivelAdmin] = useState<string>(
+    nivelFromUrl === NIVEL_POS_GRADUACAO ? NIVEL_POS_GRADUACAO : NIVEL_GRADUACAO,
+  );
   const [data, setData] = useState<FormularioRenovacaoResponse | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,10 +116,15 @@ export default function FormularioRenovacaoAdmin() {
     { texto: "Dados gerais", perguntas: [{ pergunta: "", tipo_Pergunta: "text", obrigatoriedade: true }] },
   ]);
 
+  useEffect(() => {
+    const p = searchParams.get("nivel_academico");
+    if (p === NIVEL_GRADUACAO || p === NIVEL_POS_GRADUACAO) setNivelAdmin(p);
+  }, [searchParams]);
+
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await formularioRenovacaoService.getFormularioRenovacaoOrNull();
+      const res = await formularioRenovacaoService.getFormularioRenovacaoAdmin(nivelAdmin);
       if (res) {
         setData(res);
         setTitulo(res.titulo_edital ?? "");
@@ -128,7 +142,7 @@ export default function FormularioRenovacaoAdmin() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [nivelAdmin]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -208,13 +222,21 @@ export default function FormularioRenovacaoAdmin() {
     setSaving(true);
     try {
       const stepsPayload = buildStepsPayload();
-      await formularioRenovacaoService.criarFormularioRenovacao({
+      const created = await formularioRenovacaoService.criarFormularioRenovacao({
         titulo_edital: titulo.trim(),
+        nivel_academico: nivelAdmin,
         descricao: descricao.trim() || undefined,
         steps: stepsPayload,
       });
       toast.success("Formulário de renovação criado com status Aberto.");
-      await load();
+      if (created?.id) {
+        setData(created);
+        setTitulo(created.titulo_edital ?? titulo.trim());
+        setDescricao(created.descricao ?? "");
+        setSteps(stepsFromBackend(created));
+      } else {
+        await load();
+      }
     } catch (e: any) {
       toast.error(e?.message ?? e?.mensagem ?? "Erro ao criar");
     } finally {
@@ -333,6 +355,49 @@ export default function FormularioRenovacaoAdmin() {
         Gerenciamento do formulário de renovação (recadastro). Separado do formulário geral — alunos já aprovados em editais precisam concluí-lo quando estiver aberto.
       </p>
 
+      <div className="mb-6 w-full max-w-md space-y-2">
+        <div>
+          <label
+            htmlFor="fr-admin-nivel-academico"
+            className="block text-sm font-medium text-gray-800"
+          >
+            Nível acadêmico
+          </label>
+          <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+            Graduação e Pós-graduação têm formulário e inscrições de renovação separados. Escolha o nível para editar ou ver inscrições.
+          </p>
+        </div>
+        <Select
+          id="fr-admin-nivel-academico"
+          aria-label="Nível acadêmico"
+          variant="bordered"
+          radius="lg"
+          fullWidth
+          classNames={{
+            base: "w-full",
+            trigger: "min-h-12 h-12 bg-white border-gray-200 data-[hover=true]:border-gray-300",
+          }}
+          selectedKeys={new Set([nivelAdmin])}
+          onSelectionChange={(keys) => {
+            const v = Array.from(keys)[0] as string;
+            if (!v) return;
+            setNivelAdmin(v);
+            setSearchParams(
+              (prev) => {
+                const n = new URLSearchParams(prev);
+                n.set("nivel_academico", v);
+                return n;
+              },
+              { replace: true },
+            );
+          }}
+        >
+          {OPCOES_NIVEL_ACADEMICO.map((o) => (
+            <SelectItem key={o.value}>{o.label}</SelectItem>
+          ))}
+        </Select>
+      </div>
+
       {/* ═══ TABS ═══ */}
       {isEditing && (
         <div className="flex gap-1 border-b border-gray-200 mb-6">
@@ -368,6 +433,7 @@ export default function FormularioRenovacaoAdmin() {
         </div>
       ) : activeTab === "inscricoes" && isEditing ? (
         <FRInscricoesAdmin
+          nivelAcademico={nivelAdmin}
           initialExpandInscricaoId={
             expandInscricaoFromUrl ? parseInt(expandInscricaoFromUrl, 10) : undefined
           }

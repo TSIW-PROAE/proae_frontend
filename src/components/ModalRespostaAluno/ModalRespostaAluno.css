@@ -306,9 +306,15 @@
   font-weight: 600;
 }
 
-.resposta-documento a {
+.resposta-documento a,
+.resposta-documento button.documento-link {
   color: inherit;
   text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .resposta-data {
@@ -494,6 +500,16 @@
   gap: 0.35rem;
   color: #1d4ed8;
   font-weight: 600;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.documento-link:hover {
+  color: #1e40af;
 }
 
 .documento-controles {

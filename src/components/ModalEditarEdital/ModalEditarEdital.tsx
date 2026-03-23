@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Edital } from "../../types/edital";
 import { stepService } from "@/services/StepService/stepService";
@@ -6,6 +6,10 @@ import { perguntaService } from "@/services/PerguntaService/perguntaService";
 import { editalService } from "../../services/EditalService/editalService";
 import { dadoService, Dado } from "@/services/DadoService/dado.service";
 import { toast } from "react-hot-toast";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+} from "@/constants/nivelAcademico";
 import "./ModalEditarEdital.css";
 
 // Importar tipos e utilitários
@@ -43,6 +47,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
   const [descricaoEditando, setDescricaoEditando] = useState(false);
   /** YYYY-MM-DD para input date; vazio = sem fim de vigência definido */
   const [dataFimVigencia, setDataFimVigencia] = useState<string>("");
+  const [nivelAcademico, setNivelAcademico] = useState<string>(NIVEL_GRADUACAO);
   const [status, setStatus] = useState<StatusEdital>(edital.status_edital);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showStatusConfirmModal, setShowStatusConfirmModal] = useState(false);
@@ -72,6 +77,15 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
   const [quizTitleEditing, setQuizTitleEditing] = useState(false);
   const [editorPerguntas, setEditorPerguntas] = useState<PerguntaEditorItem[]>([]);
 
+  /** Step ativo no drawer — cobre o tick em que o step acabou de ser criado e o state ainda não atualizou. */
+  const activeDrawerStepIdRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!drawerOpen) {
+      activeDrawerStepIdRef.current = undefined;
+    }
+  }, [drawerOpen]);
+
   // Estado local de Questionários (somente UI por enquanto)
   const [questionarios, setQuestionarios] = useState<EditableQuestionario[]>([]);
 
@@ -93,6 +107,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
       setAutoSaveStatus("idle");
       setTitulo(edital.titulo_edital);
       setDescricao(edital.descricao || "");
+      setNivelAcademico(edital.nivel_academico?.trim() || NIVEL_GRADUACAO);
       // Garantir que o status atual esteja refletido ao abrir, normalizando caso venha em outro formato da API
       setStatus(toInternalStatus((edital.status_edital as unknown as string) || ""));
 
@@ -218,6 +233,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
         etapasOverride?: EditableEtapa[];
         /** Se definido, grava este valor como data_fim_vigencia (null limpa no banco) */
         dataFimVigenciaOverride?: string | null;
+        /** Se definido, grava este nível (ex.: ao mudar o select antes do próximo render) */
+        nivelAcademicoOverride?: string;
       } = {},
     ) => {
       if (!edital.id) return;
@@ -244,12 +261,16 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
           data_fim_vigencia = dataFimVigencia.trim() === "" ? null : dataFimVigencia.trim();
         }
 
+        const nivel =
+          overrides.nivelAcademicoOverride ?? nivelAcademico;
+
         await editalService.atualizarEdital(edital.id, {
           titulo_edital: titulo,
           descricao: descricao,
           edital_url: documentosValidos,
           etapa_edital: etapasValidas,
           data_fim_vigencia,
+          nivel_academico: nivel,
         });
 
         showSaved();
@@ -258,7 +279,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
         showError("Erro ao salvar alterações");
       }
     },
-    [edital.id, titulo, descricao, documentos, etapas, dataFimVigencia, showSaved, showError],
+    [edital.id, titulo, descricao, documentos, etapas, dataFimVigencia, nivelAcademico, showSaved, showError],
   );
 
   /** Persiste uma vaga individual (cria ou atualiza). */
@@ -443,57 +464,49 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
     setQuestionarios([...questionarios, novoQuestionario]);
   };
 
-  const handleSaveQuestionario = async (index: number) => {
-    const questionario = questionarios[index];
-    const tituloTrimmed = questionario.value.titulo.trim();
-
-    if (!tituloTrimmed) {
-      toast.error("O título do questionário não pode estar vazio");
-      return;
-    }
-
+  const handleOpenQuestionario = async (index: number) => {
     if (!edital.id) {
       toast.error("Erro: ID do edital não encontrado");
       return;
     }
 
-    try {
-      // Cria o Step no backend com o nome fornecido
-      const created = await stepService.criarStep(edital.id, tituloTrimmed);
-
-      if (!created.id) {
-        toast.error("Erro ao criar questionário");
-        return;
-      }
-
-      // Atualiza o questionário na UI com o ID retornado e sai do modo de edição
-      const updatedQuestionarios = [...questionarios];
-      updatedQuestionarios[index] = {
-        value: {
-          id: created.id,
-          titulo: tituloTrimmed,
-          nome: tituloTrimmed,
-          previewPerguntas: [],
-        },
-        isEditing: false,
-      };
-      setQuestionarios(updatedQuestionarios);
-      toast.success("Questionário criado com sucesso");
-    } catch (error) {
-      console.error("Erro ao criar questionário:", error);
-      toast.error("Erro ao criar questionário. Tente novamente.");
-    }
-  };
-
-  const handleOpenQuestionario = async (index: number) => {
     setActiveQuestionarioIndex(index);
     setDrawerOpen(true);
     setQuizTitleEditing(false);
-    // Carrega perguntas reais para este step (se existir id)
     setDrawerLoading(true);
     try {
-      const stepId = questionarios[index].value.id;
+      let stepId = questionarios[index]?.value?.id;
+
+      /** Cria o Step no backend na primeira vez que o editor abre — não exige “salvar” antes das perguntas. */
+      if (!stepId) {
+        const tituloTrimmed =
+          (questionarios[index]?.value?.titulo || "").trim() || "Questionário";
+        const created = await stepService.criarStep(String(edital.id), tituloTrimmed);
+        if (!created?.id) {
+          toast.error("Erro ao criar questionário");
+          setDrawerOpen(false);
+          setActiveQuestionarioIndex(null);
+          return;
+        }
+        stepId = created.id;
+        setQuestionarios((prev) => {
+          const next = [...prev];
+          if (!next[index]) return prev;
+          next[index] = {
+            value: {
+              ...next[index].value,
+              id: created.id,
+              titulo: tituloTrimmed,
+              nome: tituloTrimmed,
+            },
+            isEditing: false,
+          };
+          return next;
+        });
+      }
+
       if (stepId) {
+        activeDrawerStepIdRef.current = String(stepId);
         // Garantir que os dados do aluno estejam carregados antes de mapear as perguntas
         console.log("Carregando dados do aluno...");
         await loadDadosAluno();
@@ -612,10 +625,11 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
     }
 
     const questionario = questionarios[activeQuestionarioIndex];
-    const stepId = questionario.value.id;
+    const stepId =
+      questionario.value.id ?? activeDrawerStepIdRef.current;
 
     if (!stepId) {
-      toast.error("Salve o questionário antes de adicionar perguntas");
+      toast.error("Abra o editor do questionário novamente e tente salvar a pergunta.");
       return;
     }
 
@@ -676,7 +690,8 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
     if (activeQuestionarioIndex === null) return;
 
     const questionario = questionarios[activeQuestionarioIndex];
-    const stepId = questionario.value.id;
+    const stepId =
+      questionario.value.id ?? activeDrawerStepIdRef.current;
     if (!stepId) return;
 
     const pergunta = editorPerguntas[perguntaIndex];
@@ -1061,6 +1076,30 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
             onToggleOpen={() => setOpenDescricao(!openDescricao)}
           />
 
+          <section
+            className="modal-nivel-section"
+            style={{ padding: "0 1.25rem 1rem", borderBottom: "1px solid #e5e7eb" }}
+          >
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Nível acadêmico</h3>
+            <p className="text-xs text-slate-500 mb-2">
+              Define se o edital aparece para alunos de <strong>Graduação</strong> ou{" "}
+              <strong>Pós-graduação</strong> (inscrições e formulários seguem esse nível).
+            </p>
+            <select
+              className="border border-slate-300 rounded-md px-2 py-1.5 text-sm min-w-[200px] bg-white"
+              value={nivelAcademico}
+              onChange={(e) => {
+                const v = e.target.value;
+                setNivelAcademico(v);
+                void autoSaveEdital({ nivelAcademicoOverride: v });
+              }}
+              aria-label="Nível acadêmico do edital"
+            >
+              <option value={NIVEL_GRADUACAO}>Graduação</option>
+              <option value={NIVEL_POS_GRADUACAO}>Pós-graduação</option>
+            </select>
+          </section>
+
           <section className="modal-vigencia-section" style={{ padding: "0 1.25rem 1rem", borderBottom: "1px solid #e5e7eb" }}>
             <h3 className="text-sm font-semibold text-slate-700 mb-2">Vigência no portal</h3>
             <p className="text-xs text-slate-500 mb-2">
@@ -1104,7 +1143,6 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
             onToggleOpen={() => setOpenQuestionarios(!openQuestionarios)}
             onOpenQuestionario={handleOpenQuestionario}
             onAddQuestionario={handleAddQuestionario}
-            onSaveQuestionario={handleSaveQuestionario}
           />
 
           <div className="two-col-row">

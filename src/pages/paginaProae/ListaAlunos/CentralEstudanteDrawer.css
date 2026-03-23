@@ -366,6 +366,12 @@
   border-radius: 4px;
 }
 
+.central-audit-actor-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+}
+
 .central-audit-obs {
   font-size: 0.72rem;
   color: #b45309;

@@ -30,6 +30,8 @@ export type UserSignup = {
   cpf: string;
   data_ingresso: string;
   celular: string;
+  /** Graduação | Pós-graduação */
+  nivel_academico: string;
 };
 
 export type UserLogin = {

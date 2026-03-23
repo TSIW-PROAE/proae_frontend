@@ -26,6 +26,8 @@ export interface AlunoInscrito {
   data_ingresso: string;
   inscricao_id: string;
   status_inscricao: string;
+  /** Parecer / motivo visível ao aluno (quando aplicável) */
+  observacao_admin?: string | null;
   /** Benefício no edital (só editais comuns; FG/FR não usam) */
   status_beneficio_edital?: string;
   beneficio_nome?: string | null;

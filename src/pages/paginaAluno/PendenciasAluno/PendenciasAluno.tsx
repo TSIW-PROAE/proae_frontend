@@ -5,44 +5,86 @@ import PendenciasAlunoService from "@/services/PendenciasAluno.service/pendencia
 import { Pendencia } from "@/types/pendencias";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const PendenciasAluno: React.FC = () => {
+  const navigate = useNavigate();
   const [pendencias, setPendencias] = useState<Pendencia[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPendencias = async () => {
-      setLoading(true);
-      try {
-        const httpClient = new FetchAdapter();
-        const pendenciasAlunoService = new PendenciasAlunoService(httpClient);
-        const response = await pendenciasAlunoService.getPendenciasAluno();
-        if (!response?.success) {
-          setPendencias([]);
-          throw new Error("Erro ao buscar pendências");
-        }
-        setPendencias(response.pendencias || []);
-        console.log(response.pendencias)
-      } catch (error) {
+  const fetchPendencias = async () => {
+    setLoading(true);
+    try {
+      const httpClient = new FetchAdapter();
+      const pendenciasAlunoService = new PendenciasAlunoService(httpClient);
+      const response = await pendenciasAlunoService.getPendenciasAluno();
+      if (!response?.success) {
         setPendencias([]);
-        toast.error(
-          "Erro ao buscar pendências." +
-            (error && (error as Error).message
-              ? ` Detalhes: ${(error as Error).message}`
-              : "")
-        );
-      } finally{
-        setLoading(false);
+        throw new Error("Erro ao buscar pendências");
       }
-    };
+      setPendencias(response.pendencias || []);
+    } catch (error) {
+      setPendencias([]);
+      toast.error(
+        "Erro ao buscar pendências." +
+          (error && (error as Error).message
+            ? ` Detalhes: ${(error as Error).message}`
+            : "")
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchPendencias();
+  useEffect(() => {
+    void fetchPendencias();
   }, []);
 
   const totalPendencias = pendencias.reduce(
     (acc, pendencia) => acc + pendencia.documentos.length,
     0
   );
+  const totalAjustesResposta = pendencias.reduce(
+    (acc, pendencia) => acc + (pendencia.ajustes_resposta?.length ?? 0),
+    0
+  );
+  const totalItensPendentes = totalPendencias + totalAjustesResposta;
+  const inscricoesComAjuste = pendencias.filter(
+    (p) => (p.ajustes_resposta?.length ?? 0) > 0
+  );
+
+  const buildAjusteUrl = (
+    pendencia: Pendencia,
+    stepId?: number | null,
+    perguntaId?: number | null
+  ) => {
+    const query = new URLSearchParams();
+    query.set("corrigir", "1");
+    if (stepId != null) query.set("step_id", String(stepId));
+    if (perguntaId != null) query.set("pergunta_id", String(perguntaId));
+    if (pendencia.vaga_id != null) query.set("vaga_id", String(pendencia.vaga_id));
+    if (pendencia.inscricao_id != null) {
+      query.set("inscricao_id", String(pendencia.inscricao_id));
+    }
+    const suffix = `?${query.toString()}`;
+
+    if (pendencia.is_formulario_geral) {
+      return `/portal-aluno/formulario-geral${suffix}`;
+    }
+    if (pendencia.is_formulario_renovacao) {
+      return `/portal-aluno/formulario-renovacao${suffix}`;
+    }
+    if (pendencia.edital_id != null) {
+      return `/questionario/${pendencia.edital_id}${suffix}`;
+    }
+    return "/portal-aluno";
+  };
+
+  const firstAjustePendencia = inscricoesComAjuste[0];
+  const firstAjusteStepId =
+    firstAjustePendencia?.ajustes_resposta?.[0]?.step_id ?? null;
+  const firstAjustePerguntaId =
+    firstAjustePendencia?.ajustes_resposta?.[0]?.pergunta_id ?? null;
 
   return (
     <PageLayout>
@@ -55,10 +97,10 @@ const PendenciasAluno: React.FC = () => {
             </h1>
             {!loading && pendencias.length > 0 && (
               <p className="text-sm text-gray-600 mt-1">
-                {totalPendencias}{" "}
-                {totalPendencias === 1
-                  ? "documento pendente"
-                  : "documentos pendentes"}{" "}
+                {totalItensPendentes}{" "}
+                {totalItensPendentes === 1
+                  ? "item pendente"
+                  : "itens pendentes"}{" "}
                 em {pendencias.length}{" "}
                 {pendencias.length === 1 ? "edital" : "editais"}
               </p>
@@ -66,7 +108,7 @@ const PendenciasAluno: React.FC = () => {
           </div>
         </div>
 
-        {!loading && pendencias.length > 0 && (
+        {!loading && totalPendencias > 0 && (
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
             <svg
               className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
@@ -89,6 +131,40 @@ const PendenciasAluno: React.FC = () => {
                 continuar com sua inscrição.
               </p>
             </div>
+          </div>
+        )}
+
+        {!loading && totalAjustesResposta > 0 && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-sm font-semibold text-amber-900 m-0 mb-1">
+              Você possui ajustes/complementos de resposta pendentes
+            </p>
+            <p className="text-sm text-amber-800 m-0 mb-3">
+              A PROAE solicitou revisão em uma ou mais inscrições. Verifique suas inscrições no portal e conclua os ajustes.
+            </p>
+            <ul className="mb-3 list-disc pl-5 text-sm text-amber-900">
+              {inscricoesComAjuste.map((ins) => (
+                <li key={String(ins.inscricao_id)}>
+                  {ins.titulo_edital || "Edital"}{ins.vaga_beneficio ? ` (${ins.vaga_beneficio})` : ""} -{" "}
+                  {(ins.ajustes_resposta?.length ?? 0)} ajuste(s)
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  buildAjusteUrl(
+                    firstAjustePendencia,
+                    firstAjusteStepId,
+                    firstAjustePerguntaId
+                  )
+                )
+              }
+              className="px-4 py-2 rounded-lg bg-amber-800 text-white text-sm font-medium hover:bg-amber-900"
+            >
+              Corrigir agora
+            </button>
           </div>
         )}
 
@@ -138,7 +214,13 @@ const PendenciasAluno: React.FC = () => {
               <PendenciaItem
                 key={pendencia.inscricao_id}
                 titulo_edital={pendencia.titulo_edital}
+                vaga_beneficio={pendencia.vaga_beneficio}
                 documentos={pendencia.documentos}
+                ajustes_resposta={pendencia.ajustes_resposta}
+                onGoToAjuste={(stepId, perguntaId) =>
+                  navigate(buildAjusteUrl(pendencia, stepId, perguntaId))
+                }
+                onUpdated={fetchPendencias}
               />
             ))}
           </div>

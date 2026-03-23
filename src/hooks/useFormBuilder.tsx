@@ -12,13 +12,20 @@ import { MinioService } from "@/services/MinioService/minio.service";
 import { useFormCache } from "./useFormCache";
 
 export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn {
-  const { editalId, initialData, onSubmit: backendOnSubmit, initialPaginas } = props;
+  const {
+    editalId,
+    initialData,
+    onSubmit: backendOnSubmit,
+    initialPaginas,
+    initialCurrentPage,
+  } = props;
 
   const [paginas, setPaginas] = useState<PaginaConfig[]>([]);
   const [isLoadingFromBackend, setIsLoadingFromBackend] = useState(false);
   const [backendError, setBackendError] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(0);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pageErrors, setPageErrors] = useState<Record<number, string[]> | null>(null);
 
@@ -43,6 +50,13 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
   const paginasVisiveis = useMemo(() => {
     return filtrarPaginasCondicionais(paginas, formData);
   }, [paginas, formData]);
+
+  useEffect(() => {
+    if (typeof initialCurrentPage !== "number") return;
+    if (!Number.isFinite(initialCurrentPage)) return;
+    const clamped = Math.max(0, Math.min(initialCurrentPage, paginasVisiveis.length));
+    setCurrentPage(clamped);
+  }, [initialCurrentPage, paginasVisiveis.length]);
 
   const totalPages = paginasVisiveis.length;
   const progress = totalPages > 0 ? ((currentPage + 1) / totalPages) * 100 : 0;
@@ -134,7 +148,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
 
   const goToPage = useCallback(
     (page: number) => {
-      if (page >= 0 && page < paginasVisiveis.length) {
+      if (page >= 0 && page <= paginasVisiveis.length) {
         setCurrentPage(page);
         window.scrollTo(0, 0);
       }

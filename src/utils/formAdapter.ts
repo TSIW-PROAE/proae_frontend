@@ -7,6 +7,7 @@ import type { FormularioGeralStep, FormularioGeralPergunta } from "@/services/Fo
  */
 export const mapStepsToPaginas = (steps: StepResponseDto[]): PaginaConfig[] => {
   return steps.map((step: StepResponseDto) => ({
+    step_id: step.id,
     titulo: step.texto,
     inputs: step.perguntas.map((pergunta: PerguntaResponseDto) => ({
       nome: `pergunta_${pergunta.id}`,
@@ -38,6 +39,7 @@ export const mapFormularioGeralStepsToPaginas = (
       (p: FormularioGeralPergunta) => p.id != null && p.id !== undefined
     );
     return {
+      step_id: step.id,
       titulo: texto,
       inputs: perguntas.map((pergunta: FormularioGeralPergunta) => ({
         nome: `pergunta_${pergunta.id}`,

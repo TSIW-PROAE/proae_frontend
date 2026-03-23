@@ -5,6 +5,7 @@ export interface AdminAlunoResumoInscricao {
   inscricao_id: number;
   titulo_edital: string;
   status_edital: string;
+  nivel_academico?: string;
   is_formulario_geral: boolean;
   is_formulario_renovacao: boolean;
   processo_tipo: "FORMULARIO_GERAL" | "RENOVACAO" | "EDITAL";
@@ -30,6 +31,7 @@ export interface AdminAlunoResumo {
     campus: string;
     data_nascimento: string | null;
     data_ingresso: string;
+    nivel_academico?: string;
   };
   inscricoes: AdminAlunoResumoInscricao[];
 }

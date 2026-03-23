@@ -12,6 +12,10 @@ import AuthService from "../../../services/AuthService/auth.service";
 import useFormValidation, { FormData } from "@/hooks/useFormValidation";
 import { formatarData, formatarCelular, formatCPF } from "../../../utils/validations";
 import {campus} from "../../../utils/cadastroop";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+} from "@/constants/nivelAcademico";
 
 export default function Cadastro() {
   const [formData, setFormData] = useState<FormData>({
@@ -28,6 +32,7 @@ export default function Cadastro() {
     confirmarSenha: "",
   });
 
+  const [nivelAcademico, setNivelAcademico] = useState<string>(NIVEL_GRADUACAO);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
   const [showConfirmarSenha, setShowConfirmarSenha] = useState(false);
@@ -73,6 +78,7 @@ export default function Cadastro() {
         cpf: formData.cpf.replace(/\D/g, ""),
         data_ingresso: formatarData(formData.dataIngresso),
         celular: formatarCelular(formData.celular),
+        nivel_academico: nivelAcademico,
       };
 
       const authService = new AuthService();
@@ -210,6 +216,24 @@ export default function Cadastro() {
                   errorMessage={errors.curso}
                 >
                 </Input>
+              </div>
+
+              <div className="select-container">
+                <Select
+                  className="select-campus"
+                  label="Graduação ou Pós-graduação"
+                  variant="bordered"
+                  radius="lg"
+                  fullWidth
+                  selectedKeys={new Set([nivelAcademico])}
+                  onSelectionChange={(keys) => {
+                    const v = Array.from(keys)[0] as string;
+                    if (v) setNivelAcademico(v);
+                  }}
+                >
+                  <SelectItem key={NIVEL_GRADUACAO}>Graduação</SelectItem>
+                  <SelectItem key={NIVEL_POS_GRADUACAO}>Pós-graduação</SelectItem>
+                </Select>
               </div>
 
               <div className="select-container">

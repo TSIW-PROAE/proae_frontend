@@ -6,7 +6,7 @@ import { documentoService } from "../../services/DocumentoService/documentoServi
 import { DocumentoInscricao, DocumentoStatus } from "../../types/documento";
 import { validacaoService } from "../../services/ValidacaoService/validacaoService";
 import { AuthContext } from "../../context/AuthContext";
-import { MinioService } from "../../services/MinioService/minio.service";
+import DocumentViewerModal from "@/components/DocumentViewerModal/DocumentViewerModal";
 import "./ModalRespostaAluno.css";
 
 interface ModalRespostaAlunoProps {
@@ -62,6 +62,14 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
   const [carregandoDocumentos, setCarregandoDocumentos] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFileRef, setViewerFileRef] = useState<string | null>(null);
+
+  const abrirArquivo = (ref: string | null | undefined) => {
+    if (!ref?.trim()) return;
+    setViewerFileRef(ref);
+    setViewerOpen(true);
+  };
 
   useEffect(() => {
     if (!aluno?.respostas_step) {
@@ -256,6 +264,7 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
   };
 
   return (
+    <>
     <div className="modal-overlay resposta-modal" onClick={onClose}>
       <div className="modal-content resposta-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -333,12 +342,12 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
                             <span className="resposta-data">Respondido em: {new Date(resposta.data_resposta).toLocaleString("pt-BR")}</span>
                           </div>
 
-                          {resposta.url_arquivo && MinioService.isObjectKey(resposta.url_arquivo) && (
+                          {resposta.url_arquivo?.trim() && (
                             <div className="resposta-documento">
                               <Paperclip className="w-4 h-4" />
-                              <a href={MinioService.getViewUrl(resposta.url_arquivo)} target="_blank" rel="noreferrer">
-                                Abrir documento enviado
-                              </a>
+                              <button type="button" className="documento-link" onClick={() => abrirArquivo(resposta.url_arquivo)}>
+                                Ver PDF / documento enviado
+                              </button>
                             </div>
                           )}
 
@@ -399,11 +408,11 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
                             <FileText className="w-4 h-4" />
                             <span>{documento.tipo_documento}</span>
                           </div>
-                          {documento.documento_url && MinioService.isObjectKey(documento.documento_url) && (
-                            <a href={MinioService.getViewUrl(documento.documento_url)} target="_blank" rel="noreferrer" className="documento-link">
+                          {documento.documento_url?.trim() && (
+                            <button type="button" className="documento-link" onClick={() => abrirArquivo(documento.documento_url)}>
                               <Paperclip className="w-4 h-4" />
-                              Ver arquivo
-                            </a>
+                              Ver PDF / arquivo
+                            </button>
                           )}
                         </div>
 
@@ -478,5 +487,15 @@ export default function ModalRespostaAluno({ aluno, onClose, onSaved }: ModalRes
         </div>
       </div>
     </div>
+
+    <DocumentViewerModal
+      open={viewerOpen}
+      fileRef={viewerFileRef}
+      onClose={() => {
+        setViewerOpen(false);
+        setViewerFileRef(null);
+      }}
+    />
+    </>
   );
 }

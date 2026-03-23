@@ -5,6 +5,10 @@ import {
   UpdateEditalRequest,
   EtapaEdital,
 } from "../../types/edital";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+} from "@/constants/nivelAcademico";
 import "./FormularioEdital.css";
 
 interface FormularioEditalProps {
@@ -22,6 +26,7 @@ export default function FormularioEdital({
 }: FormularioEditalProps) {
   const [formData, setFormData] = useState<CreateEditalRequest>({
     titulo_edital: "",
+    nivel_academico: NIVEL_GRADUACAO,
     descricao: "",
     edital_url: [],
     etapa_edital: [],
@@ -33,11 +38,22 @@ export default function FormularioEdital({
     if (edital) {
       setFormData({
         titulo_edital: edital.titulo_edital,
+        nivel_academico:
+          edital.nivel_academico?.trim() || NIVEL_GRADUACAO,
         descricao: edital.descricao || "",
         edital_url: Array.isArray(edital.edital_url) ? edital.edital_url : [],
         etapa_edital: Array.isArray(edital.etapa_edital) ? edital.etapa_edital : [],
       });
       setEtapas(Array.isArray(edital.etapa_edital) ? edital.etapa_edital : []);
+    } else {
+      setFormData({
+        titulo_edital: "",
+        nivel_academico: NIVEL_GRADUACAO,
+        descricao: "",
+        edital_url: [],
+        etapa_edital: [],
+      });
+      setEtapas([]);
     }
   }, [edital]);
 
@@ -130,6 +146,20 @@ export default function FormularioEdital({
             onChange={handleInputChange}
             required
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="nivel_academico">Nível acadêmico *</label>
+          <select
+            id="nivel_academico"
+            name="nivel_academico"
+            value={formData.nivel_academico || NIVEL_GRADUACAO}
+            onChange={handleInputChange}
+            required
+          >
+            <option value={NIVEL_GRADUACAO}>Graduação</option>
+            <option value={NIVEL_POS_GRADUACAO}>Pós-graduação</option>
+          </select>
         </div>
 
         <div className="form-group">

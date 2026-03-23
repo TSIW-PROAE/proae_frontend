@@ -10,7 +10,7 @@ import { DefaultResponse } from '@/types/auth';
 import {  useNavigate } from 'react-router-dom';
 import { Spinner } from '@heroui/react';
 import { AuthContext } from '@/context/AuthContext';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 export const cadastroProaeFormSchema = z.object({
@@ -40,17 +40,9 @@ export default function CadastroProae() {
     const [isLoading, setIsLoading] = useState(false);
     const [showSenha, setShowSenha] = useState(false);
     const [showConfirmarSenha, setShowConfirmarSenha] = useState(false);
-    const { isAuthenticated, registerAdmin} = useContext(AuthContext);
+    const { isAuthenticated, registerAdmin, checkAuth } = useContext(AuthContext);
 
     const navigate = useNavigate();
-
-    useEffect(() => {
-        if(isAuthenticated){
-            navigate("portal-proae/inscricoes");
-        }
-    }, [isAuthenticated]);
-
-
 
     const onSubmit = async (data: CadastroFormData) => {
         try {
@@ -58,7 +50,13 @@ export default function CadastroProae() {
             const response = await registerAdmin(data)
             if (response.sucesso) {
                 toast.success(response.mensagem);
-                navigate("/login");
+                // Conta já logada (ex.: aluno que vinculou admin): atualiza perfil e vai à fila de aprovação.
+                if (isAuthenticated) {
+                    await checkAuth();
+                    navigate("/tela-de-espera", { replace: true });
+                } else {
+                    navigate("/login");
+                }
             }
             
         } catch (error) {

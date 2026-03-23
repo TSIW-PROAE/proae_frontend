@@ -1,5 +1,6 @@
 import { FetchAdapter } from "@/services/api";
 import { API_BASE_URL } from "@/config/api";
+import { nivelAcademicoQuery } from "@/constants/nivelAcademico";
 
 const BASE_URL = API_BASE_URL + "/formulario-geral";
 
@@ -37,6 +38,7 @@ export interface FormularioGeralResponse {
   titulo_edital: string;
   descricao?: string;
   status_edital: string;
+  nivel_academico?: string;
   is_formulario_geral: boolean;
   /** Fim da vigência do edital (avisos no portal) */
   data_fim_vigencia?: string | null;
@@ -66,6 +68,8 @@ export interface FormularioGeralStepCreate {
 
 export interface FormularioGeralCreateBody {
   titulo_edital: string;
+  /** Graduação ou Pós-graduação (um FG ativo por nível) */
+  nivel_academico?: string;
   descricao?: string;
   /** Opcional: criar FG já com etapas e perguntas em uma única requisição */
   steps?: FormularioGeralStepCreate[];
@@ -101,6 +105,17 @@ export class FormularioGeralService {
     }
   }
 
+  /** [Admin] FG de um nível específico */
+  async getFormularioGeralAdmin(nivelAcademico: string): Promise<FormularioGeralResponse | null> {
+    try {
+      return await this.httpClient.get<FormularioGeralResponse>(
+        `${BASE_URL}/admin?${nivelAcademicoQuery(nivelAcademico)}`,
+      );
+    } catch {
+      return null;
+    }
+  }
+
   async criarFormularioGeral(body: FormularioGeralCreateBody): Promise<FormularioGeralResponse> {
     const response = await this.httpClient.post<FormularioGeralResponse>(BASE_URL, body);
     return (response as any).data ?? response;
@@ -122,21 +137,29 @@ export class FormularioGeralService {
 
   /* ── Gestão de inscrições do FG ── */
 
-  async listarInscricoesFG(): Promise<FGInscricoesListResponse> {
-    return this.httpClient.get<FGInscricoesListResponse>(`${BASE_URL}/inscricoes`);
+  async listarInscricoesFG(nivelAcademico: string): Promise<FGInscricoesListResponse> {
+    return this.httpClient.get<FGInscricoesListResponse>(
+      `${BASE_URL}/inscricoes?${nivelAcademicoQuery(nivelAcademico)}`,
+    );
   }
 
-  async detalheInscricaoFG(inscricaoId: number): Promise<FGInscricaoDetalhe> {
-    return this.httpClient.get<FGInscricaoDetalhe>(`${BASE_URL}/inscricoes/${inscricaoId}`);
+  async detalheInscricaoFG(
+    inscricaoId: number,
+    nivelAcademico: string,
+  ): Promise<FGInscricaoDetalhe> {
+    return this.httpClient.get<FGInscricaoDetalhe>(
+      `${BASE_URL}/inscricoes/${inscricaoId}?${nivelAcademicoQuery(nivelAcademico)}`,
+    );
   }
 
   async alterarStatusInscricaoFG(
     inscricaoId: number,
     status: string,
-    observacao?: string,
+    observacao: string | undefined,
+    nivelAcademico: string,
   ): Promise<{ id: number; status_inscricao: string; observacao_admin: string | null }> {
     return this.httpClient.patch(
-      `${BASE_URL}/inscricoes/${inscricaoId}/status`,
+      `${BASE_URL}/inscricoes/${inscricaoId}/status?${nivelAcademicoQuery(nivelAcademico)}`,
       { status, observacao },
     );
   }
@@ -165,6 +188,7 @@ export interface FGInscricaoResumo {
 export interface FGInscricoesListResponse {
   edital_id: number;
   titulo_edital: string;
+  nivel_academico?: string;
   total: number;
   inscricoes: FGInscricaoResumo[];
 }

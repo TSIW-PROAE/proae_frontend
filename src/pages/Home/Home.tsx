@@ -13,8 +13,10 @@ import residenciaIcon from "../../assets/dashboard icons/apartamento.svg";
 import renovacaoIcon from "../../assets/dashboard icons/renvação.svg";
 import "./Home.css";
 import { AuthContext } from "@/context/AuthContext";
+import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
 import type { DocumentoEdital } from "@/types/edital";
 import { normalizeUrlForHref } from "@/utils/utils";
+import { normalizeRoles } from "@/utils/authRoles";
 
 /** API envia `edital_url` como `{ titulo_documento, url_documento }[]`, não como string[]. */
 function mapEditalUrlParaDocumentos(
@@ -47,9 +49,10 @@ export default function Home() {
   // Create stable values for role checking to prevent unnecessary re-renders
   const userRoleInfo = useMemo(() => {
     if (!userInfo) return { isAdmin: false, isAprovado: false, rolesString: "" };
-    const isAdmin = userInfo.roles?.includes("admin") ?? false;
+    const roles = normalizeRoles(userInfo.roles);
+    const isAdmin = roles.includes("admin");
     const isAprovado = userInfo.aprovado ?? false;
-    const rolesString = Array.isArray(userInfo.roles) ? userInfo.roles.join(",") : "";
+    const rolesString = roles.join(",");
     return { isAdmin, isAprovado, rolesString };
   }, [userInfo?.roles, userInfo?.aprovado]);
 
@@ -58,7 +61,7 @@ export default function Home() {
       try {
         const client = new FetchAdapter();
         const portalAlunoService = new PortalAlunoService(client);
-        const response = await portalAlunoService.getEditals();
+        const response = await portalAlunoService.getEditals(NIVEL_GRADUACAO);
         setEditais(Array.isArray(response) ? response : []);
       } catch (error) {
         setEditais([]);
@@ -94,13 +97,18 @@ export default function Home() {
   }, [isAuthenticated, authLoading, navigate, location.pathname, userRoleInfo.isAdmin, userRoleInfo.isAprovado, userRoleInfo.rolesString]);
 
   const handleAccessPortal = () => {
-    if (isAuthenticated) {
-      if (userInfo?.roles.includes("admin") && userInfo?.aprovado) {
+    if (isAuthenticated && userInfo) {
+      const roles = normalizeRoles(userInfo.roles);
+      const isAdmin = roles.includes("admin");
+      const aprovado = userInfo.aprovado === true;
+      if (isAdmin && aprovado) {
         navigate("/portal-proae/inscricoes");
+      } else if (isAdmin && !aprovado) {
+        navigate("/tela-de-espera");
       } else {
         navigate("/portal-aluno");
       }
-    } else {
+    } else if (!isAuthenticated) {
       navigate("/login");
     }
   };

@@ -213,6 +213,63 @@
   white-space: nowrap;
 }
 
+/* Nível acadêmico (Graduação / Pós-graduação) — lista e cards */
+.nivel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.nivel-badge--grad {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.nivel-badge--pos {
+  background: #f5f3ff;
+  color: #5b21b6;
+  border-color: #ddd6fe;
+}
+
+.table-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.table-title-row .table-title {
+  margin-bottom: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.selection-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.selection-card-title-row .selection-card-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
 .card-actions {
   display: flex;
   align-items: center;
