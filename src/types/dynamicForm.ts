@@ -60,6 +60,7 @@ export interface InputConfig {
 }
 
 export interface PaginaConfig {
+  step_id?: number | null;
   titulo?: string;
   subtitulo?: string;
   inputs: InputConfig[];
@@ -83,6 +84,7 @@ export interface UseFormBuilderProps {
   titulo?: string;
   subtitulo?: string;
   initialData?: FormData;
+  initialCurrentPage?: number;
   /** Quando informado (ex.: steps do GET /formulario-geral), usa em vez de buscar steps da API */
   initialPaginas?: PaginaConfig[];
 }

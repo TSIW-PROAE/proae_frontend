@@ -20,6 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import "./ProcessosProae.css";
+import { Toaster } from "react-hot-toast";
 import {
   NIVEL_GRADUACAO,
   NIVEL_POS_GRADUACAO,
@@ -162,7 +163,7 @@ export default function ProcessosProae() {
     setIsCreatingEdital(true);
     setError(null);
     try {
-      await editalService.criarEdital({
+      const novoEdital = await editalService.criarEdital({
         titulo_edital: tituloEdital.trim(),
         nivel_academico: nivelNovoEdital,
       });
@@ -170,6 +171,10 @@ export default function ProcessosProae() {
       setShowCreateModal(false);
       setTituloEdital("");
       setNivelNovoEdital(NIVEL_GRADUACAO);
+      if (novoEdital?.id) {
+        setEditingEdital(novoEdital);
+        setShowEditModal(true);
+      }
     } catch (err) {
       setError("Não foi possível criar o edital. Tente novamente.");
       console.error("Erro ao criar edital:", err);
@@ -312,6 +317,7 @@ export default function ProcessosProae() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Toaster position="top-right" />
       <div className="processos-container">
         {/* Header Principal */}
         <header className="processos-header">

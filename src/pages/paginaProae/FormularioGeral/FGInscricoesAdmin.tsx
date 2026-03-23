@@ -17,6 +17,7 @@ import {
   type FGInscricaoResumo,
   type FGInscricaoDetalhe,
 } from "@/services/FormularioGeralService/formularioGeral.service";
+import DocumentViewerModal from "@/components/DocumentViewerModal/DocumentViewerModal";
 
 const STATUS_INSCRICAO_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
   "Inscrição Pendente":   { label: "Pendente",    color: "text-amber-700",   bg: "bg-amber-50",    border: "border-amber-200", icon: <Clock className="w-3.5 h-3.5" /> },
@@ -57,6 +58,14 @@ function InscricaoDetailPanel({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [observacao, setObservacao] = useState("");
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFileRef, setViewerFileRef] = useState<string | null>(null);
+
+  const abrirArquivo = (ref: string | null | undefined) => {
+    if (!ref?.trim()) return;
+    setViewerFileRef(ref);
+    setViewerOpen(true);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -161,14 +170,14 @@ function InscricaoDetailPanel({
                   <div key={idx} className="text-sm">
                     <span className="text-gray-500">{r.pergunta_texto}:</span>{" "}
                     {r.urlArquivo ? (
-                      <a
-                        href={r.urlArquivo}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                      <button
+                        type="button"
+                        onClick={() => abrirArquivo(r.urlArquivo)}
+                        className="text-blue-600 hover:underline inline-flex items-center gap-1 font-medium"
                       >
-                        <FileText className="w-3 h-3" /> Ver arquivo <ExternalLink className="w-3 h-3" />
-                      </a>
+                        <FileText className="w-3 h-3" /> Ver PDF / arquivo
+                        <ExternalLink className="w-3 h-3" />
+                      </button>
                     ) : r.valorOpcoes?.length ? (
                       <span className="font-medium">{r.valorOpcoes.join(", ")}</span>
                     ) : (
@@ -193,14 +202,13 @@ function InscricaoDetailPanel({
                 <span className="flex-1">{doc.tipo_documento}</span>
                 <span className="text-xs text-gray-500">{doc.status_documento}</span>
                 {doc.documento_url && (
-                  <a
-                    href={doc.documento_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline inline-flex items-center gap-1 text-xs"
+                  <button
+                    type="button"
+                    onClick={() => abrirArquivo(doc.documento_url)}
+                    className="text-blue-600 hover:underline inline-flex items-center gap-1 text-xs font-medium"
                   >
-                    Abrir <ExternalLink className="w-3 h-3" />
-                  </a>
+                    Ver PDF / arquivo <ExternalLink className="w-3 h-3" />
+                  </button>
                 )}
               </div>
             ))}
@@ -256,6 +264,15 @@ function InscricaoDetailPanel({
           </Button>
         </div>
       </div>
+
+      <DocumentViewerModal
+        open={viewerOpen}
+        fileRef={viewerFileRef}
+        onClose={() => {
+          setViewerOpen(false);
+          setViewerFileRef(null);
+        }}
+      />
     </div>
   );
 }

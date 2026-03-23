@@ -91,7 +91,7 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
                       {benefit.titulo_edital || "Edital"}
                     </p>
                     <p className="text-xs text-gray-600 mt-0.5 truncate" title={benefit.titulo_beneficio}>
-                      Vaga: {benefit.titulo_beneficio}
+                      Benefício: {benefit.titulo_beneficio}
                     </p>
                     {benefit.resumo_para_aluno && (
                       <p className="text-xs text-gray-500 mt-2 leading-relaxed border-l-2 border-emerald-200 pl-2">

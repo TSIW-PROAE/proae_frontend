@@ -49,6 +49,22 @@ export class InscricaoService {
     return (response as any).data;
   }
 
+  /**
+   * Correção de respostas (ajuste PROAE / complemento). Preferível a POST /inscricoes.
+   */
+  async corrigirRespostasPendentes(
+    inscricaoId: string,
+    body: { respostas: Array<{
+      perguntaId: number;
+      valorTexto?: string;
+      valorOpcoes?: string[];
+      urlArquivo?: string;
+    }> },
+  ) {
+    const url = `${this.url}/inscricoes/${encodeURIComponent(inscricaoId)}/correcao-respostas`;
+    return await this.httpClient.patch(url, body);
+  }
+
   async salvarRespostas(vaga_id: string, respostas: any[]): Promise<{ message: string }> {
     const url = this.url + `/inscricoes/cache/save/respostas`;
     const response = await this.httpClient.post(url, { vaga_id, respostas });

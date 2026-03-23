@@ -1,13 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X, History, Loader2 } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
+import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X, History, Loader2, Save } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { Edital } from "@/types/edital";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
 import { AlunoInscrito } from "@/types/inscricao";
 import type { InscricaoStatusAuditEntry } from "@/types/inscricaoStatusAudit";
 import { respostaService } from "@/services/RespostaService/respostaService";
+import { getApiErrorMessage } from "@/utils/apiError";
 import "./InscricoesProae.css";
+
+/** Valores aceitos pelo PATCH admin de status (alinhado à Central / backend). */
+const ADMIN_STATUS_OPCOES = [
+  "Inscrição Pendente",
+  "Inscrição Aprovada",
+  "Inscrição Negada",
+  "Ajuste Necessário",
+] as const;
+
+const ADMIN_BENEFICIO_OPCOES = ["Pendente seleção", "Beneficiário no edital", "Não beneficiário"] as const;
 
 interface PerguntaPayload {
   id: string;
@@ -72,7 +84,10 @@ interface StepsCompletos {
   steps: StepComStatus[];
 }
 
-function formatActorIdAudit(id: string | null): string {
+function formatActorAuditDisplay(entry: { actor_nome?: string | null; actor_usuario_id: string | null }): string {
+  const nome = entry.actor_nome?.trim();
+  if (nome) return nome;
+  const id = entry.actor_usuario_id;
   if (!id) return "—";
   if (id.length <= 12) return id;
   return `${id.slice(0, 8)}…${id.slice(-4)}`;
@@ -138,6 +153,14 @@ export default function InscricoesProae() {
   const [auditEntries, setAuditEntries] = useState<InscricaoStatusAuditEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditErro, setAuditErro] = useState(false);
+  const [auditRefreshTick, setAuditRefreshTick] = useState(0);
+
+  /** Rascunhos PROAE — aba Informações (decisões de análise / benefício no edital). */
+  const [adminStatusDraft, setAdminStatusDraft] = useState("");
+  const [adminObsDraft, setAdminObsDraft] = useState("");
+  const [adminBeneficioDraft, setAdminBeneficioDraft] = useState("");
+  const [salvandoAdminStatus, setSalvandoAdminStatus] = useState(false);
+  const [salvandoAdminBeneficio, setSalvandoAdminBeneficio] = useState(false);
 
   // Estado do modal de confirmação de validação
   const [modalValidarOpen, setModalValidarOpen] = useState(false);
@@ -205,16 +228,18 @@ export default function InscricoesProae() {
     }
   };
 
-  const carregarInscricoes = async () => {
-    if (!editalSelecionado?.id) return;
+  const carregarInscricoes = async (): Promise<AlunoInscrito[] | undefined> => {
+    if (!editalSelecionado?.id) return undefined;
 
     try {
       setIsLoading(true);
       const dados = await inscricaoServiceManager.listarInscritosPorEdital(editalSelecionado.id);
       setInscricoes(dados);
+      return dados;
     } catch (err: any) {
       console.error("Erro ao carregar inscrições:", err);
       setInscricoes([]);
+      return undefined;
     } finally {
       setIsLoading(false);
     }
@@ -382,7 +407,70 @@ export default function InscricoesProae() {
     return () => {
       cancelled = true;
     };
-  }, [isModalOpen, abaAtiva, inscricaoSelecionada?.inscricao_id]);
+  }, [isModalOpen, abaAtiva, inscricaoSelecionada?.inscricao_id, auditRefreshTick]);
+
+  useEffect(() => {
+    if (!inscricaoSelecionada) return;
+    setAdminStatusDraft(inscricaoSelecionada.status_inscricao || "");
+    setAdminObsDraft(inscricaoSelecionada.observacao_admin?.trim() ?? "");
+    const b =
+      inscricaoSelecionada.status_beneficio_edital &&
+      ADMIN_BENEFICIO_OPCOES.includes(
+        inscricaoSelecionada.status_beneficio_edital as (typeof ADMIN_BENEFICIO_OPCOES)[number],
+      )
+        ? inscricaoSelecionada.status_beneficio_edital
+        : "Pendente seleção";
+    setAdminBeneficioDraft(b);
+  }, [
+    inscricaoSelecionada?.inscricao_id,
+    inscricaoSelecionada?.status_inscricao,
+    inscricaoSelecionada?.observacao_admin,
+    inscricaoSelecionada?.status_beneficio_edital,
+  ]);
+
+  const podeEditarBeneficioEdital =
+    !!editalSelecionado && !editalSelecionado.is_formulario_geral && !editalSelecionado.is_formulario_renovacao;
+
+  const salvarStatusInscricaoAdmin = async () => {
+    if (!inscricaoSelecionada?.inscricao_id) return;
+    const id = String(inscricaoSelecionada.inscricao_id);
+    setSalvandoAdminStatus(true);
+    try {
+      await inscricaoServiceManager.adminAlterarStatusInscricao(id, {
+        status: adminStatusDraft,
+        observacao: adminObsDraft.trim() || undefined,
+      });
+      toast.success("Status da inscrição (análise) atualizado.");
+      const lista = await carregarInscricoes();
+      const fresh = lista?.find((i) => String(i.inscricao_id) === id);
+      if (fresh) setInscricaoSelecionada(fresh);
+      setAuditRefreshTick((t) => t + 1);
+    } catch (e: unknown) {
+      toast.error(getApiErrorMessage(e));
+    } finally {
+      setSalvandoAdminStatus(false);
+    }
+  };
+
+  const salvarBeneficioEditalAdmin = async () => {
+    if (!inscricaoSelecionada?.inscricao_id) return;
+    const id = String(inscricaoSelecionada.inscricao_id);
+    setSalvandoAdminBeneficio(true);
+    try {
+      await inscricaoServiceManager.adminAlterarBeneficioEdital(id, {
+        status_beneficio_edital: adminBeneficioDraft,
+      });
+      toast.success("Situação de benefício no edital atualizada.");
+      const lista = await carregarInscricoes();
+      const fresh = lista?.find((i) => String(i.inscricao_id) === id);
+      if (fresh) setInscricaoSelecionada(fresh);
+      setAuditRefreshTick((t) => t + 1);
+    } catch (e: unknown) {
+      toast.error(getApiErrorMessage(e));
+    } finally {
+      setSalvandoAdminBeneficio(false);
+    }
+  };
 
   const carregarStepsCompletos = async (alunoId: string) => {
     if (!editalSelecionado?.id || !alunoId) return;
@@ -456,7 +544,7 @@ export default function InscricoesProae() {
       }
     } catch (err: any) {
       console.error("Erro ao validar resposta:", err);
-      window.alert("Não foi possível validar a resposta. Tente novamente.");
+      toast.error("Não foi possível validar a resposta. Tente novamente.");
     } finally {
       setValidandoRespostas((prev) => {
         const clone = { ...prev };
@@ -554,7 +642,7 @@ export default function InscricoesProae() {
       }
       fecharModalEditar();
     } catch (err: any) {
-      window.alert(err?.message || "Erro ao editar resposta.");
+      toast.error(err?.message || "Erro ao editar resposta.");
     } finally {
       setEnviandoEdicao(false);
     }
@@ -566,11 +654,11 @@ export default function InscricoesProae() {
     // Validações
     if (!apenasInvalidar) {
       if (!invalidarParecer.trim()) {
-        window.alert("Informe o motivo/instrução de correção.");
+        toast.error("Informe o motivo/instrução de correção.");
         return;
       }
       if (!invalidarPrazo) {
-        window.alert("Informe o prazo para reenvio.");
+        toast.error("Informe o prazo para reenvio.");
         return;
       }
     }
@@ -612,7 +700,7 @@ export default function InscricoesProae() {
       }
     } catch (err: any) {
       console.error("Erro ao invalidar resposta:", err);
-      window.alert("Não foi possível invalidar a resposta. Tente novamente.");
+      toast.error("Não foi possível invalidar a resposta. Tente novamente.");
     } finally {
       setEnviandoInvalidacao(false);
       setValidandoRespostas((prev) => {
@@ -649,7 +737,7 @@ export default function InscricoesProae() {
       }
     } catch (err: any) {
       console.error("Erro ao alterar prazo de reenvio:", err);
-      window.alert("Não foi possível alterar o prazo. Tente novamente.");
+      toast.error("Não foi possível alterar o prazo. Tente novamente.");
     } finally {
       setValidandoRespostas((prev) => {
         const clone = { ...prev };
@@ -752,7 +840,7 @@ export default function InscricoesProae() {
       a.click();
       document.body.removeChild(a);
     } else {
-      window.alert("Não foi possível baixar o documento.");
+      toast.error("Não foi possível baixar o documento.");
     }
   };
 
@@ -768,7 +856,7 @@ export default function InscricoesProae() {
 
     const prazoDate = new Date(reabrirNovoPrazo);
     if (prazoDate.getTime() <= Date.now()) {
-      window.alert("O novo prazo deve ser uma data futura.");
+      toast.error("O novo prazo deve ser uma data futura.");
       return;
     }
 
@@ -796,7 +884,7 @@ export default function InscricoesProae() {
       await carregarInscricoes();
     } catch (err: any) {
       console.error("Erro ao reabrir complemento:", err);
-      window.alert(err.message || "Não foi possível reabrir o prazo. Tente novamente.");
+      toast.error(err.message || "Não foi possível reabrir o prazo. Tente novamente.");
     } finally {
       setEnviandoReabertura(false);
     }
@@ -804,7 +892,7 @@ export default function InscricoesProae() {
 
   const baixarPdfInscricoesAprovadasAnalise = async () => {
     if (!editalSelecionado?.id) {
-      window.alert("Selecione um edital primeiro.");
+      toast.error("Selecione um edital primeiro.");
       return;
     }
 
@@ -814,7 +902,7 @@ export default function InscricoesProae() {
     } catch (err: unknown) {
       console.error("Erro ao baixar PDF:", err);
       const msg = err instanceof Error ? err.message : "Não foi possível baixar o PDF.";
-      window.alert(msg);
+      toast.error(msg);
     } finally {
       setDownloadingPdfAnalise(false);
     }
@@ -822,7 +910,7 @@ export default function InscricoesProae() {
 
   const baixarPdfBeneficiariosEdital = async () => {
     if (!editalSelecionado?.id) {
-      window.alert("Selecione um edital primeiro.");
+      toast.error("Selecione um edital primeiro.");
       return;
     }
 
@@ -832,7 +920,7 @@ export default function InscricoesProae() {
     } catch (err: unknown) {
       console.error("Erro ao baixar PDF de beneficiários:", err);
       const msg = err instanceof Error ? err.message : "Não foi possível baixar o PDF.";
-      window.alert(msg);
+      toast.error(msg);
     } finally {
       setDownloadingPdfBeneficio(false);
     }
@@ -897,6 +985,7 @@ export default function InscricoesProae() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Toaster position="top-right" />
       <div className="inscricoes-proae-container">
         <header className="inscricoes-proae-header">
           <div className="header-content">
@@ -2129,6 +2218,165 @@ export default function InscricoesProae() {
                           </div>
                         </div>
 
+                        <div
+                          style={{
+                            marginBottom: "24px",
+                            padding: "16px",
+                            background: "#f0f9ff",
+                            borderRadius: "10px",
+                            border: "1px solid #bae6fd",
+                          }}
+                        >
+                          <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: 700, color: "#0c4a6e" }}>
+                            Decisões PROAE (análise e benefício)
+                          </h4>
+                          <p style={{ margin: "0 0 18px 0", fontSize: "12px", color: "#0369a1", lineHeight: 1.45 }}>
+                            Registre aqui o status da análise da inscrição e, quando couber, a situação do benefício no edital. O histórico abaixo é atualizado após salvar.
+                          </p>
+
+                          {/** Estilos compartilhados entre as duas subseções */}
+                          {(() => {
+                            const fieldMax = "480px";
+                            const labelStyle: CSSProperties = {
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              color: "#64748b",
+                              display: "block",
+                              marginBottom: "6px",
+                            };
+                            const controlStyle: CSSProperties = {
+                              width: "100%",
+                              maxWidth: fieldMax,
+                              padding: "8px 10px",
+                              borderRadius: "8px",
+                              border: "1px solid #cbd5e1",
+                              fontSize: "14px",
+                              boxSizing: "border-box",
+                            };
+                            const subTitleStyle: CSSProperties = {
+                              margin: "0 0 6px 0",
+                              fontSize: "13px",
+                              fontWeight: 700,
+                              color: "#0c4a6e",
+                            };
+                            const hintStyle: CSSProperties = {
+                              margin: "0 0 14px 0",
+                              fontSize: "12px",
+                              color: "#0369a1",
+                              lineHeight: 1.45,
+                            };
+                            const saveBtnStyle = (loading: boolean): CSSProperties => ({
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px",
+                              width: "100%",
+                              maxWidth: fieldMax,
+                              marginTop: "12px",
+                              padding: "10px 16px",
+                              borderRadius: "8px",
+                              border: "none",
+                              background: "#0284c7",
+                              color: "#fff",
+                              fontWeight: 600,
+                              fontSize: "13px",
+                              cursor: loading ? "wait" : "pointer",
+                              opacity: loading ? 0.88 : 1,
+                              boxSizing: "border-box",
+                            });
+                            return (
+                              <>
+                                <div style={{ marginBottom: "20px" }}>
+                                  <h5 style={subTitleStyle}>1. Análise da inscrição</h5>
+                                  <p style={hintStyle}>
+                                    Documentação, parecer e trâmite da inscrição — independente de ser beneficiário da vaga.
+                                  </p>
+                                  <div style={{ marginBottom: "12px" }}>
+                                    <label style={labelStyle}>Status da inscrição (análise)</label>
+                                    <select
+                                      value={adminStatusDraft}
+                                      onChange={(e) => setAdminStatusDraft(e.target.value)}
+                                      disabled={salvandoAdminStatus}
+                                      style={controlStyle}
+                                    >
+                                      {ADMIN_STATUS_OPCOES.map((s) => (
+                                        <option key={s} value={s}>
+                                          {s}
+                                        </option>
+                                      ))}
+                                      {adminStatusDraft &&
+                                      !ADMIN_STATUS_OPCOES.includes(adminStatusDraft as (typeof ADMIN_STATUS_OPCOES)[number]) ? (
+                                        <option value={adminStatusDraft}>{adminStatusDraft} (valor atual)</option>
+                                      ) : null}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label style={labelStyle}>Observação / motivo (opcional, visível ao aluno)</label>
+                                    <textarea
+                                      value={adminObsDraft}
+                                      onChange={(e) => setAdminObsDraft(e.target.value)}
+                                      disabled={salvandoAdminStatus}
+                                      rows={3}
+                                      placeholder="Ex.: Ajuste solicitado pela comissão…"
+                                      style={{ ...controlStyle, resize: "vertical", minHeight: "72px" }}
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => void salvarStatusInscricaoAdmin()}
+                                    disabled={salvandoAdminStatus}
+                                    style={saveBtnStyle(salvandoAdminStatus)}
+                                  >
+                                    {salvandoAdminStatus ? (
+                                      <Loader2 style={{ width: "16px", height: "16px", animation: "spin 0.8s linear infinite" }} />
+                                    ) : (
+                                      <Save style={{ width: "16px", height: "16px" }} />
+                                    )}
+                                    Salvar análise da inscrição
+                                  </button>
+                                </div>
+
+                                {podeEditarBeneficioEdital ? (
+                                  <div style={{ paddingTop: "18px", borderTop: "1px solid #bae6fd" }}>
+                                    <h5 style={subTitleStyle}>2. Benefício no edital</h5>
+                                    <p style={hintStyle}>
+                                      Homologação como beneficiário da vaga — pode diferir do status da análise acima.
+                                    </p>
+                                    <div>
+                                      <label style={labelStyle}>Situação do benefício</label>
+                                      <select
+                                        value={adminBeneficioDraft}
+                                        onChange={(e) => setAdminBeneficioDraft(e.target.value)}
+                                        disabled={salvandoAdminBeneficio}
+                                        style={controlStyle}
+                                      >
+                                        {ADMIN_BENEFICIO_OPCOES.map((s) => (
+                                          <option key={s} value={s}>
+                                            {s}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => void salvarBeneficioEditalAdmin()}
+                                      disabled={salvandoAdminBeneficio}
+                                      style={saveBtnStyle(salvandoAdminBeneficio)}
+                                    >
+                                      {salvandoAdminBeneficio ? (
+                                        <Loader2 style={{ width: "16px", height: "16px", animation: "spin 0.8s linear infinite" }} />
+                                      ) : (
+                                        <Save style={{ width: "16px", height: "16px" }} />
+                                      )}
+                                      Salvar benefício no edital
+                                    </button>
+                                  </div>
+                                ) : null}
+                              </>
+                            );
+                          })()}
+                        </div>
+
                         <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: 700, color: "#334155", display: "flex", alignItems: "center", gap: "8px" }}>
                           <User style={{ width: "18px", height: "18px", color: "#2563eb" }} />
                           Dados do estudante
@@ -2220,7 +2468,8 @@ export default function InscricoesProae() {
                                   <strong>{ev.status_novo}</strong>
                                 </p>
                                 <p style={{ margin: "0 0 4px 0", fontSize: "12px", color: "#64748b" }}>
-                                  Por: <code style={{ fontSize: "12px", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px" }}>{formatActorIdAudit(ev.actor_usuario_id)}</code>
+                                  Por:{" "}
+                                <span style={{ fontWeight: 600, color: "#334155" }}>{formatActorAuditDisplay(ev)}</span>
                                 </p>
                                 {ev.observacao ? (
                                   <p style={{ margin: 0, fontSize: "13px", color: "#475569", fontStyle: "italic" }}>Obs.: {ev.observacao}</p>

@@ -4,14 +4,31 @@ import arrowDownIcon from "@/assets/icons/arrow-down-item.svg";
 import uploadIcon from "@/assets/icons/upload.svg";
 import React, { useState } from "react";
 import { Pendencia } from "@/types/pendencias";
+import DocumentViewerModal from "@/components/DocumentViewerModal/DocumentViewerModal";
+import axios from "axios";
+import { API_BASE_URL } from "@/config/api";
+import toast from "react-hot-toast";
 
-interface PendenciaItemProps extends Omit<Pendencia, "inscricao_id"> {}
+interface PendenciaItemProps extends Omit<Pendencia, "inscricao_id"> {
+  onUpdated?: () => Promise<void> | void;
+  onGoToAjuste?: (stepId?: number | null, perguntaId?: number | null) => void;
+}
 
 const PendenciaItem: React.FC<PendenciaItemProps> = ({
   titulo_edital,
+  vaga_beneficio,
   documentos: pendencias,
+  ajustes_resposta,
+  onUpdated,
+  onGoToAjuste,
 }) => {
+  const totalAjustes = ajustes_resposta?.length ?? 0;
+  const totalItensPendentes = pendencias.length + totalAjustes;
+
   const [expandido, setExpandido] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFileRef, setViewerFileRef] = useState<string | null>(null);
+  const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
 
   const alternarExpansao = () => setExpandido(!expandido);
 
@@ -37,6 +54,40 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
     });
   };
 
+  const handleOpenViewer = (fileRef?: string | null) => {
+    if (!fileRef) {
+      toast.error("Este documento ainda não possui arquivo enviado.");
+      return;
+    }
+    setViewerFileRef(fileRef);
+    setViewerOpen(true);
+  };
+
+  const handleResubmit = async (documentoId: string, tipoDocumento: string, file: File) => {
+    setUploadingDocId(documentoId);
+    try {
+      const formData = new FormData();
+      formData.append("files", file);
+      formData.append("tipo_documento", tipoDocumento);
+
+      await axios.put(`${API_BASE_URL}/documentos/resubmissao/${documentoId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      });
+
+      toast.success("Documento reenviado com sucesso para nova análise.");
+      await onUpdated?.();
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ??
+        error?.message ??
+        "Não foi possível reenviar o documento.";
+      toast.error(message);
+    } finally {
+      setUploadingDocId(null);
+    }
+  };
+
   return (
     <div className="w-full mb-4 rounded-lg border border-gray-300 bg-white shadow-sm hover:shadow-md transition-all duration-200">
       <div
@@ -47,6 +98,11 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
           <h2 className="text-base md:text-lg font-semibold text-[#183b4e] leading-tight">
             {titulo_edital}
           </h2>
+          {vaga_beneficio && (
+            <span className="text-sm text-gray-600 font-medium">
+              Benefício: {vaga_beneficio}
+            </span>
+          )}
           <div className="inline-flex items-center gap-2 text-sm font-medium text-red-600">
             <svg
               className="w-4 h-4"
@@ -61,8 +117,8 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
               />
             </svg>
             <span>
-              {pendencias.length}{" "}
-              {pendencias.length === 1 ? "pendência" : "pendências"}
+              {totalItensPendentes}{" "}
+              {totalItensPendentes === 1 ? "pendência" : "pendências"}
             </span>
           </div>
         </div>
@@ -85,6 +141,70 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
         <div className="border-t border-gray-200 bg-[#EDF2F7]">
           <div className="p-5">
             <ul className="space-y-4 max-h-[32rem] overflow-y-auto pr-2 custom-scrollbar">
+              {(ajustes_resposta ?? []).map((ajuste, index) => (
+                <li
+                  key={`ajuste-${ajuste.resposta_id}-${index}`}
+                  className="bg-amber-50 rounded-lg border border-amber-200 p-4"
+                >
+                  <div className="space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className="text-xs font-semibold text-amber-800 uppercase tracking-wide min-w-[120px]">
+                        Tipo:
+                      </span>
+                      <p className="text-sm font-medium text-amber-950">
+                        {ajuste.tipo_ajuste === "NOVA_PERGUNTA"
+                          ? "Nova pergunta de complemento"
+                          : "Resposta para reenvio/correção"}
+                      </p>
+                    </div>
+                    {ajuste.step_texto && (
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="text-xs font-semibold text-amber-800 uppercase tracking-wide min-w-[120px]">
+                          Etapa:
+                        </span>
+                        <p className="text-sm text-amber-950">{ajuste.step_texto}</p>
+                      </div>
+                    )}
+                    {ajuste.pergunta_texto && (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+                          Pergunta:
+                        </span>
+                        <p className="text-sm text-amber-950">{ajuste.pergunta_texto}</p>
+                      </div>
+                    )}
+                    {ajuste.parecer && (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+                          Parecer da PROAE:
+                        </span>
+                        <p className="text-sm text-amber-950">{ajuste.parecer}</p>
+                      </div>
+                    )}
+                    {ajuste.prazo_reenvio && (
+                      <p className="text-xs text-amber-900 m-0">
+                        Prazo para ajuste: {formatDate(ajuste.prazo_reenvio)}
+                      </p>
+                    )}
+                    {ajuste.prazo_resposta_nova_pergunta && (
+                      <p className="text-xs text-amber-900 m-0">
+                        Prazo para responder: {formatDate(ajuste.prazo_resposta_nova_pergunta)}
+                      </p>
+                    )}
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onGoToAjuste?.(ajuste.step_id, ajuste.pergunta_id)
+                        }
+                        className="rounded-md bg-amber-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-800"
+                      >
+                        Corrigir agora
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
               {pendencias.map((pendencia, index) => (
                 <li
                   key={pendencia.documento_id || index}
@@ -157,6 +277,7 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
                         className="group flex items-center justify-center w-11 h-11 rounded-lg border-2 border-[#183b4e] bg-white hover:bg-[#183b4e] transition-all duration-200"
                         aria-label="Visualizar arquivo"
                         title="Visualizar documento"
+                        onClick={() => handleOpenViewer(pendencia.documento_url)}
                       >
                         <img
                           src={fileIcon}
@@ -165,25 +286,60 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
                         />
                       </button>
 
-                      <button
-                        className="group flex items-center justify-center w-11 h-11 rounded-lg border-2 border-green-600 bg-white hover:bg-green-600 transition-all duration-200"
+                      <label
+                        className={`group flex items-center justify-center w-11 h-11 rounded-lg border-2 border-green-600 bg-white transition-all duration-200 ${
+                          uploadingDocId === String(pendencia.documento_id)
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-green-600 cursor-pointer"
+                        }`}
                         aria-label="Fazer upload"
                         title="Reenviar documento"
                       >
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          className="hidden"
+                          disabled={uploadingDocId === String(pendencia.documento_id)}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            void handleResubmit(
+                              String(pendencia.documento_id),
+                              pendencia.tipo_documento,
+                              file,
+                            );
+                            e.currentTarget.value = "";
+                          }}
+                        />
                         <img
                           src={uploadIcon}
                           alt="Upload"
                           className="w-5 h-5 opacity-80 group-hover:opacity-100 group-hover:brightness-0 group-hover:invert transition-all"
                         />
-                      </button>
+                      </label>
                     </div>
                   </div>
                 </li>
               ))}
+              {totalItensPendentes === 0 && (
+                <li className="bg-white rounded-lg border border-gray-200 p-4">
+                  <p className="text-sm text-gray-600 m-0">
+                    Não há itens pendentes nesta inscrição.
+                  </p>
+                </li>
+              )}
             </ul>
           </div>
         </div>
       )}
+      <DocumentViewerModal
+        open={viewerOpen}
+        fileRef={viewerFileRef}
+        onClose={() => {
+          setViewerOpen(false);
+          setViewerFileRef(null);
+        }}
+      />
     </div>
   );
 };

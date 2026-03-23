@@ -5,13 +5,18 @@ import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { API_BASE_URL } from "@/config/api";
 import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
 import { formularioGeralService } from "@/services/FormularioGeralService/formularioGeral.service";
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useMemo, useRef, useCallback } from "react";
+import {
+  buildPortalNotifications,
+  countUrgentNotifications,
+} from "./buildPortalNotifications";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
 import { User, BookOpen, FileText, Award, TrendingUp, Clock, CheckCircle, AlertCircle, Bell, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingSpin } from "@/components/Loading/LoadingScreen";
+import toast from "react-hot-toast";
 
 interface ResponseData {
   dados: {
@@ -30,6 +35,9 @@ export default function PortalAluno() {
   const [podeSeInscreverEmOutros, setPodeSeInscreverEmOutros] = useState<boolean>(true);
   const [renovacaoPendente, setRenovacaoPendente] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifWrapRef = useRef<HTMLDivElement>(null);
+  const prevUrgentCountRef = useRef(0);
 
   useEffect(() => {
     if (user) {
@@ -113,6 +121,69 @@ export default function PortalAluno() {
     };
   }, [userId]);
 
+  const hasPendenciasLike = (inscricao: any) => {
+    const totalPendencias = Number(inscricao?.total_pendencias ?? 0);
+    const totalNovas = Number(inscricao?.total_novas_perguntas ?? 0);
+    const status = String(inscricao?.status_inscricao ?? "").toLowerCase();
+    const statusIndicaAjuste =
+      status.includes("ajuste") ||
+      status.includes("complemento") ||
+      status.includes("regulariza") ||
+      status.includes("pendente_regularizacao");
+    return (
+      inscricao?.possui_pendencias === true ||
+      inscricao?.possui_novas_perguntas_pendentes === true ||
+      totalPendencias > 0 ||
+      totalNovas > 0 ||
+      statusIndicaAjuste
+    );
+  };
+
+  const inscricoesComPendenciaCount =
+    inscriptions?.filter((i) => hasPendenciasLike(i)).length ?? 0;
+
+  const portalNotifications = useMemo(
+    () => buildPortalNotifications(inscriptions, renovacaoPendente),
+    [inscriptions, renovacaoPendente],
+  );
+  const urgentNotifCount = useMemo(
+    () => countUrgentNotifications(portalNotifications),
+    [portalNotifications],
+  );
+
+  const closeNotif = useCallback(() => setNotifOpen(false), []);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const el = notifWrapRef.current;
+      if (el && !el.contains(e.target as Node)) closeNotif();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeNotif();
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [notifOpen, closeNotif]);
+
+  useEffect(() => {
+    const prev = prevUrgentCountRef.current;
+    if (urgentNotifCount > prev) {
+      const novas = urgentNotifCount - prev;
+      toast(
+        novas === 1
+          ? "Você recebeu 1 nova notificação de pendência."
+          : `Você recebeu ${novas} novas notificações de pendência.`,
+        { icon: "🔔" },
+      );
+    }
+    prevUrgentCountRef.current = urgentNotifCount;
+  }, [urgentNotifCount]);
+
   // Estatísticas do dashboard
   const stats = [
     {
@@ -142,7 +213,7 @@ export default function PortalAluno() {
     {
       icon: Clock,
       label: "Pendências",
-      value: inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0,
+      value: inscricoesComPendenciaCount,
       color: "bg-amber-500",
       bgColor: "bg-amber-50",
       textColor: "text-amber-700",
@@ -176,10 +247,58 @@ export default function PortalAluno() {
             </div>
 
             <div className="header-actions">
-              <div className="notification-icon">
-                <Bell className="w-5 h-5" />
-                {(inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0) > 0 && (
-                  <span className="notification-badge">{inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0}</span>
+              <div className="notification-wrap" ref={notifWrapRef}>
+                <button
+                  type="button"
+                  className="notification-icon"
+                  aria-label="Notificações"
+                  aria-expanded={notifOpen}
+                  aria-haspopup="true"
+                  onClick={() => setNotifOpen((o) => !o)}
+                >
+                  <Bell className="w-5 h-5" />
+                  {urgentNotifCount > 0 && (
+                    <span className="notification-badge">
+                      {urgentNotifCount > 9 ? "9+" : urgentNotifCount}
+                    </span>
+                  )}
+                </button>
+                {notifOpen && (
+                  <div className="notification-dropdown" role="region" aria-label="Lista de notificações">
+                    <div className="notification-dropdown-header">Notificações</div>
+                    <p className="notification-dropdown-hint">
+                      Resumo com base nas suas inscrições e renovação. Itens em vermelho/laranja pedem ação.
+                    </p>
+                    {portalNotifications.length === 0 ? (
+                      <p className="notification-dropdown-empty">Nada a mostrar no momento.</p>
+                    ) : (
+                      <ul className="notification-list">
+                        {portalNotifications.map((n) => (
+                          <li key={n.id}>
+                            {n.href ? (
+                              <button
+                                type="button"
+                                className={`notification-item notification-item--${n.variant}`}
+                                onClick={() => {
+                                  navigate(n.href!);
+                                  closeNotif();
+                                }}
+                              >
+                                <span className="notification-item-title">{n.title}</span>
+                                <span className="notification-item-body">{n.body}</span>
+                                <span className="notification-item-cta">Abrir →</span>
+                              </button>
+                            ) : (
+                              <div className={`notification-item notification-item--${n.variant} notification-item--static`}>
+                                <span className="notification-item-title">{n.title}</span>
+                                <span className="notification-item-body">{n.body}</span>
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -313,8 +432,8 @@ export default function PortalAluno() {
                 <div className="status-content">
                   <h3 className="status-title">Pendências</h3>
                   <p className="status-description">
-                    {inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0} item
-                    {(inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0) !== 1 ? "s" : ""} para resolver
+                    {inscricoesComPendenciaCount}{" "}
+                    {inscricoesComPendenciaCount === 1 ? "item" : "itens"} para resolver
                   </p>
                 </div>
               </div>

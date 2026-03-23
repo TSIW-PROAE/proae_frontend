@@ -3,6 +3,7 @@ import { AuthContext } from '@/context/AuthContext'
 import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
 import AuthService from '@/services/AuthService/auth.service'
 import { CadastroFormData } from '@/pages/paginaProae/CadastroProae/CadastroProae';
+import { hasAdminRole, normalizeRoles } from '@/utils/authRoles';
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,12 +16,14 @@ function AuthProvider({children}: {children: React.ReactNode}){
     try {
       const response = await authService.login(data);
       const aprovado = response.user?.aprovado ?? response.user?.adminAprovado ?? response.adminAprovado;
+      // API / TypeORM podem mandar roles como string "aluno,admin" — não descartar com Array.isArray
+      const roles = normalizeRoles(response.user?.roles);
       const fillUserInfo: UserInfo = {
         email: response.user.email,
         id: String(response.user.usuario_id),
         nome: response.user.nome,
-        roles: response.user.roles,
-        aprovado: response.user.roles?.includes("admin") ? Boolean(aprovado) : undefined
+        roles,
+        aprovado: hasAdminRole(roles) ? Boolean(aprovado) : undefined
       }
       setUserInfo(fillUserInfo);
       setIsAuthenticated(true);
@@ -69,14 +72,14 @@ function AuthProvider({children}: {children: React.ReactNode}){
             if (!response.valid) {
               throw new Error("Token inválido");
             }
-            console.log(response, "checkout response")
             const aprovado = response.user?.aprovado ?? response.user?.adminAprovado ?? response.adminAprovado;
+            const roles = normalizeRoles(response.user?.roles);
              const fillUserInfo: UserInfo = {
                 email: response.user.email,
-                id: response.user.usuario_id,
+                id: String(response.user.usuario_id),
                 nome: response.user.nome,
-                roles: response.user.roles,
-                aprovado: response.user.roles?.includes("admin") ? Boolean(aprovado) : undefined
+                roles,
+                aprovado: hasAdminRole(roles) ? Boolean(aprovado) : undefined
               }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);

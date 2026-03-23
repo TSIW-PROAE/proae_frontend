@@ -1,19 +1,11 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Loader2, ExternalLink, History } from "lucide-react";
-import toast from "react-hot-toast";
 import { alunoService } from "@/services/AlunoService/alunoService";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
 import type { AdminAlunoResumo, AdminAlunoResumoInscricao } from "@/types/adminAlunoResumo";
 import type { InscricaoStatusAuditEntry } from "@/types/inscricaoStatusAudit";
 import "./CentralEstudanteDrawer.css";
-
-const STATUS_OPCOES = [
-  "Inscrição Pendente",
-  "Inscrição Aprovada",
-  "Inscrição Negada",
-  "Ajuste Necessário",
-] as const;
 
 /** Alinhado ao enum `StatusBeneficioEdital` do backend */
 const BENEFICIO_OPCOES = ["Pendente seleção", "Beneficiário no edital", "Não beneficiário"] as const;
@@ -38,7 +30,10 @@ function hrefDetalheAdmin(row: AdminAlunoResumoInscricao, nivelAluno: string): s
   return `/portal-proae/inscricoes?editalId=${eid}&expandInscricao=${id}`;
 }
 
-function formatActorId(id: string | null): string {
+function formatActorDisplay(entry: { actor_nome?: string | null; actor_usuario_id: string | null }): string {
+  const nome = entry.actor_nome?.trim();
+  if (nome) return nome;
+  const id = entry.actor_usuario_id;
   if (!id) return "—";
   if (id.length <= 12) return id;
   return `${id.slice(0, 8)}…${id.slice(-4)}`;
@@ -112,7 +107,7 @@ function InscricaoAuditTimeline({ inscricaoId }: { inscricaoId: number }) {
               <span className="central-audit-status novo">{ev.status_novo}</span>
             </p>
             <p className="central-audit-actor">
-              Por: <code>{formatActorId(ev.actor_usuario_id)}</code>
+              Por: <span className="central-audit-actor-name">{formatActorDisplay(ev)}</span>
             </p>
             {ev.observacao ? <p className="central-audit-obs">Obs.: {ev.observacao}</p> : null}
           </div>
@@ -122,15 +117,14 @@ function InscricaoAuditTimeline({ inscricaoId }: { inscricaoId: number }) {
   );
 }
 
-function InscricaoRowEditor({
+/** Somente leitura: dados consolidados + auditoria. Decisões (status / benefício) ficam em Inscrições por edital ou FG/FR. */
+function InscricaoRowResumo({
   row,
   nivelAluno,
-  onAtualizado,
   auditGlobalNonce,
 }: {
   row: AdminAlunoResumoInscricao;
   nivelAluno: string;
-  onAtualizado: () => void;
   auditGlobalNonce: number;
 }) {
   const isEditalComBeneficio = row.processo_tipo === "EDITAL";
@@ -138,57 +132,6 @@ function InscricaoRowEditor({
     row.status_beneficio_edital && BENEFICIO_OPCOES.includes(row.status_beneficio_edital as (typeof BENEFICIO_OPCOES)[number])
       ? row.status_beneficio_edital
       : "Pendente seleção";
-
-  const [status, setStatus] = useState(row.status_inscricao);
-  const [observacao, setObservacao] = useState(row.observacao_admin ?? "");
-  const [statusBeneficio, setStatusBeneficio] = useState(beneficioInicial);
-  const [salvandoAnalise, setSalvandoAnalise] = useState(false);
-  const [salvandoBeneficio, setSalvandoBeneficio] = useState(false);
-  const [auditKey, setAuditKey] = useState(0);
-
-  useEffect(() => {
-    setStatus(row.status_inscricao);
-    setObservacao(row.observacao_admin ?? "");
-    const b =
-      row.status_beneficio_edital && BENEFICIO_OPCOES.includes(row.status_beneficio_edital as (typeof BENEFICIO_OPCOES)[number])
-        ? row.status_beneficio_edital
-        : "Pendente seleção";
-    setStatusBeneficio(b);
-  }, [row.inscricao_id, row.status_inscricao, row.observacao_admin, row.status_beneficio_edital]);
-
-  const salvarAnalise = async () => {
-    setSalvandoAnalise(true);
-    try {
-      await inscricaoServiceManager.adminAlterarStatusInscricao(String(row.inscricao_id), {
-        status,
-        observacao: observacao.trim() || undefined,
-      });
-      toast.success("Status da inscrição (análise) atualizado.");
-      setAuditKey((k) => k + 1);
-      onAtualizado();
-    } catch (e: unknown) {
-      const msg = e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : "Falha ao salvar";
-      toast.error(msg);
-    } finally {
-      setSalvandoAnalise(false);
-    }
-  };
-
-  const salvarBeneficio = async () => {
-    setSalvandoBeneficio(true);
-    try {
-      await inscricaoServiceManager.adminAlterarBeneficioEdital(String(row.inscricao_id), {
-        status_beneficio_edital: statusBeneficio,
-      });
-      toast.success("Situação de benefício no edital atualizada.");
-      onAtualizado();
-    } catch (e: unknown) {
-      const msg = e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : "Falha ao salvar benefício";
-      toast.error(msg);
-    } finally {
-      setSalvandoBeneficio(false);
-    }
-  };
 
   return (
     <div className="central-inscricao-card">
@@ -225,8 +168,11 @@ function InscricaoRowEditor({
         rel="noopener noreferrer"
       >
         <ExternalLink className="w-3.5 h-3.5" />
-        Abrir detalhe (respostas e documentos)
+        Abrir em gerenciamento (validar respostas e alterar status / benefício)
       </a>
+      <p className="central-form-section-hint" style={{ marginTop: "10px", marginBottom: 0 }}>
+        A Central concentra apenas a visualização e o histórico. Para registrar decisões de análise ou de benefício no edital, use o link acima.
+      </p>
 
       <div className="central-audit-section">
         <h4 className="central-audit-title">
@@ -234,62 +180,10 @@ function InscricaoRowEditor({
           Histórico de alterações do status da inscrição (auditoria)
         </h4>
         <InscricaoAuditTimeline
-          key={`${row.inscricao_id}-${auditKey}-${auditGlobalNonce}`}
+          key={`${row.inscricao_id}-${auditGlobalNonce}`}
           inscricaoId={row.inscricao_id}
         />
       </div>
-
-      <div className="central-form-section">
-        <h4 className="central-form-section-title">1) Análise da inscrição</h4>
-        <p className="central-form-section-hint">Documentação, parecer e trâmite da inscrição — independente de ser beneficiário da vaga.</p>
-        <label className="central-field-label">Status da inscrição (análise)</label>
-        <select className="central-select" value={status} onChange={(e) => setStatus(e.target.value)} disabled={salvandoAnalise}>
-          {STATUS_OPCOES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <label className="central-field-label">Observação / motivo (opcional, visível ao aluno)</label>
-        <textarea
-          className="central-textarea"
-          rows={3}
-          value={observacao}
-          onChange={(e) => setObservacao(e.target.value)}
-          disabled={salvandoAnalise}
-          placeholder="Ex.: Ajuste solicitado pela comissão…"
-        />
-        <button type="button" className="central-btn-salvar" onClick={() => void salvarAnalise()} disabled={salvandoAnalise}>
-          {salvandoAnalise ? <Loader2 className="w-4 h-4 animate-spin inline mr-1" /> : null}
-          Salvar análise da inscrição
-        </button>
-      </div>
-
-      {isEditalComBeneficio ? (
-        <div className="central-form-section">
-          <h4 className="central-form-section-title">2) Benefício no edital (gestão da vaga)</h4>
-          <p className="central-form-section-hint">
-            Define se o estudante foi homologado como beneficiário daquela vaga/edital. Pode diferir do status da inscrição (ex.: inscrição aprovada na análise, mas ainda pendente de seleção final).
-          </p>
-          <label className="central-field-label">Situação do benefício</label>
-          <select
-            className="central-select"
-            value={statusBeneficio}
-            onChange={(e) => setStatusBeneficio(e.target.value)}
-            disabled={salvandoBeneficio}
-          >
-            {BENEFICIO_OPCOES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <button type="button" className="central-btn-salvar central-btn-salvar--secondary" onClick={() => void salvarBeneficio()} disabled={salvandoBeneficio}>
-            {salvandoBeneficio ? <Loader2 className="w-4 h-4 animate-spin inline mr-1" /> : null}
-            Salvar benefício no edital
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -396,18 +290,17 @@ export default function CentralEstudanteDrawer({ alunoId, isOpen, onClose }: Cen
               <section className="central-inscricoes-bloco">
                 <h3>Inscrições ({resumo!.inscricoes.length})</h3>
                 <p className="central-inscricoes-hint">
-                  <strong>Análise da inscrição</strong> e <strong>benefício no edital</strong> são coisas diferentes: a primeira trata da documentação e do parecer da inscrição; a segunda, da homologação como beneficiário da vaga (somente editais com benefício).
+                  Visão consolidada dos processos e do histórico de status. Para alterar análise ou benefício no edital, abra o gerenciamento pelo link em cada inscrição (Inscrições por edital, Form. Geral ou Renovação).
                 </p>
                 {resumo!.inscricoes.length === 0 ? (
                   <p className="central-vazio">Nenhuma inscrição encontrada.</p>
                 ) : (
                   resumo!.inscricoes.map((row) => (
-                    <InscricaoRowEditor
+                    <InscricaoRowResumo
                       key={row.inscricao_id}
                       row={row}
                       nivelAluno={a.nivel_academico ?? "Graduação"}
                       auditGlobalNonce={auditGlobalNonce}
-                      onAtualizado={() => void carregar()}
                     />
                   ))
                 )}

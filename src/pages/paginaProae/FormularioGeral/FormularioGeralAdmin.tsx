@@ -222,14 +222,21 @@ export default function FormularioGeralAdmin() {
     setSaving(true);
     try {
       const stepsPayload = buildStepsPayload();
-      await formularioGeralService.criarFormularioGeral({
+      const created = await formularioGeralService.criarFormularioGeral({
         titulo_edital: titulo.trim(),
         nivel_academico: nivelAdmin,
         descricao: descricao.trim() || undefined,
         steps: stepsPayload,
       });
       toast.success("Formulário geral criado com status Aberto.");
-      await load();
+      if (created?.id) {
+        setData(created);
+        setTitulo(created.titulo_edital ?? titulo.trim());
+        setDescricao(created.descricao ?? "");
+        setSteps(stepsFromBackend(created));
+      } else {
+        await load();
+      }
     } catch (e: any) {
       toast.error(e?.message ?? e?.mensagem ?? "Erro ao criar");
     } finally {
@@ -348,9 +355,29 @@ export default function FormularioGeralAdmin() {
         Gerenciamento exclusivo do formulário geral. Status, etapas, perguntas e configuração — tudo nesta página.
       </p>
 
-      <div className="mb-4 max-w-xs">
+      <div className="mb-6 w-full max-w-md space-y-2">
+        <div>
+          <label
+            htmlFor="fg-admin-nivel-academico"
+            className="block text-sm font-medium text-gray-800"
+          >
+            Nível acadêmico
+          </label>
+          <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+            Graduação e Pós-graduação têm formulário geral e inscrições separados. Escolha o nível para editar ou ver inscrições.
+          </p>
+        </div>
+        {/* Select sem label interno: evita borda “outlined” cortando o texto do rótulo (HeroUI) */}
         <Select
-          label="Nível acadêmico (FG separado por nível)"
+          id="fg-admin-nivel-academico"
+          aria-label="Nível acadêmico"
+          variant="bordered"
+          radius="lg"
+          fullWidth
+          classNames={{
+            base: "w-full",
+            trigger: "min-h-12 h-12 bg-white border-gray-200 data-[hover=true]:border-gray-300",
+          }}
           selectedKeys={new Set([nivelAdmin])}
           onSelectionChange={(keys) => {
             const v = Array.from(keys)[0] as string;

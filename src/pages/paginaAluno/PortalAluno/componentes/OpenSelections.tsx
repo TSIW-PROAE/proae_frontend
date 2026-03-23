@@ -7,18 +7,20 @@ import {
   ArrowRight,
   AlertCircle,
   BookOpen,
-  CheckCircle,
 } from "lucide-react";
 
 interface Edital {
   id: string;
-  tipo_edital: string;
+  tipo_edital?: string;
   descricao: string;
   edital_url: string[];
   titulo_edital: string;
-  quantidade_bolsas: number;
+  /** Soma de vagas por benefício (vem do backend a partir das linhas de vaga). */
+  quantidade_bolsas?: number;
+  /** Quantidade de benefícios/vagas cadastrados no edital. */
+  numero_beneficios?: number;
   status_edital: string;
-  etapas: any[];
+  etapas?: any[];
   /** ISO date (YYYY-MM-DD) — após esta data o vínculo com o edital não está mais ativo */
   data_fim_vigencia?: string | null;
 }
@@ -37,7 +39,11 @@ interface OpenSelectionsProps {
 }
 
 const OpenSelectionCard: React.FC<
-  Edital & { podeSeInscreverEmOutros?: boolean; jaInscrito?: boolean }
+  Edital & {
+    podeSeInscreverEmOutros?: boolean;
+    /** Quantas inscrições o aluno já tem neste edital (podem ser benefícios diferentes). */
+    inscricoesNesteEdital?: number;
+  }
 > = ({
   id,
   titulo_edital,
@@ -45,9 +51,10 @@ const OpenSelectionCard: React.FC<
   edital_url: _edital_url,
   descricao,
   quantidade_bolsas,
+  numero_beneficios,
   data_fim_vigencia,
   podeSeInscreverEmOutros = true,
-  jaInscrito = false,
+  inscricoesNesteEdital = 0,
 }) => {
   const navigate = useNavigate();
   const statusLower = status_edital ? status_edital.toLowerCase() : "";
@@ -81,7 +88,15 @@ const OpenSelectionCard: React.FC<
         <div className="selection-card-meta">
           <div className="meta-item">
             <Users className="w-3 h-3" />
-            <span>{quantidade_bolsas || 0} vagas</span>
+            <span>
+              {quantidade_bolsas ?? 0} vagas
+              {(numero_beneficios ?? 0) > 1 ? (
+                <span className="text-gray-500 font-normal">
+                  {" "}
+                  · {numero_beneficios} benefícios
+                </span>
+              ) : null}
+            </span>
           </div>
         </div>
 
@@ -106,22 +121,21 @@ const OpenSelectionCard: React.FC<
 
       <div className="selection-card-footer">
         {isOpen ? (
-          jaInscrito ? (
-            <button
-              className="selection-action-button enrolled"
-              disabled
-              title="Você já está inscrito neste edital"
-            >
-              <CheckCircle className="w-3 h-3" />
-              <span>Já Inscrito</span>
-            </button>
-          ) : podeSeInscreverEmOutros ? (
+          podeSeInscreverEmOutros ? (
             <button
               onClick={() => navigate(`/questionario/${id}`)}
               className="selection-action-button primary"
-              title="Realizar Inscrição"
+              title={
+                inscricoesNesteEdital > 0
+                  ? "Inscrever em outro benefício deste mesmo processo"
+                  : "Realizar inscrição"
+              }
             >
-              <span>Inscrever-se</span>
+              <span>
+                {inscricoesNesteEdital > 0
+                  ? "Inscrever em outro benefício"
+                  : "Inscrever-se"}
+              </span>
               <ArrowRight className="w-3 h-3" />
             </button>
           ) : (
@@ -152,9 +166,12 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
   inscricoesAluno = [],
   podeSeInscreverEmOutros = true,
 }) => {
-  const editaisInscritos = new Set(
-    (inscricoesAluno || []).map((insc) => insc.edital_id || insc.id),
-  );
+  const contagemInscricoesPorEdital = (editalId: string | number): number => {
+    const alvo = String(editalId);
+    return (inscricoesAluno || []).filter(
+      (insc) => String(insc.edital_id ?? "") === alvo,
+    ).length;
+  };
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -218,7 +235,7 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
               key={`open-${edital.id}`}
               {...edital}
               podeSeInscreverEmOutros={podeSeInscreverEmOutros}
-              jaInscrito={editaisInscritos.has(edital.id)}
+              inscricoesNesteEdital={contagemInscricoesPorEdital(edital.id)}
             />
           ))}
 
@@ -227,7 +244,7 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
               key={`closed-${edital.id}`}
               {...edital}
               podeSeInscreverEmOutros={podeSeInscreverEmOutros}
-              jaInscrito={editaisInscritos.has(edital.id)}
+              inscricoesNesteEdital={contagemInscricoesPorEdital(edital.id)}
             />
           ))}
         </div>
