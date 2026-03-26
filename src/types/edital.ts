@@ -12,7 +12,7 @@ export interface DocumentoEdital {
 
 export interface Vaga {
   id?: string;
-  edital_id: string;
+  edital_id: number;
   beneficio: string;
   descricao_beneficio: string;
   numero_vagas: number;

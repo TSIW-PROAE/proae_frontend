@@ -297,7 +297,7 @@ const ModalEditarEdital: React.FC<ModalEditarEditalProps> = ({ edital, isOpen, o
           });
         } else {
           const created = await editalService.criarVaga({
-            edital_id: edital.id,
+            edital_id: Number(edital.id),
             beneficio: vaga.value.beneficio,
             descricao_beneficio: vaga.value.descricao_beneficio,
             numero_vagas: vaga.value.numero_vagas,
