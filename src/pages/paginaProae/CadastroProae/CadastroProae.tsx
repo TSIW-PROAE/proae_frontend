@@ -59,7 +59,7 @@ export default function CadastroProae() {
             }
             
         } catch (error) {
-                toast.error((error as DefaultResponse).mensagem || "Erro ao realizar cadastro. Tente novamente.");
+                toast.error((error as DefaultResponse)?.message || "Erro ao realizar cadastro. Tente novamente.");
         }finally{
             setIsLoading(false);
         }

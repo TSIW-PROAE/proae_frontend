@@ -11,6 +11,7 @@ export const Questionario: React.FC = () => {
 
   const handleSuccess = (data: any) => {
     console.log("Dados do formulário enviados com sucesso:", data);
+    
   }
 
   const handleError = (error: string) => {
