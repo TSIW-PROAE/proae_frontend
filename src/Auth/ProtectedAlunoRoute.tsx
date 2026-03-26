@@ -1,11 +1,15 @@
 import { useContext, useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import ProtectedAluno from "@/layouts/ProtectedAluno";
 import { FetchAdapter } from "@/services/api";
 import EditarPerfilService from "@/services/EditarPerfil.service/editarPerfil.service";
 import { API_BASE_URL } from "@/config/api";
 import { toast, Toaster } from "react-hot-toast";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+} from "@/constants/nivelAcademico";
 
 const CAMPUS_OPTIONS = [
   { valor: "Salvador", label: "Salvador" },
@@ -18,15 +22,18 @@ const CAMPUS_OPTIONS = [
  * Chama POST /aluno/complete-cadastro para vincular o perfil.
  */
 function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
   const [matricula, setMatricula] = useState("");
   const [curso, setCurso] = useState("");
   const [campus, setCampus] = useState("");
   const [dataIngresso, setDataIngresso] = useState("");
+  const [nivelAcademico, setNivelAcademico] = useState<string>(NIVEL_GRADUACAO);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!matricula || !curso || !campus || !dataIngresso) {
+    if (!matricula || !curso || !campus || !dataIngresso || !nivelAcademico) {
       toast.error("Preencha todos os campos.");
       return;
     }
@@ -34,13 +41,27 @@ function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
     try {
       const httpClient = new FetchAdapter();
       const url = `${API_BASE_URL}/aluno/complete-cadastro`;
-      await httpClient.post(url, {
+      const res = await httpClient.post(url, {
         matricula,
         curso,
         campus,
         data_ingresso: dataIngresso,
+        nivel_academico: nivelAcademico,
       });
-      toast.success("Cadastro de aluno vinculado com sucesso!");
+      const data = res.data as {
+        aguardando_confirmacao_email?: boolean;
+        mensagem?: string;
+      };
+      if (data.aguardando_confirmacao_email) {
+        toast.success(
+          data.mensagem ||
+            "Enviamos um link de confirmação para seu email. Abra o link para liberar o portal."
+        );
+      } else {
+        toast.success(
+          data.mensagem || "Cadastro de aluno vinculado com sucesso!"
+        );
+      }
       onSuccess();
     } catch (err: any) {
       const msg = err?.message || err?.mensagem || "Erro ao completar cadastro.";
@@ -89,6 +110,20 @@ function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
           </div>
 
           <div>
+            <label htmlFor="cc-nivel" className="block text-sm font-medium text-gray-700 mb-1">Nível</label>
+            <select
+              id="cc-nivel"
+              value={nivelAcademico}
+              onChange={(e) => setNivelAcademico(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
+              required
+            >
+              <option value={NIVEL_GRADUACAO}>Graduação</option>
+              <option value={NIVEL_POS_GRADUACAO}>Pós-graduação</option>
+            </select>
+          </div>
+
+          <div>
             <label htmlFor="cc-campus" className="block text-sm font-medium text-gray-700 mb-1">Campus</label>
             <select
               id="cc-campus"
@@ -123,7 +158,53 @@ function CompletarCadastroAluno({ onSuccess }: { onSuccess: () => void }) {
           >
             {submitting ? "Salvando..." : "Vincular perfil de aluno"}
           </button>
+
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={async () => {
+              await logout();
+              navigate("/login", { replace: true });
+            }}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            Voltar ao login
+          </button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function AguardandoConfirmacaoEmail() {
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
+
+  return (
+    <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6 overflow-y-auto">
+      <Toaster position="top-right" />
+      <div className="max-w-lg w-full rounded-2xl border border-blue-200 bg-white p-8 shadow-sm my-auto text-center">
+        <h1 className="text-xl font-semibold text-[#183b4e] mb-3">
+          Confirme seu email
+        </h1>
+        <p className="text-gray-600 text-sm mb-6">
+          Enviamos um link para seu email institucional. Clique no link para
+          ativar seu cadastro de estudante e acessar editais e o portal.
+          Verifique também a pasta de spam.
+        </p>
+        <p className="text-xs text-gray-500 mb-6">
+          Depois de confirmar, atualize esta página ou faça login novamente.
+        </p>
+        <button
+          type="button"
+          onClick={async () => {
+            await logout();
+            navigate("/login", { replace: true });
+          }}
+          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Voltar ao login
+        </button>
       </div>
     </div>
   );
@@ -133,6 +214,8 @@ export default function ProtectedAlunoRoute() {
   const { userInfo, isAuthenticated, loading, checkAuth } = useContext(AuthContext);
   const [loadingAlunoCheck, setLoadingAlunoCheck] = useState(true);
   const [alunoExiste, setAlunoExiste] = useState(false);
+  const [aguardandoConfirmacaoEmail, setAguardandoConfirmacaoEmail] =
+    useState(false);
 
   const verificarAluno = () => {
     if (!isAuthenticated) {
@@ -144,8 +227,19 @@ export default function ProtectedAlunoRoute() {
     const service = new EditarPerfilService();
     service
       .getAlunoPerfil(httpClient)
-      .then(() => setAlunoExiste(true))
-      .catch(() => setAlunoExiste(false))
+      .then(() => {
+        setAlunoExiste(true);
+        setAguardandoConfirmacaoEmail(false);
+      })
+      .catch((err: { statusCode?: number; message?: string }) => {
+        if (err?.statusCode === 403) {
+          setAguardandoConfirmacaoEmail(true);
+          setAlunoExiste(false);
+          return;
+        }
+        setAlunoExiste(false);
+        setAguardandoConfirmacaoEmail(false);
+      })
       .finally(() => setLoadingAlunoCheck(false));
   };
 
@@ -173,6 +267,10 @@ export default function ProtectedAlunoRoute() {
         <span className="ml-2 text-gray-600">Verificando cadastro...</span>
       </div>
     );
+  }
+
+  if (aguardandoConfirmacaoEmail) {
+    return <AguardandoConfirmacaoEmail />;
   }
 
   if (!alunoExiste) {

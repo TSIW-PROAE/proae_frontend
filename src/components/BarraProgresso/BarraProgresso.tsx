@@ -7,15 +7,39 @@ interface ProgressBarProps {
   totalSteps: number;
   showStepNumbers?: boolean;
   className?: string;
+  /**
+   * Modo correção (deep link / um campo): evita barra em 100% como se o processo estivesse concluído.
+   */
+  variant?: "default" | "correction";
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   currentStep,
   totalSteps,
   showStepNumbers = true,
-  className = ""
+  className = "",
+  variant = "default",
 }) => {
   const progressPercentage = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
+
+  if (variant === "correction") {
+    return (
+      <div
+        className={`w-full max-w-2xl mx-auto mb-8 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 ${className}`}
+        role="status"
+        aria-live="polite"
+      >
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-sm font-semibold text-amber-900">
+            Correção de resposta
+          </span>
+          <span className="text-xs text-amber-800 sm:text-sm">
+            Revise o campo indicado e envie — não é o formulário completo.
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`w-full max-w-2xl mx-auto mb-8 ${className}`}>
@@ -36,7 +60,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         className="w-full"
         showValueLabel={true}
         formatOptions={{
-          style: 'percent',
+          style: "percent",
           minimumFractionDigits: 0,
           maximumFractionDigits: 0,
         }}

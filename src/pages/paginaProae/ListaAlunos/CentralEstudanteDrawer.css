@@ -1,0 +1,426 @@
+.central-drawer-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.central-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  border: none;
+  cursor: pointer;
+}
+
+.central-drawer-panel {
+  position: relative;
+  width: min(100%, 520px);
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.12);
+  animation: central-slide-in 0.2s ease-out;
+}
+
+@keyframes central-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.central-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+}
+
+.central-drawer-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.central-drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.central-drawer-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.central-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.central-drawer-loading,
+.central-drawer-error {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #64748b;
+}
+
+.central-drawer-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-radius: 8px;
+}
+
+.central-aluno-bloco,
+.central-inscricoes-bloco {
+  margin-bottom: 1.5rem;
+}
+
+.central-aluno-bloco h3,
+.central-inscricoes-bloco h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.central-aluno-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.central-aluno-list li {
+  padding: 0.2rem 0;
+}
+
+.central-inscricoes-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0 0 1rem;
+  line-height: 1.45;
+}
+
+.central-vazio {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.central-inscricao-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fafafa;
+}
+
+.central-inscricao-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.central-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+}
+
+.central-badge--formulario_geral {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.central-badge--renovacao {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.central-badge--edital {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.central-edital-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #0f172a;
+  flex: 1;
+  min-width: 0;
+}
+
+.central-inscricao-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.central-detalhe-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+  margin-bottom: 0.75rem;
+}
+
+.central-detalhe-link:hover {
+  text-decoration: underline;
+}
+
+.central-pendencia {
+  color: #c2410c;
+  font-weight: 600;
+}
+
+.central-field-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.central-select,
+.central-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.central-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.central-btn-salvar {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: #2563eb;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.central-btn-salvar:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.central-btn-salvar:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Auditoria — linha do tempo */
+.central-audit-section {
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem 0.75rem 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.central-audit-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.central-audit-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  padding: 0.25rem 0;
+}
+
+.central-audit-empty {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.central-audit-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.5rem;
+  border-left: 2px solid #cbd5e1;
+}
+
+.central-audit-item {
+  position: relative;
+  padding: 0 0 1rem 1rem;
+  margin: 0;
+}
+
+.central-audit-item:last-child {
+  padding-bottom: 0;
+}
+
+.central-audit-dot {
+  position: absolute;
+  left: -0.4rem;
+  top: 0.35rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #f8fafc;
+  box-shadow: 0 0 0 1px #cbd5e1;
+}
+
+.central-audit-time {
+  display: block;
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.central-audit-change {
+  font-size: 0.78rem;
+  margin: 0 0 0.25rem;
+  line-height: 1.35;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.central-audit-status.anterior {
+  color: #64748b;
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.central-audit-arrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.central-audit-status.novo {
+  color: #0f172a;
+  font-weight: 600;
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.central-audit-actor {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.central-audit-actor code {
+  font-size: 0.68rem;
+  background: #e2e8f0;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+.central-audit-actor-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.central-audit-obs {
+  font-size: 0.72rem;
+  color: #b45309;
+  margin: 0.35rem 0 0;
+  line-height: 1.35;
+}
+
+.central-inscricao-meta--destaque {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.5rem 0.65rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1e3a5f;
+  font-size: 0.78rem;
+  margin-bottom: 0.65rem;
+}
+
+.central-meta-muted {
+  color: #64748b;
+  font-style: italic;
+}
+
+.central-form-section {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.central-form-section-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.central-form-section-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.central-btn-salvar--secondary {
+  background: #0f766e;
+}
+
+.central-btn-salvar--secondary:hover:not(:disabled) {
+  background: #0d9488;
+}

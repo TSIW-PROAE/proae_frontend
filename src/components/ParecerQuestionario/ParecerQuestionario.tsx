@@ -3,6 +3,7 @@ import { Button, Textarea, Select, SelectItem, Card, CardBody, CardHeader, Chip 
 import { CheckCircle, XCircle, Clock, FileText, User, Calendar } from 'lucide-react';
 import { validacaoService, Validacao, CreateValidacaoRequest } from '@/services/ValidacaoService/validacaoService';
 import { AuthContext } from '@/context/AuthContext';
+import { hasAdminRole, normalizeRoles } from '@/utils/authRoles';
 import './ParecerQuestionario.css';
 
 interface ParecerQuestionarioProps {
@@ -259,7 +260,7 @@ export const ParecerQuestionario: React.FC<ParecerQuestionarioProps> = ({
                       </Chip>
                     </div>
                     
-                    {validacao.status === 'pendente' && userInfo?.roles.includes('admin') && (
+                    {validacao.status === 'pendente' && hasAdminRole(normalizeRoles(userInfo?.roles)) && (
                       <div className="flex gap-2">
                         <Button
                           size="sm"

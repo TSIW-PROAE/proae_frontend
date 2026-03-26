@@ -6,6 +6,10 @@ import CustomInput, { InputProps } from "@/components/CustomInput/CustomInput.ts
 import { TypeInput } from "@/utils/enumInput.tsx";
 import arrowDownIcon from "../../../assets/icons/arrow-down-item.svg";
 import { useNavigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { editalService } from "@/services/EditalService/editalService";
+import { mapCadastroEditalFormToPayload } from "@/utils/cadastroEditalMapper";
+import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
 import "./CadastroEdital.css";
 
 const CadastroEdital = () => {
@@ -21,7 +25,9 @@ const CadastroEdital = () => {
         { name: "nome_edital", type: TypeInput.Text, title: "Nome do edital", placeholder: "Seleção para benefícios PROAE", required: true },
         { name: "descricao", type: TypeInput.Text, title: "Descrição do edital", placeholder: "Descreva o edital", required: true },
         { name: "tipo_do_beneficio", type: TypeInput.Text, title: "Tipo do benefício do edital", placeholder: "Alimentação", required: true },
-        { name: "quantidade_bolsas", type: TypeInput.Text, title: "Quantidade de bolsas", placeholder: "15", required: true }];
+        { name: "quantidade_bolsas", type: TypeInput.Text, title: "Quantidade de bolsas", placeholder: "15", required: true },
+        { name: "data_fim_vigencia", type: TypeInput.Text, title: "Fim da vigência no portal (opcional)", placeholder: "AAAA-MM-DD", required: false },
+    ];
 
     const inputDetailsProps = { inputsConfig: inputsOfDetailsStep }
 
@@ -34,6 +40,42 @@ const CadastroEdital = () => {
     ];
 
     const inputEtapasEdital = { inputsConfig: inputOfEtapasEditalStep }
+
+    const handleFinishSteps = async (getValues: () => Record<string, unknown>) => {
+        const v = getValues();
+        const payload = mapCadastroEditalFormToPayload(v);
+        if (!payload.titulo_edital.trim()) {
+            throw new Error("Nome do edital é obrigatório.");
+        }
+        if (!payload.descricao.trim()) {
+            throw new Error("Descrição é obrigatória.");
+        }
+        if (!payload.edital_url.length) {
+            throw new Error("Informe ao menos um link de documento do edital.");
+        }
+        if (!payload.etapa_edital.length) {
+            throw new Error("Preencha todas as etapas (nome e datas).");
+        }
+        try {
+            const created = await editalService.criarEdital({
+              titulo_edital: payload.titulo_edital.trim(),
+              nivel_academico: NIVEL_GRADUACAO,
+            });
+            if (!created?.id) {
+                throw new Error("Não foi possível criar o edital.");
+            }
+            await editalService.atualizarEdital(created.id, {
+                descricao: payload.descricao,
+                edital_url: payload.edital_url,
+                etapa_edital: payload.etapa_edital,
+                data_fim_vigencia: payload.data_fim_vigencia,
+            });
+        } catch (e: unknown) {
+            const any = e as { message?: string | string[] };
+            const msg = Array.isArray(any?.message) ? any.message.join(", ") : any?.message;
+            throw new Error(msg || "Erro ao salvar o edital. Verifique os dados e tente novamente.");
+        }
+    };
 
     const steps: StepsConfig[] = [
         { stepTitle: "Olá Caio! Vamos cadastrar o processo seletivo?", stepSubtitle: "Você está começando as etapas para cadastrar um novo edital.", nextButtonName: "Continuar", isFirstPage: true, logoSrc: logoUfba },
@@ -49,9 +91,14 @@ const CadastroEdital = () => {
                 </div>
                 <p className="details">Cadastro de Edital PROAE</p>
             </div>
+            <Toaster position="top-right" />
             <div className="steps-container">
                 <FormProvider {...methods}>
-                    <Steps stepsConfig={steps} whereToRedirectWhenFinishSteps={"/portal-proae/processos"} />
+                    <Steps
+                        stepsConfig={steps}
+                        whereToRedirectWhenFinishSteps={"/portal-proae/processos"}
+                        onFinishSteps={handleFinishSteps}
+                    />
                 </FormProvider>
             </div>
             <div className="footer">

@@ -11,6 +11,12 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from 'react-hook-form';
 import { verificarEmailInstitucional } from "@/utils/validations";
+import {
+  hasAdminRole,
+  hasAlunoRole,
+  isAdminAprovado,
+  normalizeRoles,
+} from "@/utils/authRoles";
 import "./Login.css";
 import { Spinner } from "@heroui/react";
 
@@ -32,6 +38,18 @@ type LoginProaeFormData = z.infer<typeof loginProaeSchema>;
 
 export type LoginAs = "aluno" | "admin";
 
+const LOGIN_AS_KEY = "proae_login_as";
+
+function readStoredLoginAs(): LoginAs {
+  try {
+    const s = sessionStorage.getItem(LOGIN_AS_KEY);
+    if (s === "admin" || s === "aluno") return s;
+  } catch {
+    /* private mode etc. */
+  }
+  return "aluno";
+}
+
 export default function LoginProae() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,7 +57,19 @@ export default function LoginProae() {
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [loginAs, setLoginAs] = useState<LoginAs>("aluno");
+  /** Persistido: sobrevive a remount (ex.: React Strict Mode) após o login */
+  const [loginAs, setLoginAs] = useState<LoginAs>(readStoredLoginAs);
+  /** Impede o useEffect de competir com o navigate do onSubmit */
+  const [loginInProgress, setLoginInProgress] = useState(false);
+
+  const setLoginAsTab = (as: LoginAs) => {
+    try {
+      sessionStorage.setItem(LOGIN_AS_KEY, as);
+    } catch {
+      /* ignore */
+    }
+    setLoginAs(as);
+  };
 
   const { 
     control, 
@@ -56,9 +86,6 @@ export default function LoginProae() {
     mode: "onBlur"
   });
 
-  // Flag para impedir que o useEffect redirecione durante o onSubmit
-  const [justLoggedIn, setJustLoggedIn] = useState(false);
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const emailParam = params.get("email");
@@ -67,57 +94,75 @@ export default function LoginProae() {
       setValue("email", emailParam);
     }
 
-    // Só redireciona automaticamente se o usuário já estava logado ao abrir /login
-    // (NÃO logo após um login feito nesta tela — o onSubmit cuida disso)
-    if (isAuthenticated && userInfo && !justLoggedIn) {
-      const isAdmin = userInfo.roles?.includes("admin");
-      const isAluno = userInfo.roles?.includes("aluno");
+    /**
+     * Já logado ao abrir /login: respeita a aba escolhida (persistida em sessionStorage).
+     * Assim, após remount do React, "Servidor PROAE" não volta ao default "aluno" e não
+     * manda o servidor para o portal do estudante por engano.
+     */
+    if (isAuthenticated && userInfo && !loginInProgress) {
+      const roles = normalizeRoles(userInfo.roles);
+      const isAdmin = hasAdminRole(roles);
+      const aprovado = isAdminAprovado(
+        userInfo.aprovado,
+        userInfo.adminAprovado,
+      );
+      const isAluno = hasAlunoRole(roles);
 
       if (loginAs === "admin") {
         if (isAdmin && userInfo.aprovado) {
           navigate("/portal-proae/inscricoes");
         } else if (isAluno) {
-          navigate("/portal-aluno");
+          navigate("/portal-aluno", { replace: true });
         }
       } else {
-        // loginAs === "aluno": sempre portal-aluno (completar cadastro se necessário)
-        navigate("/portal-aluno");
+        navigate("/portal-aluno", { replace: true });
       }
     }
-  }, [location, navigate, isAuthenticated, userInfo, setValue, loginAs, justLoggedIn]);
+  }, [
+    location.search,
+    navigate,
+    isAuthenticated,
+    userInfo,
+    setValue,
+    loginAs,
+    loginInProgress,
+  ]);
 
   const onSubmit = async (data: LoginProaeFormData) => {
     if (isLoading) return;
     
     setIsLoading(true);
-    setJustLoggedIn(true);
+    setLoginInProgress(true);
     try {
+      setLoginAsTab(loginAs);
       const response = await login({ email: data.email, senha: data.senha });
       toast.success("Login realizado com sucesso!");
-      const isAdmin = response?.user?.roles?.includes("admin");
-      const aprovado = response?.user?.aprovado ?? response?.user?.adminAprovado ?? response?.adminAprovado;
-      const isAluno = response?.user?.roles?.includes("aluno");
+      const roles = normalizeRoles(response?.user?.roles);
+      const isAdmin = hasAdminRole(roles);
+      const aprovado = isAdminAprovado(
+        response?.user?.aprovado,
+        response?.user?.adminAprovado ?? response?.adminAprovado,
+      );
+      const isAluno = hasAlunoRole(roles);
 
       if (loginAs === "admin") {
         if (isAdmin && aprovado) {
-          navigate("/portal-proae/inscricoes");
+          navigate("/portal-proae/inscricoes", { replace: true });
         } else if (isAdmin && !aprovado) {
-          navigate("/tela-de-espera");
+          navigate("/tela-de-espera", { replace: true });
         } else if (isAluno) {
-          toast("Você não tem acesso como Servidor PROAE. Redirecionando ao Portal do Aluno.", { icon: "ℹ️" });
-          navigate("/portal-aluno");
+          toast("Você não tem cadastro de Servidor PROAE nesta conta. Redirecionando ao portal do estudante.", { icon: "ℹ️" });
+          navigate("/portal-aluno", { replace: true });
         } else {
-          navigate("/");
+          navigate("/", { replace: true });
         }
       } else {
-        // loginAs === "aluno": sempre direcionar para portal-aluno.
-        // Se ainda não tem perfil de aluno, o ProtectedAlunoRoute mostrará
-        // o formulário de completar cadastro.
-        navigate("/portal-aluno");
+        // Aba aluno: sempre portal do estudante (completar cadastro se necessário).
+        navigate("/portal-aluno", { replace: true });
       }
     } catch (err: any) {
       console.error("Erro no login:", err);
-      setJustLoggedIn(false);
+      setLoginInProgress(false);
       if (err?.message) {
         toast.error(err.message);
       } else {
@@ -161,7 +206,7 @@ export default function LoginProae() {
                 role="tab"
                 aria-selected={loginAs === "aluno"}
                 className={`login-as-tab ${loginAs === "aluno" ? "login-as-tab-active" : ""}`}
-                onClick={() => setLoginAs("aluno")}
+                onClick={() => setLoginAsTab("aluno")}
               >
                 Sou Aluno
               </button>
@@ -170,7 +215,7 @@ export default function LoginProae() {
                 role="tab"
                 aria-selected={loginAs === "admin"}
                 className={`login-as-tab ${loginAs === "admin" ? "login-as-tab-active" : ""}`}
-                onClick={() => setLoginAs("admin")}
+                onClick={() => setLoginAsTab("admin")}
               >
                 Sou Servidor PROAE
               </button>

@@ -15,7 +15,30 @@ import { Edital, Vaga } from "../../types/edital";
 import { editalService } from "../../services/EditalService/editalService";
 import { toInternalStatus } from "@/components/ModalEditarEdital/utils";
 import type { StatusEdital } from "@/components/ModalEditarEdital/types";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+} from "@/constants/nivelAcademico";
 import "./ListaEditais.css";
+
+/** Badge de nível (Graduação / Pós-graduação) na lista e no grid. */
+function NivelAcademicoBadge({
+  nivel,
+}: {
+  nivel?: string | null;
+}) {
+  const raw = nivel?.trim() || NIVEL_GRADUACAO;
+  const isPos =
+    raw === NIVEL_POS_GRADUACAO || raw.toLowerCase().includes("pós");
+  return (
+    <span
+      className={`nivel-badge ${isPos ? "nivel-badge--pos" : "nivel-badge--grad"}`}
+      title="Nível acadêmico do edital"
+    >
+      {isPos ? "Pós-graduação" : "Graduação"}
+    </span>
+  );
+}
 
 /** Normaliza status do backend (ABERTO, EM_ANDAMENTO, "Edital em andamento", etc.) para comparação. */
 function normalizeStatus(status: string | undefined): StatusEdital {
@@ -106,8 +129,11 @@ const EditalTableRow: React.FC<{
   return (
     <tr className="table-row" onClick={() => onEdit(edital)}>
       <td className="table-cell title-cell">
-        <div className="table-title">
-          {edital.titulo_edital || "Título não informado"}
+        <div className="table-title-row">
+          <div className="table-title">
+            {edital.titulo_edital || "Título não informado"}
+          </div>
+          <NivelAcademicoBadge nivel={edital.nivel_academico} />
         </div>
         <div className="table-description">
           {edital.descricao && edital.descricao.length > 60
@@ -296,9 +322,12 @@ const EditalCard: React.FC<{
           </div>
         </div>
 
-        <h3 className="selection-card-title">
-          {edital.titulo_edital || "Título não informado"}
-        </h3>
+        <div className="selection-card-title-row">
+          <h3 className="selection-card-title">
+            {edital.titulo_edital || "Título não informado"}
+          </h3>
+          <NivelAcademicoBadge nivel={edital.nivel_academico} />
+        </div>
         <p className="selection-card-description">
           {edital.descricao && edital.descricao.length > 90
             ? `${edital.descricao.substring(0, 90)}...`

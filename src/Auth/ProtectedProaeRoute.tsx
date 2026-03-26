@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import ProtectedProae from "@/layouts/ProtectedProae";
+import { hasAdminRole, normalizeRoles } from "@/utils/authRoles";
 
 export default function ProtectedProaeRoute() {
     const { userInfo, isAuthenticated, loading } = useContext(AuthContext);
@@ -19,11 +20,12 @@ export default function ProtectedProaeRoute() {
         return <Navigate to="/" replace />;
     }
 
-    if (!userInfo?.roles.includes('admin')) {
+    const roles = normalizeRoles(userInfo?.roles);
+    if (!hasAdminRole(roles)) {
         return <Navigate to="/" replace />;
     }
 
-    if (!userInfo?.aprovado && userInfo?.roles.includes('admin')) {
+    if (userInfo?.aprovado !== true) {
         return <Navigate to="/tela-de-espera" replace />;
     }
 

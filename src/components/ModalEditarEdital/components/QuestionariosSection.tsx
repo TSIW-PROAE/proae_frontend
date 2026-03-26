@@ -3,9 +3,9 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
-  Save,
   Trash2,
   Plus,
+  ListChecks,
 } from "lucide-react";
 import { EditableQuestionario } from "../types";
 
@@ -16,7 +16,6 @@ interface QuestionariosSectionProps {
   onToggleOpen: () => void;
   onOpenQuestionario: (index: number) => void;
   onAddQuestionario: () => void;
-  onSaveQuestionario: (index: number) => void;
 }
 
 const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
@@ -26,7 +25,6 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
   onToggleOpen,
   onOpenQuestionario,
   onAddQuestionario,
-  onSaveQuestionario,
 }) => {
   const updateQuestionario = (
     index: number,
@@ -72,23 +70,30 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
             <div key={index} className="questionario-item">
               {q.isEditing ? (
                 <div className="questionario-editing">
-                  <input
-                    type="text"
-                    placeholder="Título do questionário"
-                    value={q.value.titulo}
-                    onChange={(e) =>
-                      updateQuestionario(index, "titulo", e.target.value)
-                    }
-                    className="questionario-input"
-                  />
-                  <div className="questionario-actions">
+                  <div className="questionario-editing-fields">
+                    <input
+                      type="text"
+                      placeholder="Título do questionário (opcional)"
+                      value={q.value.titulo}
+                      onChange={(e) =>
+                        updateQuestionario(index, "titulo", e.target.value)
+                      }
+                      className="questionario-input"
+                    />
+                    <p className="questionario-editing-hint">
+                      Você pode ir direto ao editor: o questionário é criado ao abrir e você já adiciona perguntas lá.
+                    </p>
+                  </div>
+                  <div className="questionario-actions questionario-actions-editing">
                     <button
-                      aria-label="Salvar questionário"
-                      title="Salvar questionário"
-                      onClick={() => onSaveQuestionario(index)}
-                      className="btn-save-questionario"
+                      type="button"
+                      aria-label="Abrir editor de perguntas"
+                      title="Abrir editor de perguntas"
+                      onClick={() => onOpenQuestionario(index)}
+                      className="btn-open-questionario-editor"
                     >
-                      <Save size={16} />
+                      <ListChecks size={16} />
+                      <span>Abrir editor de perguntas</span>
                     </button>
                     <button
                       aria-label="Excluir questionário"

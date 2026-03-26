@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
@@ -41,6 +41,8 @@ interface NovaPerguntaPendenteStep {
   step_id: string;
   step_texto: string;
   total_novas: number;
+  /** Deep-link: mesma URL que Pendências (`pergunta_id`). */
+  primeira_pergunta_id?: number;
 }
 
 interface EditalAPI {
@@ -50,6 +52,8 @@ interface EditalAPI {
   status_edital: string;
   etapa_edital: EtapaEdital[];
   status_inscricao: string;
+  /** Homologação da vaga no edital (API `status_beneficio_edital`) */
+  status_beneficio_edital?: string;
   data_inscricao: string;
   vaga: Vaga;
   possui_pendencias: boolean;
@@ -61,6 +65,7 @@ interface EditalAPI {
   total_novas_perguntas?: number;
   novas_perguntas_pendentes_por_step?: NovaPerguntaPendenteStep[];
   is_formulario_geral?: boolean;
+  is_formulario_renovacao?: boolean;
   observacao_admin?: string | null;
 }
 
@@ -71,42 +76,87 @@ interface CandidateStatusProps {
 
 const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
   const navigate = useNavigate();
+  const [fichaOpen, setFichaOpen] = useState(false);
   if (!edital) return null;
 
   const {
     titulo_edital,
     status_inscricao,
+    status_beneficio_edital,
     possui_pendencias,
-    etapa_edital,
+    etapa_edital: etapaEditalProp,
     data_inscricao,
     vaga,
-    total_pendencias,
+    total_pendencias: totalPendenciasProp,
     pendencias_por_step,
     possui_novas_perguntas_pendentes,
     total_novas_perguntas,
     novas_perguntas_pendentes_por_step,
     is_formulario_geral,
+    is_formulario_renovacao,
     observacao_admin,
   } = edital;
+
+  /** API antiga mandava `etapas_edital`; a correta é `etapa_edital`. */
+  const etapa_edital =
+    etapaEditalProp ??
+    (edital as { etapas_edital?: typeof etapaEditalProp }).etapas_edital ??
+    [];
+  const total_pendencias = totalPendenciasProp ?? 0;
+
+  const benLower = (status_beneficio_edital ?? "").toLowerCase();
+  const ehBeneficiario =
+    benLower.includes("beneficiário") || benLower.includes("beneficiario");
+  const ehPendenteSelecao =
+    benLower.includes("pendente seleção") || benLower.includes("pendente selecao");
+  const ehNaoBeneficiario =
+    benLower.includes("não beneficiário") ||
+    benLower.includes("nao beneficiário") ||
+    benLower.includes("nao beneficiario");
 
   const statusLower = (status_inscricao ?? "").toLowerCase();
   const isAjuste = status_inscricao === "Ajuste Necessário";
   const isNegada = statusLower.includes("negada") || statusLower.includes("rejeitada") || statusLower.includes("reprovada");
   const isFG = is_formulario_geral === true;
+  const isFR = is_formulario_renovacao === true;
+  /** Mesmo padrão de query que `PendenciasAluno` → `buildAjusteUrl`. */
+  const resolveAjusteUrl = () => {
+    const first = novas_perguntas_pendentes_por_step?.[0];
+    const firstStepId = first?.step_id;
+    const firstPerguntaId = first?.primeira_pergunta_id;
+    const query = new URLSearchParams();
+    query.set("corrigir", "1");
+    if (firstStepId) query.set("step_id", String(firstStepId));
+    if (firstPerguntaId != null) query.set("pergunta_id", String(firstPerguntaId));
+    if (vaga?.vaga_id) query.set("vaga_id", String(vaga.vaga_id));
+    if (edital.inscricao_id) {
+      query.set("inscricao_id", String(edital.inscricao_id));
+    }
+    const suffix = `?${query.toString()}`;
+    if (isFG) return `/portal-aluno/formulario-geral${suffix}`;
+    if (isFR) return `/portal-aluno/formulario-renovacao${suffix}`;
+    return `/questionario/${edital.edital_id}${suffix}`;
+  };
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString("pt-BR", {
+  const formatDate = (dateStr: string | undefined | null) => {
+    if (dateStr == null || String(dateStr).trim() === "") return "—";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
+  };
 
   const normalizarData = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const hoje = normalizarData(new Date());
 
   const getEtapaStatus = (etapa: EtapaEdital): "completed" | "current" | "upcoming" => {
+    if (!etapa?.data_inicio || !etapa?.data_fim) return "upcoming";
     const [ai, mi, di] = etapa.data_inicio.split("-").map(Number);
     const [af, mf, df] = etapa.data_fim.split("-").map(Number);
+    if ([ai, mi, di, af, mf, df].some((n) => Number.isNaN(n))) return "upcoming";
     const inicio = new Date(ai, mi - 1, di);
     const fim = new Date(af, mf - 1, df);
     if (hoje.getTime() > fim.getTime()) return "completed";
@@ -172,6 +222,43 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
       </div>
 
       <div className="status-content">
+        {!isFG && status_beneficio_edital && (
+          <div
+            className={`mb-3 rounded-lg border px-3 py-2.5 text-sm ${
+              ehBeneficiario
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                : ehNaoBeneficiario
+                  ? "bg-slate-50 border-slate-200 text-slate-800"
+                  : "bg-amber-50 border-amber-200 text-amber-950"
+            }`}
+          >
+            <p className="font-semibold m-0 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0" />
+              Sua participação neste edital
+            </p>
+            <p className="m-0 mt-1 opacity-95">
+              <span className="font-medium">Inscrição:</span> você está inscrito desde {formatDate(data_inscricao)}.{" "}
+              <span className="font-medium">Análise da inscrição:</span>{" "}
+              {status_inscricao || "—"}.
+            </p>
+            {ehBeneficiario && statusLower.includes("aprovada") && (
+              <p className="m-0 mt-2 font-medium text-emerald-900">
+                Você foi <strong>homologado como beneficiário da vaga</strong> neste edital (além da inscrição aprovada na análise).
+              </p>
+            )}
+            {ehPendenteSelecao && !ehBeneficiario && statusLower.includes("aprovada") && (
+              <p className="m-0 mt-2">
+                Sua inscrição está aprovada na análise; o próximo passo é a <strong>homologação como beneficiário</strong> no edital — aguarde a divulgação ou acompanhe a PROAE.
+              </p>
+            )}
+            {ehNaoBeneficiario && statusLower.includes("aprovada") && (
+              <p className="m-0 mt-2">
+                Neste edital você <strong>não foi selecionado como beneficiário da vaga</strong>. Sua inscrição segue o status da análise acima.
+              </p>
+            )}
+          </div>
+        )}
+
         {isAjuste && (
           <div className="alert alert-warning">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
@@ -216,6 +303,11 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
 
         <div className="timeline-section">
           <h4 className="timeline-title">Linha do Tempo do Processo</h4>
+          {etapasOrdenadas.length === 0 ? (
+            <p className="text-sm text-gray-500 px-1 py-2 m-0">
+              Não há etapas com datas cadastradas para este edital. Se o processo já deveria aparecer aqui, entre em contato com a PROAE.
+            </p>
+          ) : null}
           <div className="timeline-container">
             {etapasOrdenadas.map((etapa, index) => {
               const status = getEtapaStatus(etapa);
@@ -303,8 +395,8 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
               </div>
               <div className="pendencias-urgent-info">
                 <h4 className="pendencias-urgent-title">
-                  {total_novas_perguntas ?? 0} nova{(total_novas_perguntas ?? 0) > 1 ? "s" : ""} pergunta
-                  {(total_novas_perguntas ?? 0) > 1 ? "s" : ""} pendente{(total_novas_perguntas ?? 0) > 1 ? "s" : ""}
+                  {total_novas_perguntas ?? 0} ajuste{(total_novas_perguntas ?? 0) > 1 ? "s" : ""} de resposta/complemento
+                  {" "}pendente{(total_novas_perguntas ?? 0) > 1 ? "s" : ""}
                 </h4>
               </div>
             </div>
@@ -327,9 +419,9 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
               </div>
             )}
 
-            <button onClick={() => navigate("/portal-aluno/pendencias")} className="pendencias-urgent-button novas-perguntas-button">
+            <button onClick={() => navigate(resolveAjusteUrl())} className="pendencias-urgent-button novas-perguntas-button">
               <RefreshCw className="w-4 h-4" />
-              <span>Responder novas perguntas</span>
+              <span>Resolver ajustes</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -337,7 +429,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
       </div>
 
       <div className="status-actions">
-        <button onClick={() => {}} className="action-button secondary">
+        <button onClick={() => setFichaOpen(true)} className="action-button secondary">
           <FileText className="w-4 h-4" />
           <span>Ver Ficha de Inscrição</span>
         </button>
@@ -350,6 +442,81 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
           </button>
         )}
       </div>
+
+      {fichaOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ficha da inscrição"
+          className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setFichaOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-xl bg-white shadow-2xl border border-slate-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <h4 className="m-0 text-base font-semibold text-slate-900">Ficha de Inscrição</h4>
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                onClick={() => setFichaOpen(false)}
+              >
+                Fechar
+              </button>
+            </div>
+            <div className="space-y-3 px-5 py-4 text-sm text-slate-800">
+              <p className="m-0">
+                <span className="font-semibold">Edital:</span> {titulo_edital}
+              </p>
+              <p className="m-0">
+                <span className="font-semibold">Status da inscrição:</span> {status_inscricao || "—"}
+              </p>
+              <p className="m-0">
+                <span className="font-semibold">Status do benefício no edital:</span> {status_beneficio_edital || "—"}
+              </p>
+              <p className="m-0">
+                <span className="font-semibold">Data de inscrição:</span> {formatDate(data_inscricao)}
+              </p>
+              {vaga && (
+                <p className="m-0">
+                  <span className="font-semibold">Vaga/benefício:</span> {vaga.beneficio || "—"}
+                </p>
+              )}
+              <p className="m-0">
+                <span className="font-semibold">Pendências de documentos:</span> {total_pendencias}
+              </p>
+              <p className="m-0">
+                <span className="font-semibold">Novas perguntas pendentes:</span> {total_novas_perguntas ?? 0}
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                type="button"
+                className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                onClick={() => {
+                  navigate("/portal-aluno/pendencias");
+                  setFichaOpen(false);
+                }}
+              >
+                Ir para Pendências
+              </button>
+              {isFG && (
+                <button
+                  type="button"
+                  className="rounded-md bg-[#183b4e] px-3 py-2 text-sm font-medium text-white hover:opacity-95"
+                  onClick={() => {
+                    navigate("/portal-aluno/formulario-geral");
+                    setFichaOpen(false);
+                  }}
+                >
+                  Abrir formulário geral
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

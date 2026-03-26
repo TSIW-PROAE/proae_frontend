@@ -1186,6 +1186,26 @@ select:focus {
   border: 2px solid #3b82f6;
   border-radius: 14px;
   padding: 12px; /* menor */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.questionario-editing-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.questionario-editing-fields .questionario-input {
+  margin-bottom: 0;
+}
+
+.questionario-editing-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #64748b;
 }
 
 .questionario-input {
@@ -1216,6 +1236,32 @@ select:focus {
   display: inline-flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+.questionario-actions-editing {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+}
+
+.btn-open-questionario-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-open-questionario-editor:hover {
+  background: #047857;
 }
 
 .btn-save-questionario,

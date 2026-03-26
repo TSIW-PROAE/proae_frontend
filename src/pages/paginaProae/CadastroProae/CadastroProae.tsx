@@ -10,7 +10,8 @@ import { DefaultResponse } from '@/types/auth';
 import {  useNavigate } from 'react-router-dom';
 import { Spinner } from '@heroui/react';
 import { AuthContext } from '@/context/AuthContext';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export const cadastroProaeFormSchema = z.object({
     cargo: z.string({error: 'Cargo não pode estar vazio'}).min(5, "O campo cargo é obrigatório"),
@@ -37,17 +38,11 @@ export default function CadastroProae() {
         mode: "onBlur",
     }); 
     const [isLoading, setIsLoading] = useState(false);
-    const { isAuthenticated, registerAdmin} = useContext(AuthContext);
+    const [showSenha, setShowSenha] = useState(false);
+    const [showConfirmarSenha, setShowConfirmarSenha] = useState(false);
+    const { isAuthenticated, registerAdmin, checkAuth } = useContext(AuthContext);
 
     const navigate = useNavigate();
-
-    useEffect(() => {
-        if(isAuthenticated){
-            navigate("portal-proae/inscricoes");
-        }
-    }, [isAuthenticated]);
-
-
 
     const onSubmit = async (data: CadastroFormData) => {
         try {
@@ -55,7 +50,13 @@ export default function CadastroProae() {
             const response = await registerAdmin(data)
             if (response.sucesso) {
                 toast.success(response.mensagem);
-                navigate("/login");
+                // Conta já logada (ex.: aluno que vinculou admin): atualiza perfil e vai à fila de aprovação.
+                if (isAuthenticated) {
+                    await checkAuth();
+                    navigate("/tela-de-espera", { replace: true });
+                } else {
+                    navigate("/login");
+                }
             }
             
         } catch (error) {
@@ -175,10 +176,16 @@ export default function CadastroProae() {
                         <Input {...field}
                             placeholder='Digite sua senha'
                             label='Senha'
-                            type='password'
+                            type={showSenha ? 'text' : 'password'}
                             variant='bordered'
                             isInvalid={!!errors.senha}
                             errorMessage={errors.senha?.message}
+                            classNames={{ innerWrapper: "items-center", input: "pr-10" }}
+                            endContent={
+                              <button type="button" className="p-1 focus:outline-none" onClick={() => setShowSenha(!showSenha)} aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}>
+                                {showSenha ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                              </button>
+                            }
                         />
                     }
                     />
@@ -193,10 +200,16 @@ export default function CadastroProae() {
                         <Input {...field}
                             placeholder='Digite sua senha'
                             label='Confirmar Senha'
-                            type='password'
+                            type={showConfirmarSenha ? 'text' : 'password'}
                             variant='bordered'
                             isInvalid={!!errors.confirmarSenha}
                             errorMessage={errors.confirmarSenha?.message}
+                            classNames={{ innerWrapper: "items-center", input: "pr-10" }}
+                            endContent={
+                              <button type="button" className="p-1 focus:outline-none" onClick={() => setShowConfirmarSenha(!showConfirmarSenha)} aria-label={showConfirmarSenha ? "Ocultar senha" : "Mostrar senha"}>
+                                {showConfirmarSenha ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                              </button>
+                            }
                         />
                     }
                     />

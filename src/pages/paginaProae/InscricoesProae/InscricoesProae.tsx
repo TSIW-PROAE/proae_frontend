@@ -1,11 +1,25 @@
-import { useState, useEffect } from "react";
-import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X } from "lucide-react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
+import { useSearchParams } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
+import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X, History, Loader2, Save } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { Edital } from "@/types/edital";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
 import { AlunoInscrito } from "@/types/inscricao";
+import type { InscricaoStatusAuditEntry } from "@/types/inscricaoStatusAudit";
 import { respostaService } from "@/services/RespostaService/respostaService";
+import { getApiErrorMessage } from "@/utils/apiError";
 import "./InscricoesProae.css";
+
+/** Valores aceitos pelo PATCH admin de status (alinhado à Central / backend). */
+const ADMIN_STATUS_OPCOES = [
+  "Inscrição Pendente",
+  "Inscrição Aprovada",
+  "Inscrição Negada",
+  "Ajuste Necessário",
+] as const;
+
+const ADMIN_BENEFICIO_OPCOES = ["Pendente seleção", "Beneficiário no edital", "Não beneficiário"] as const;
 
 interface PerguntaPayload {
   id: string;
@@ -70,7 +84,54 @@ interface StepsCompletos {
   steps: StepComStatus[];
 }
 
+function formatActorAuditDisplay(entry: { actor_nome?: string | null; actor_usuario_id: string | null }): string {
+  const nome = entry.actor_nome?.trim();
+  if (nome) return nome;
+  const id = entry.actor_usuario_id;
+  if (!id) return "—";
+  if (id.length <= 12) return id;
+  return `${id.slice(0, 8)}…${id.slice(-4)}`;
+}
+
+/** Evita deslocamento de fuso em strings só data (YYYY-MM-DD). */
+function formatDataHoraOuDataBr(iso: string | undefined | null): string {
+  if (iso == null || String(iso).trim() === "") return "—";
+  const s = String(iso).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if (m) {
+    const [, y, mo, d] = m;
+    if (!s.includes("T") && !/\d{2}:\d{2}/.test(s)) {
+      return `${d}/${mo}/${y}`;
+    }
+  }
+  const t = new Date(s);
+  if (Number.isNaN(t.getTime())) return s || "—";
+  const hasTime = /\d{2}:\d{2}/.test(s) || s.includes("T");
+  return hasTime
+    ? t.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+    : t.toLocaleDateString("pt-BR");
+}
+
+function mergeAlunoInformacoesGerais(ins: AlunoInscrito, sc?: StepsCompletos["aluno"] | null) {
+  return {
+    nome: ins.nome?.trim() || sc?.nome?.trim() || "",
+    email: ins.email?.trim() || sc?.email?.trim() || "",
+    matricula: ins.matricula?.trim() || sc?.matricula?.trim() || "",
+    cpf: ins.cpf?.trim() || "",
+    celular: ins.celular?.trim() || "",
+    curso: ins.curso?.trim() || "",
+    campus: ins.campus?.trim() || "",
+    data_nascimento: ins.data_nascimento?.trim() || "",
+    data_ingresso: ins.data_ingresso?.trim() || "",
+  };
+}
+
 export default function InscricoesProae() {
+  const [searchParams] = useSearchParams();
+  const editalIdFromUrl = searchParams.get("editalId");
+  const expandInscricaoFromUrl = searchParams.get("expandInscricao");
+  const deepLinkExpandHandled = useRef(false);
+
   const [editais, setEditais] = useState<Edital[]>([]);
   const [editalSelecionado, setEditalSelecionado] = useState<Edital | null>(null);
   const [inscricoes, setInscricoes] = useState<AlunoInscrito[]>([]);
@@ -85,7 +146,21 @@ export default function InscricoesProae() {
   const [questionarioSelecionado, setQuestionarioSelecionado] = useState<string | null>(null);
   const [isLoadingModal, setIsLoadingModal] = useState(false);
   const [validandoRespostas, setValidandoRespostas] = useState<Record<string, boolean>>({});
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingPdfAnalise, setDownloadingPdfAnalise] = useState(false);
+  const [downloadingPdfBeneficio, setDownloadingPdfBeneficio] = useState(false);
+
+  /** Aba Informações Gerais — auditoria de status */
+  const [auditEntries, setAuditEntries] = useState<InscricaoStatusAuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditErro, setAuditErro] = useState(false);
+  const [auditRefreshTick, setAuditRefreshTick] = useState(0);
+
+  /** Rascunhos PROAE — aba Informações (decisões de análise / benefício no edital). */
+  const [adminStatusDraft, setAdminStatusDraft] = useState("");
+  const [adminObsDraft, setAdminObsDraft] = useState("");
+  const [adminBeneficioDraft, setAdminBeneficioDraft] = useState("");
+  const [salvandoAdminStatus, setSalvandoAdminStatus] = useState(false);
+  const [salvandoAdminBeneficio, setSalvandoAdminBeneficio] = useState(false);
 
   // Estado do modal de confirmação de validação
   const [modalValidarOpen, setModalValidarOpen] = useState(false);
@@ -135,6 +210,12 @@ export default function InscricoesProae() {
     }
   }, [editalSelecionado]);
 
+  useEffect(() => {
+    if (!editais.length || !editalIdFromUrl) return;
+    const ed = editais.find((e) => String(e.id) === String(editalIdFromUrl));
+    if (ed) setEditalSelecionado(ed);
+  }, [editais, editalIdFromUrl]);
+
   const carregarEditais = async () => {
     try {
       setIsLoadingEditais(true);
@@ -147,16 +228,18 @@ export default function InscricoesProae() {
     }
   };
 
-  const carregarInscricoes = async () => {
-    if (!editalSelecionado?.id) return;
+  const carregarInscricoes = async (): Promise<AlunoInscrito[] | undefined> => {
+    if (!editalSelecionado?.id) return undefined;
 
     try {
       setIsLoading(true);
       const dados = await inscricaoServiceManager.listarInscritosPorEdital(editalSelecionado.id);
       setInscricoes(dados);
+      return dados;
     } catch (err: any) {
       console.error("Erro ao carregar inscrições:", err);
       setInscricoes([]);
+      return undefined;
     } finally {
       setIsLoading(false);
     }
@@ -212,8 +295,10 @@ export default function InscricoesProae() {
     const s = status?.toUpperCase();
     switch (s) {
       case "APROVADA":
+      case "INSCRIÇÃO APROVADA":
         return "status-badge status-aprovada";
       case "REJEITADA":
+      case "INSCRIÇÃO NEGADA":
         return "status-badge status-rejeitada";
       case "EM ANÁLISE":
       case "EM_ANALISE":
@@ -233,6 +318,9 @@ export default function InscricoesProae() {
       case "REJEITADA_POR_PRAZO_COMPLEMENTO":
         return "status-badge status-rejeitada-prazo-complemento";
       case "PENDENTE":
+      case "INSCRIÇÃO PENDENTE":
+      case "AJUSTE NECESSÁRIO":
+        return "status-badge status-pendente";
       default:
         return "status-badge status-pendente";
     }
@@ -242,8 +330,10 @@ export default function InscricoesProae() {
     const s = status?.toUpperCase();
     switch (s) {
       case "APROVADA":
+      case "INSCRIÇÃO APROVADA":
         return "Aprovada";
       case "REJEITADA":
+      case "INSCRIÇÃO NEGADA":
         return "Rejeitada";
       case "EM ANÁLISE":
       case "EM_ANALISE":
@@ -263,8 +353,12 @@ export default function InscricoesProae() {
       case "REJEITADA_POR_PRAZO_COMPLEMENTO":
         return "Rejeitada por Prazo";
       case "PENDENTE":
-      default:
+      case "INSCRIÇÃO PENDENTE":
         return "Pendente";
+      case "AJUSTE NECESSÁRIO":
+        return "Ajuste necessário";
+      default:
+        return status?.trim() ? status : "Pendente";
     }
   };
 
@@ -274,13 +368,117 @@ export default function InscricoesProae() {
     await carregarStepsCompletos(inscricao.aluno_id);
   };
 
+  useEffect(() => {
+    if (!expandInscricaoFromUrl || !inscricoes.length || deepLinkExpandHandled.current) return;
+    const ins = inscricoes.find((i) => String(i.inscricao_id) === String(expandInscricaoFromUrl));
+    if (ins) {
+      deepLinkExpandHandled.current = true;
+      void handleVerDetalhes(ins);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deep link uma vez ao carregar a lista
+  }, [inscricoes, expandInscricaoFromUrl]);
+
+  useEffect(() => {
+    if (!isModalOpen || abaAtiva !== "informacoes" || !inscricaoSelecionada?.inscricao_id) {
+      return;
+    }
+    let cancelled = false;
+    setAuditLoading(true);
+    setAuditErro(false);
+    inscricaoServiceManager
+      .listarStatusAuditAdmin(String(inscricaoSelecionada.inscricao_id))
+      .then((data) => {
+        if (!cancelled) {
+          const asc = [...(data || [])].sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+          );
+          setAuditEntries(asc);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuditErro(true);
+          setAuditEntries([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAuditLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isModalOpen, abaAtiva, inscricaoSelecionada?.inscricao_id, auditRefreshTick]);
+
+  useEffect(() => {
+    if (!inscricaoSelecionada) return;
+    setAdminStatusDraft(inscricaoSelecionada.status_inscricao || "");
+    setAdminObsDraft(inscricaoSelecionada.observacao_admin?.trim() ?? "");
+    const b =
+      inscricaoSelecionada.status_beneficio_edital &&
+      ADMIN_BENEFICIO_OPCOES.includes(
+        inscricaoSelecionada.status_beneficio_edital as (typeof ADMIN_BENEFICIO_OPCOES)[number],
+      )
+        ? inscricaoSelecionada.status_beneficio_edital
+        : "Pendente seleção";
+    setAdminBeneficioDraft(b);
+  }, [
+    inscricaoSelecionada?.inscricao_id,
+    inscricaoSelecionada?.status_inscricao,
+    inscricaoSelecionada?.observacao_admin,
+    inscricaoSelecionada?.status_beneficio_edital,
+  ]);
+
+  const podeEditarBeneficioEdital =
+    !!editalSelecionado && !editalSelecionado.is_formulario_geral && !editalSelecionado.is_formulario_renovacao;
+
+  const salvarStatusInscricaoAdmin = async () => {
+    if (!inscricaoSelecionada?.inscricao_id) return;
+    const id = String(inscricaoSelecionada.inscricao_id);
+    setSalvandoAdminStatus(true);
+    try {
+      await inscricaoServiceManager.adminAlterarStatusInscricao(id, {
+        status: adminStatusDraft,
+        observacao: adminObsDraft.trim() || undefined,
+      });
+      toast.success("Status da inscrição (análise) atualizado.");
+      const lista = await carregarInscricoes();
+      const fresh = lista?.find((i) => String(i.inscricao_id) === id);
+      if (fresh) setInscricaoSelecionada(fresh);
+      setAuditRefreshTick((t) => t + 1);
+    } catch (e: unknown) {
+      toast.error(getApiErrorMessage(e));
+    } finally {
+      setSalvandoAdminStatus(false);
+    }
+  };
+
+  const salvarBeneficioEditalAdmin = async () => {
+    if (!inscricaoSelecionada?.inscricao_id) return;
+    const id = String(inscricaoSelecionada.inscricao_id);
+    setSalvandoAdminBeneficio(true);
+    try {
+      await inscricaoServiceManager.adminAlterarBeneficioEdital(id, {
+        status_beneficio_edital: adminBeneficioDraft,
+      });
+      toast.success("Situação de benefício no edital atualizada.");
+      const lista = await carregarInscricoes();
+      const fresh = lista?.find((i) => String(i.inscricao_id) === id);
+      if (fresh) setInscricaoSelecionada(fresh);
+      setAuditRefreshTick((t) => t + 1);
+    } catch (e: unknown) {
+      toast.error(getApiErrorMessage(e));
+    } finally {
+      setSalvandoAdminBeneficio(false);
+    }
+  };
+
   const carregarStepsCompletos = async (alunoId: string) => {
     if (!editalSelecionado?.id || !alunoId) return;
 
     try {
       setIsLoadingModal(true);
       const url = `${import.meta.env.VITE_API_URL_SERVICES}/respostas/aluno/${alunoId}/edital/${editalSelecionado.id}/steps-completos`;
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: "include" });
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -333,6 +531,7 @@ export default function InscricoesProae() {
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ validada: true }),
       });
 
@@ -345,7 +544,7 @@ export default function InscricoesProae() {
       }
     } catch (err: any) {
       console.error("Erro ao validar resposta:", err);
-      window.alert("Não foi possível validar a resposta. Tente novamente.");
+      toast.error("Não foi possível validar a resposta. Tente novamente.");
     } finally {
       setValidandoRespostas((prev) => {
         const clone = { ...prev };
@@ -443,7 +642,7 @@ export default function InscricoesProae() {
       }
       fecharModalEditar();
     } catch (err: any) {
-      window.alert(err?.message || "Erro ao editar resposta.");
+      toast.error(err?.message || "Erro ao editar resposta.");
     } finally {
       setEnviandoEdicao(false);
     }
@@ -455,11 +654,11 @@ export default function InscricoesProae() {
     // Validações
     if (!apenasInvalidar) {
       if (!invalidarParecer.trim()) {
-        window.alert("Informe o motivo/instrução de correção.");
+        toast.error("Informe o motivo/instrução de correção.");
         return;
       }
       if (!invalidarPrazo) {
-        window.alert("Informe o prazo para reenvio.");
+        toast.error("Informe o prazo para reenvio.");
         return;
       }
     }
@@ -486,6 +685,7 @@ export default function InscricoesProae() {
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body),
       });
 
@@ -500,7 +700,7 @@ export default function InscricoesProae() {
       }
     } catch (err: any) {
       console.error("Erro ao invalidar resposta:", err);
-      window.alert("Não foi possível invalidar a resposta. Tente novamente.");
+      toast.error("Não foi possível invalidar a resposta. Tente novamente.");
     } finally {
       setEnviandoInvalidacao(false);
       setValidandoRespostas((prev) => {
@@ -519,6 +719,7 @@ export default function InscricoesProae() {
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           invalidada: true,
           requerReenvio: true,
@@ -536,7 +737,7 @@ export default function InscricoesProae() {
       }
     } catch (err: any) {
       console.error("Erro ao alterar prazo de reenvio:", err);
-      window.alert("Não foi possível alterar o prazo. Tente novamente.");
+      toast.error("Não foi possível alterar o prazo. Tente novamente.");
     } finally {
       setValidandoRespostas((prev) => {
         const clone = { ...prev };
@@ -554,17 +755,25 @@ export default function InscricoesProae() {
     setModalReabrirComplementoOpen(true);
   };
 
-  // ── Documento: buscar URL presigned ──
-  const extrairNomeArquivo = (urlArquivo: string): string => {
-    // Se for uma URL completa, pegar último segmento
+  // ── Documento: chave no R2 (object key) ou URL antiga ──
+  /** Chave completa para a API (ex.: userId/documentos/arquivo.pdf) */
+  const resolveStorageKeyForApi = (urlArquivo: string): string => {
+    const t = urlArquivo.trim();
+    if (!t) return "";
+    if (!/^https?:\/\//i.test(t)) return t;
     try {
-      const url = new URL(urlArquivo);
-      const segments = url.pathname.split("/").filter(Boolean);
-      return segments[segments.length - 1] || urlArquivo;
+      const u = new URL(t);
+      return u.pathname.replace(/^\/+/, "");
     } catch {
-      // Se não for URL válida, usar como está (já é o nome do arquivo)
-      return urlArquivo;
+      return t;
     }
+  };
+
+  /** Nome amigável para exibir (último segmento da chave) */
+  const extrairNomeArquivo = (urlArquivo: string): string => {
+    const key = resolveStorageKeyForApi(urlArquivo);
+    const parts = key.split("/").filter(Boolean);
+    return parts[parts.length - 1] || key;
   };
 
   const getExtensaoArquivo = (nome: string): string => {
@@ -579,9 +788,12 @@ export default function InscricoesProae() {
     return extensao === "pdf";
   };
 
-  const buscarDocumentoPresignedUrl = async (nomeArquivo: string): Promise<{ nome_do_arquivo: string; url: string } | null> => {
+  const buscarDocumentoPresignedUrl = async (
+    objectKey: string,
+  ): Promise<{ nome_do_arquivo?: string; url: string; objectKey?: string } | null> => {
     try {
-      const url = `${import.meta.env.VITE_API_URL_SERVICES}/documents/${encodeURIComponent(nomeArquivo)}`;
+      const base = import.meta.env.VITE_API_URL_SERVICES;
+      const url = `${base}/documents/presigned?key=${encodeURIComponent(objectKey)}`;
       const response = await fetch(url, { credentials: "include" });
       if (!response.ok) throw new Error("Erro ao buscar documento");
       return await response.json();
@@ -592,13 +804,14 @@ export default function InscricoesProae() {
   };
 
   const abrirVisualizadorDocumento = async (urlArquivo: string) => {
+    const storageKey = resolveStorageKeyForApi(urlArquivo);
     const nomeArquivo = extrairNomeArquivo(urlArquivo);
     setDocumentoNome(nomeArquivo);
     setDocumentoLoading(true);
     setDocumentoErro(null);
     setDocumentoViewerOpen(true);
 
-    const result = await buscarDocumentoPresignedUrl(nomeArquivo);
+    const result = await buscarDocumentoPresignedUrl(storageKey);
     if (result?.url) {
       setDocumentoUrl(result.url);
     } else {
@@ -615,8 +828,9 @@ export default function InscricoesProae() {
   };
 
   const baixarDocumento = async (urlArquivo: string) => {
+    const storageKey = resolveStorageKeyForApi(urlArquivo);
     const nomeArquivo = extrairNomeArquivo(urlArquivo);
-    const result = await buscarDocumentoPresignedUrl(nomeArquivo);
+    const result = await buscarDocumentoPresignedUrl(storageKey);
     if (result?.url) {
       const a = document.createElement("a");
       a.href = result.url;
@@ -626,7 +840,7 @@ export default function InscricoesProae() {
       a.click();
       document.body.removeChild(a);
     } else {
-      window.alert("Não foi possível baixar o documento.");
+      toast.error("Não foi possível baixar o documento.");
     }
   };
 
@@ -642,7 +856,7 @@ export default function InscricoesProae() {
 
     const prazoDate = new Date(reabrirNovoPrazo);
     if (prazoDate.getTime() <= Date.now()) {
-      window.alert("O novo prazo deve ser uma data futura.");
+      toast.error("O novo prazo deve ser uma data futura.");
       return;
     }
 
@@ -652,6 +866,7 @@ export default function InscricoesProae() {
       const response = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ novoPrazo: prazoDate.toISOString() }),
       });
 
@@ -669,50 +884,45 @@ export default function InscricoesProae() {
       await carregarInscricoes();
     } catch (err: any) {
       console.error("Erro ao reabrir complemento:", err);
-      window.alert(err.message || "Não foi possível reabrir o prazo. Tente novamente.");
+      toast.error(err.message || "Não foi possível reabrir o prazo. Tente novamente.");
     } finally {
       setEnviandoReabertura(false);
     }
   };
 
-  const baixarPdfAprovados = async () => {
+  const baixarPdfInscricoesAprovadasAnalise = async () => {
     if (!editalSelecionado?.id) {
-      window.alert("Selecione um edital primeiro.");
+      toast.error("Selecione um edital primeiro.");
       return;
     }
 
-    setDownloadingPdf(true);
+    setDownloadingPdfAnalise(true);
     try {
-      const url = `${import.meta.env.VITE_API_URL_SERVICES}/inscricoes/aprovados/pdf?editalId=${editalSelecionado.id}`;
-      const response = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Sessão expirada. Faça login novamente.");
-        }
-        if (response.status === 404) {
-          throw new Error("Nenhum estudante aprovado encontrado para este edital.");
-        }
-        throw new Error(`Erro ao baixar PDF: ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = `estudantes-aprovados-${editalSelecionado.titulo_edital || "edital"}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (err: any) {
+      await inscricaoServiceManager.downloadPdfAprovados(String(editalSelecionado.id));
+    } catch (err: unknown) {
       console.error("Erro ao baixar PDF:", err);
-      window.alert(err.message || "Não foi possível baixar o PDF. Tente novamente.");
+      const msg = err instanceof Error ? err.message : "Não foi possível baixar o PDF.";
+      toast.error(msg);
     } finally {
-      setDownloadingPdf(false);
+      setDownloadingPdfAnalise(false);
+    }
+  };
+
+  const baixarPdfBeneficiariosEdital = async () => {
+    if (!editalSelecionado?.id) {
+      toast.error("Selecione um edital primeiro.");
+      return;
+    }
+
+    setDownloadingPdfBeneficio(true);
+    try {
+      await inscricaoServiceManager.downloadPdfBeneficiarios(String(editalSelecionado.id));
+    } catch (err: unknown) {
+      console.error("Erro ao baixar PDF de beneficiários:", err);
+      const msg = err instanceof Error ? err.message : "Não foi possível baixar o PDF.";
+      toast.error(msg);
+    } finally {
+      setDownloadingPdfBeneficio(false);
     }
   };
 
@@ -775,6 +985,7 @@ export default function InscricoesProae() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Toaster position="top-right" />
       <div className="inscricoes-proae-container">
         <header className="inscricoes-proae-header">
           <div className="header-content">
@@ -850,10 +1061,26 @@ export default function InscricoesProae() {
                     <option value="rejeitada_prazo_complemento">Rejeitada por Prazo de Complemento</option>
                   </select>
                 </div>
-                <button onClick={baixarPdfAprovados} disabled={downloadingPdf} className="download-pdf-button" title="Baixar PDF dos aprovados">
-                  <Download className="w-4 h-4" />
-                  <span>{downloadingPdf ? "Baixando..." : "PDF Aprovados"}</span>
-                </button>
+                <div className="download-pdf-button-group" style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+                  <button
+                    onClick={() => void baixarPdfInscricoesAprovadasAnalise()}
+                    disabled={downloadingPdfAnalise || downloadingPdfBeneficio}
+                    className="download-pdf-button"
+                    title="PDF: inscrições com status Inscrição Aprovada (análise documental / parecer)"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{downloadingPdfAnalise ? "Baixando..." : "PDF — Aprovados (análise)"}</span>
+                  </button>
+                  <button
+                    onClick={() => void baixarPdfBeneficiariosEdital()}
+                    disabled={downloadingPdfAnalise || downloadingPdfBeneficio}
+                    className="download-pdf-button download-pdf-button--secondary"
+                    title="PDF: estudantes homologados como Beneficiário no edital"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{downloadingPdfBeneficio ? "Baixando..." : "PDF — Beneficiários"}</span>
+                  </button>
+                </div>
               </div>
             </section>
           )}
@@ -887,7 +1114,8 @@ export default function InscricoesProae() {
                         <th>Curso</th>
                         <th>Campus</th>
                         <th>Data Inscrição</th>
-                        <th>Status</th>
+                        <th title="Análise da inscrição (documentos / parecer)">Análise</th>
+                        <th title="Homologação do benefício no edital (vaga)">Benefício</th>
                         <th style={{ width: "20px" }}></th>
                       </tr>
                     </thead>
@@ -936,6 +1164,22 @@ export default function InscricoesProae() {
                             <div className={getStatusBadgeClass(inscricao.status_inscricao || "PENDENTE")}>
                               {getStatusLabel(inscricao.status_inscricao || "PENDENTE")}
                             </div>
+                          </td>
+                          <td>
+                            <span
+                              style={{
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                color: inscricao.status_beneficio_edital?.includes("Beneficiário")
+                                  ? "#047857"
+                                  : inscricao.status_beneficio_edital?.includes("Não")
+                                    ? "#b91c1c"
+                                    : "#64748b",
+                              }}
+                              title={inscricao.beneficio_nome ? `Vaga: ${inscricao.beneficio_nome}` : undefined}
+                            >
+                              {inscricao.status_beneficio_edital?.replace(" no edital", "") || "Pendente seleção"}
+                            </span>
                           </td>
                           <td>
                             <ChevronRight className="w-5 h-5" style={{ color: "#64748b" }} />
@@ -1896,10 +2140,347 @@ export default function InscricoesProae() {
                     )}
                   </div>
                 ) : (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
-                    <FileText style={{ width: "64px", height: "64px", margin: "0 auto 16px", opacity: 0.3 }} />
-                    <h3 style={{ color: "#64748b", marginBottom: "8px" }}>Informações Gerais</h3>
-                    <p>Seção em desenvolvimento. Informações adicionais serão exibidas aqui.</p>
+                  <div
+                    style={{
+                      padding: "8px 4px 24px",
+                      maxHeight: "min(70vh, 640px)",
+                      overflowY: "auto",
+                      textAlign: "left",
+                    }}
+                  >
+                    {inscricaoSelecionada && (() => {
+                      const alunoInfo = mergeAlunoInformacoesGerais(inscricaoSelecionada, stepsCompletos?.aluno);
+                      const idInsc = String(inscricaoSelecionada.inscricao_id || "").trim();
+                      const fmtIngresso = (v: string) => {
+                        const t = v?.trim();
+                        if (!t) return "—";
+                        if (/^\d{2}\/\d{2}\/\d{4}$/.test(t)) return t;
+                        return formatDataHoraOuDataBr(t);
+                      };
+                      return (
+                      <>
+                        <h3 style={{ margin: "0 0 16px 0", fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>
+                          Informações Gerais
+                        </h3>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                            gap: "12px 20px",
+                            marginBottom: "24px",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Edital</div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px" }}>
+                              {stepsCompletos?.edital?.titulo_edital ||
+                                stepsCompletos?.edital?.titulo ||
+                                editalSelecionado?.titulo_edital ||
+                                "—"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Inscrição</div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px" }}>
+                              {idInsc ? `#${idInsc}` : "—"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                              Análise da inscrição
+                            </div>
+                            <div style={{ marginTop: "4px" }}>
+                              <span className={getStatusBadgeClass(inscricaoSelecionada.status_inscricao)}>
+                                {getStatusLabel(inscricaoSelecionada.status_inscricao)}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                              Benefício no edital
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px", fontWeight: 600 }}>
+                              {inscricaoSelecionada.status_beneficio_edital || "Pendente seleção"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Vaga / benefício</div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px" }}>
+                              {inscricaoSelecionada.beneficio_nome || "—"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>Data da inscrição</div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px" }}>
+                              {formatDataHoraOuDataBr(inscricaoSelecionada.data_inscricao)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            marginBottom: "24px",
+                            padding: "16px",
+                            background: "#f0f9ff",
+                            borderRadius: "10px",
+                            border: "1px solid #bae6fd",
+                          }}
+                        >
+                          <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: 700, color: "#0c4a6e" }}>
+                            Decisões PROAE (análise e benefício)
+                          </h4>
+                          <p style={{ margin: "0 0 18px 0", fontSize: "12px", color: "#0369a1", lineHeight: 1.45 }}>
+                            Registre aqui o status da análise da inscrição e, quando couber, a situação do benefício no edital. O histórico abaixo é atualizado após salvar.
+                          </p>
+
+                          {/** Estilos compartilhados entre as duas subseções */}
+                          {(() => {
+                            const fieldMax = "480px";
+                            const labelStyle: CSSProperties = {
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              color: "#64748b",
+                              display: "block",
+                              marginBottom: "6px",
+                            };
+                            const controlStyle: CSSProperties = {
+                              width: "100%",
+                              maxWidth: fieldMax,
+                              padding: "8px 10px",
+                              borderRadius: "8px",
+                              border: "1px solid #cbd5e1",
+                              fontSize: "14px",
+                              boxSizing: "border-box",
+                            };
+                            const subTitleStyle: CSSProperties = {
+                              margin: "0 0 6px 0",
+                              fontSize: "13px",
+                              fontWeight: 700,
+                              color: "#0c4a6e",
+                            };
+                            const hintStyle: CSSProperties = {
+                              margin: "0 0 14px 0",
+                              fontSize: "12px",
+                              color: "#0369a1",
+                              lineHeight: 1.45,
+                            };
+                            const saveBtnStyle = (loading: boolean): CSSProperties => ({
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px",
+                              width: "100%",
+                              maxWidth: fieldMax,
+                              marginTop: "12px",
+                              padding: "10px 16px",
+                              borderRadius: "8px",
+                              border: "none",
+                              background: "#0284c7",
+                              color: "#fff",
+                              fontWeight: 600,
+                              fontSize: "13px",
+                              cursor: loading ? "wait" : "pointer",
+                              opacity: loading ? 0.88 : 1,
+                              boxSizing: "border-box",
+                            });
+                            return (
+                              <>
+                                <div style={{ marginBottom: "20px" }}>
+                                  <h5 style={subTitleStyle}>1. Análise da inscrição</h5>
+                                  <p style={hintStyle}>
+                                    Documentação, parecer e trâmite da inscrição — independente de ser beneficiário da vaga.
+                                  </p>
+                                  <div style={{ marginBottom: "12px" }}>
+                                    <label style={labelStyle}>Status da inscrição (análise)</label>
+                                    <select
+                                      value={adminStatusDraft}
+                                      onChange={(e) => setAdminStatusDraft(e.target.value)}
+                                      disabled={salvandoAdminStatus}
+                                      style={controlStyle}
+                                    >
+                                      {ADMIN_STATUS_OPCOES.map((s) => (
+                                        <option key={s} value={s}>
+                                          {s}
+                                        </option>
+                                      ))}
+                                      {adminStatusDraft &&
+                                      !ADMIN_STATUS_OPCOES.includes(adminStatusDraft as (typeof ADMIN_STATUS_OPCOES)[number]) ? (
+                                        <option value={adminStatusDraft}>{adminStatusDraft} (valor atual)</option>
+                                      ) : null}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label style={labelStyle}>Observação / motivo (opcional, visível ao aluno)</label>
+                                    <textarea
+                                      value={adminObsDraft}
+                                      onChange={(e) => setAdminObsDraft(e.target.value)}
+                                      disabled={salvandoAdminStatus}
+                                      rows={3}
+                                      placeholder="Ex.: Ajuste solicitado pela comissão…"
+                                      style={{ ...controlStyle, resize: "vertical", minHeight: "72px" }}
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => void salvarStatusInscricaoAdmin()}
+                                    disabled={salvandoAdminStatus}
+                                    style={saveBtnStyle(salvandoAdminStatus)}
+                                  >
+                                    {salvandoAdminStatus ? (
+                                      <Loader2 style={{ width: "16px", height: "16px", animation: "spin 0.8s linear infinite" }} />
+                                    ) : (
+                                      <Save style={{ width: "16px", height: "16px" }} />
+                                    )}
+                                    Salvar análise da inscrição
+                                  </button>
+                                </div>
+
+                                {podeEditarBeneficioEdital ? (
+                                  <div style={{ paddingTop: "18px", borderTop: "1px solid #bae6fd" }}>
+                                    <h5 style={subTitleStyle}>2. Benefício no edital</h5>
+                                    <p style={hintStyle}>
+                                      Homologação como beneficiário da vaga — pode diferir do status da análise acima.
+                                    </p>
+                                    <div>
+                                      <label style={labelStyle}>Situação do benefício</label>
+                                      <select
+                                        value={adminBeneficioDraft}
+                                        onChange={(e) => setAdminBeneficioDraft(e.target.value)}
+                                        disabled={salvandoAdminBeneficio}
+                                        style={controlStyle}
+                                      >
+                                        {ADMIN_BENEFICIO_OPCOES.map((s) => (
+                                          <option key={s} value={s}>
+                                            {s}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => void salvarBeneficioEditalAdmin()}
+                                      disabled={salvandoAdminBeneficio}
+                                      style={saveBtnStyle(salvandoAdminBeneficio)}
+                                    >
+                                      {salvandoAdminBeneficio ? (
+                                        <Loader2 style={{ width: "16px", height: "16px", animation: "spin 0.8s linear infinite" }} />
+                                      ) : (
+                                        <Save style={{ width: "16px", height: "16px" }} />
+                                      )}
+                                      Salvar benefício no edital
+                                    </button>
+                                  </div>
+                                ) : null}
+                              </>
+                            );
+                          })()}
+                        </div>
+
+                        <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: 700, color: "#334155", display: "flex", alignItems: "center", gap: "8px" }}>
+                          <User style={{ width: "18px", height: "18px", color: "#2563eb" }} />
+                          Dados do estudante
+                        </h4>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                            gap: "10px 16px",
+                            marginBottom: "28px",
+                            padding: "16px",
+                            background: "#f8fafc",
+                            borderRadius: "10px",
+                            border: "1px solid #e2e8f0",
+                          }}
+                        >
+                          {[
+                            { label: "Nome", value: alunoInfo.nome },
+                            { label: "E-mail", value: alunoInfo.email },
+                            { label: "Matrícula", value: alunoInfo.matricula },
+                            { label: "CPF", value: alunoInfo.cpf },
+                            { label: "Celular", value: alunoInfo.celular },
+                            { label: "Curso", value: alunoInfo.curso },
+                            { label: "Campus", value: alunoInfo.campus },
+                            {
+                              label: "Data de nascimento",
+                              value: alunoInfo.data_nascimento ? formatDataHoraOuDataBr(alunoInfo.data_nascimento) : "—",
+                            },
+                            {
+                              label: "Data de ingresso",
+                              value: fmtIngresso(alunoInfo.data_ingresso),
+                            },
+                          ].map((row) => (
+                            <div key={row.label}>
+                              <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b" }}>{row.label}</div>
+                              <div style={{ fontSize: "14px", color: "#0f172a", marginTop: "2px", wordBreak: "break-word" }}>{row.value || "—"}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: 700, color: "#334155", display: "flex", alignItems: "center", gap: "8px" }}>
+                          <History style={{ width: "18px", height: "18px", color: "#2563eb" }} />
+                          Histórico de status (auditoria)
+                        </h4>
+                        {auditLoading ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#64748b", padding: "12px 0" }}>
+                            <Loader2 style={{ width: "18px", height: "18px", animation: "spin 0.8s linear infinite" }} />
+                            <span>Carregando histórico…</span>
+                          </div>
+                        ) : auditErro ? (
+                          <p style={{ color: "#b91c1c", fontSize: "14px", margin: 0 }}>Não foi possível carregar o histórico de auditoria.</p>
+                        ) : auditEntries.length === 0 ? (
+                          <p style={{ color: "#64748b", fontSize: "14px", margin: 0 }}>Nenhuma alteração de status registrada ainda.</p>
+                        ) : (
+                          <ul style={{ listStyle: "none", margin: 0, padding: 0, borderLeft: "2px solid #e2e8f0" }}>
+                            {auditEntries.map((ev) => (
+                              <li
+                                key={ev.id}
+                                style={{
+                                  position: "relative",
+                                  paddingLeft: "20px",
+                                  paddingBottom: "16px",
+                                  marginLeft: "6px",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    position: "absolute",
+                                    left: "-7px",
+                                    top: "4px",
+                                    width: "10px",
+                                    height: "10px",
+                                    borderRadius: "50%",
+                                    background: "#2563eb",
+                                    border: "2px solid #fff",
+                                    boxShadow: "0 0 0 1px #e2e8f0",
+                                  }}
+                                  aria-hidden
+                                />
+                                <time
+                                  style={{ fontSize: "12px", color: "#64748b", display: "block", marginBottom: "6px" }}
+                                  dateTime={ev.created_at}
+                                >
+                                  {new Date(ev.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                                </time>
+                                <p style={{ margin: "0 0 6px 0", fontSize: "14px", color: "#1e293b" }}>
+                                  <span style={{ color: "#64748b" }}>{ev.status_anterior ?? "—"}</span>
+                                  <span style={{ margin: "0 8px", color: "#94a3b8" }}>→</span>
+                                  <strong>{ev.status_novo}</strong>
+                                </p>
+                                <p style={{ margin: "0 0 4px 0", fontSize: "12px", color: "#64748b" }}>
+                                  Por:{" "}
+                                <span style={{ fontWeight: 600, color: "#334155" }}>{formatActorAuditDisplay(ev)}</span>
+                                </p>
+                                {ev.observacao ? (
+                                  <p style={{ margin: 0, fontSize: "13px", color: "#475569", fontStyle: "italic" }}>Obs.: {ev.observacao}</p>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

@@ -2,13 +2,21 @@ import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
 import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
+import { API_BASE_URL } from "@/config/api";
+import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
 import { formularioGeralService } from "@/services/FormularioGeralService/formularioGeral.service";
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useMemo, useRef, useCallback } from "react";
+import {
+  buildPortalNotifications,
+  countUrgentNotifications,
+} from "./buildPortalNotifications";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
-import { User, BookOpen, FileText, Award, TrendingUp, Clock, CheckCircle, AlertCircle, Bell } from "lucide-react";
+import { User, BookOpen, FileText, Award, TrendingUp, Clock, CheckCircle, AlertCircle, Bell, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingSpin } from "@/components/Loading/LoadingScreen";
+import toast from "react-hot-toast";
 
 interface ResponseData {
   dados: {
@@ -17,6 +25,7 @@ interface ResponseData {
 }
 
 export default function PortalAluno() {
+  const navigate = useNavigate();
   const { userInfo: user } = useContext(AuthContext);
   const [firstName, setFirstName] = useState("");
   const [userId, setUserId] = useState("");
@@ -24,7 +33,11 @@ export default function PortalAluno() {
   const [openSelections, setOpenSelections] = useState<any[]>([]);
   const [inscriptions, setInscriptions] = useState<any[]>([]);
   const [podeSeInscreverEmOutros, setPodeSeInscreverEmOutros] = useState<boolean>(true);
+  const [renovacaoPendente, setRenovacaoPendente] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifWrapRef = useRef<HTMLDivElement>(null);
+  const prevUrgentCountRef = useRef(0);
 
   useEffect(() => {
     if (user) {
@@ -38,23 +51,12 @@ export default function PortalAluno() {
 
   const getBenefits = async () => {
     try {
-      const response = await portalAlunoService.getBenefts();
-      const data = (response as ResponseData).dados.beneficios;
-      setBenefits(data);
+      const response = (await portalAlunoService.getBenefts()) as ResponseData | null;
+      const data = response?.dados?.beneficios ?? [];
+      setBenefits(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao obter benefícios:", error);
-    }
-  };
-
-  const getOpenSelections = async () => {
-    try {
-      const response = await portalAlunoService.getEditals();
-      if (!response || !Array.isArray(response)) {
-        throw new Error("Resposta inválida do servidor");
-      }
-      setOpenSelections(response);
-    } catch (error) {
-      console.error("Erro ao obter seleções abertas:", error);
+      setBenefits([]);
     }
   };
 
@@ -74,27 +76,119 @@ export default function PortalAluno() {
     try {
       const fg = await formularioGeralService.getFormularioGeralOrNull();
       setPodeSeInscreverEmOutros(fg?.pode_se_inscrever_em_outros ?? true);
+      setRenovacaoPendente(!!fg?.renovacao_pendente);
     } catch {
       setPodeSeInscreverEmOutros(true);
+      setRenovacaoPendente(false);
     }
   };
 
   useEffect(() => {
-    if (userId) {
-      Promise.all([
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      let nivel: string = NIVEL_GRADUACAO;
+      try {
+        const r = (await client.get(`${API_BASE_URL}/aluno/me`)) as {
+          dados?: { aluno?: { nivel_academico?: string } };
+        };
+        const n = r?.dados?.aluno?.nivel_academico;
+        if (n) nivel = n as string;
+      } catch {
+        nivel = NIVEL_GRADUACAO;
+      }
+      if (cancelled) return;
+      try {
+        const response = await portalAlunoService.getEditals(nivel);
+        if (!cancelled && response && Array.isArray(response)) {
+          setOpenSelections(response);
+        }
+      } catch {
+        if (!cancelled) setOpenSelections([]);
+      }
+      if (cancelled) return;
+      await Promise.all([
         getBenefits(),
-        getOpenSelections(),
         getInscriptions(),
         getFormularioGeralStatus(),
-      ]).finally(() => setLoading(false));
-    }
+      ]);
+    })().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
+
+  const hasPendenciasLike = (inscricao: any) => {
+    const totalPendencias = Number(inscricao?.total_pendencias ?? 0);
+    const totalNovas = Number(inscricao?.total_novas_perguntas ?? 0);
+    const status = String(inscricao?.status_inscricao ?? "").toLowerCase();
+    const statusIndicaAjuste =
+      status.includes("ajuste") ||
+      status.includes("complemento") ||
+      status.includes("regulariza") ||
+      status.includes("pendente_regularizacao");
+    return (
+      inscricao?.possui_pendencias === true ||
+      inscricao?.possui_novas_perguntas_pendentes === true ||
+      totalPendencias > 0 ||
+      totalNovas > 0 ||
+      statusIndicaAjuste
+    );
+  };
+
+  const inscricoesComPendenciaCount =
+    inscriptions?.filter((i) => hasPendenciasLike(i)).length ?? 0;
+
+  const portalNotifications = useMemo(
+    () => buildPortalNotifications(inscriptions, renovacaoPendente),
+    [inscriptions, renovacaoPendente],
+  );
+  const urgentNotifCount = useMemo(
+    () => countUrgentNotifications(portalNotifications),
+    [portalNotifications],
+  );
+
+  const closeNotif = useCallback(() => setNotifOpen(false), []);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const el = notifWrapRef.current;
+      if (el && !el.contains(e.target as Node)) closeNotif();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeNotif();
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [notifOpen, closeNotif]);
+
+  useEffect(() => {
+    const prev = prevUrgentCountRef.current;
+    if (urgentNotifCount > prev) {
+      const novas = urgentNotifCount - prev;
+      toast(
+        novas === 1
+          ? "Você recebeu 1 nova notificação de pendência."
+          : `Você recebeu ${novas} novas notificações de pendência.`,
+        { icon: "🔔" },
+      );
+    }
+    prevUrgentCountRef.current = urgentNotifCount;
+  }, [urgentNotifCount]);
 
   // Estatísticas do dashboard
   const stats = [
     {
       icon: Award,
-      label: "Benefícios Ativos",
+      label: "Benefícios no edital",
       value: benefits?.filter((b) => b.beneficio?.toLowerCase().includes("ativo")).length || 0,
       color: "bg-emerald-500",
       bgColor: "bg-emerald-50",
@@ -119,7 +213,7 @@ export default function PortalAluno() {
     {
       icon: Clock,
       label: "Pendências",
-      value: inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0,
+      value: inscricoesComPendenciaCount,
       color: "bg-amber-500",
       bgColor: "bg-amber-50",
       textColor: "text-amber-700",
@@ -153,15 +247,97 @@ export default function PortalAluno() {
             </div>
 
             <div className="header-actions">
-              <div className="notification-icon">
-                <Bell className="w-5 h-5" />
-                {(inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0) > 0 && (
-                  <span className="notification-badge">{inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0}</span>
+              <div className="notification-wrap" ref={notifWrapRef}>
+                <button
+                  type="button"
+                  className="notification-icon"
+                  aria-label="Notificações"
+                  aria-expanded={notifOpen}
+                  aria-haspopup="true"
+                  onClick={() => setNotifOpen((o) => !o)}
+                >
+                  <Bell className="w-5 h-5" />
+                  {urgentNotifCount > 0 && (
+                    <span className="notification-badge">
+                      {urgentNotifCount > 9 ? "9+" : urgentNotifCount}
+                    </span>
+                  )}
+                </button>
+                {notifOpen && (
+                  <div className="notification-dropdown" role="region" aria-label="Lista de notificações">
+                    <div className="notification-dropdown-header">Notificações</div>
+                    <p className="notification-dropdown-hint">
+                      Resumo com base nas suas inscrições e renovação. Itens em vermelho/laranja pedem ação.
+                    </p>
+                    {portalNotifications.length === 0 ? (
+                      <p className="notification-dropdown-empty">Nada a mostrar no momento.</p>
+                    ) : (
+                      <ul className="notification-list">
+                        {portalNotifications.map((n) => (
+                          <li key={n.id}>
+                            {n.href ? (
+                              <button
+                                type="button"
+                                className={`notification-item notification-item--${n.variant}`}
+                                onClick={() => {
+                                  navigate(n.href!);
+                                  closeNotif();
+                                }}
+                              >
+                                <span className="notification-item-title">{n.title}</span>
+                                <span className="notification-item-body">{n.body}</span>
+                                <span className="notification-item-cta">Abrir →</span>
+                              </button>
+                            ) : (
+                              <div className={`notification-item notification-item--${n.variant} notification-item--static`}>
+                                <span className="notification-item-title">{n.title}</span>
+                                <span className="notification-item-body">{n.body}</span>
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </header>
+
+        <div className="mb-4 p-4 rounded-xl border border-slate-200 bg-white/90 text-slate-800 text-sm leading-relaxed shadow-sm">
+          <p className="font-semibold text-slate-900 m-0 mb-1">Como ler o portal</p>
+          <ul className="list-disc pl-5 m-0 space-y-1">
+            <li>
+              <strong>Minhas inscrições</strong>: situação da sua inscrição no processo (análise, pendências, etc.).
+            </li>
+            <li>
+              <strong>Benefícios no edital</strong>: aparece quando a inscrição está <strong>aprovada na análise</strong> e você foi{" "}
+              <strong>homologado como beneficiário da vaga</strong> naquele edital — são duas etapas diferentes.
+            </li>
+          </ul>
+        </div>
+
+        {renovacaoPendente && (
+          <div className="mb-4 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-950 flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-start gap-2">
+              <RefreshCw className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Renovação obrigatória</p>
+                <p className="text-sm opacity-90">
+                  Há um formulário de renovação aberto. Conclua-o para voltar a se inscrever em editais e benefícios.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/portal-aluno/formulario-renovacao")}
+              className="px-4 py-2 rounded-lg bg-amber-800 text-white text-sm font-medium hover:bg-amber-900"
+            >
+              Preencher renovação
+            </button>
+          </div>
+        )}
 
         {/* Estatísticas Cards */}
         <section className="stats-section">
@@ -256,8 +432,8 @@ export default function PortalAluno() {
                 <div className="status-content">
                   <h3 className="status-title">Pendências</h3>
                   <p className="status-description">
-                    {inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0} item
-                    {(inscriptions?.filter((i) => i.possui_pendencias || i.possui_novas_perguntas_pendentes).length || 0) !== 1 ? "s" : ""} para resolver
+                    {inscricoesComPendenciaCount}{" "}
+                    {inscricoesComPendenciaCount === 1 ? "item" : "itens"} para resolver
                   </p>
                 </div>
               </div>
@@ -265,11 +441,10 @@ export default function PortalAluno() {
               <div className="status-card info">
                 <TrendingUp className="w-6 h-6 text-blue-600" />
                 <div className="status-content">
-                  <h3 className="status-title">Progresso</h3>
+                  <h3 className="status-title">Homologações</h3>
                   <p className="status-description">
-                    {benefits.length} benefício
-                    {benefits.length !== 1 ? "s" : ""} conquistado
-                    {benefits.length !== 1 ? "s" : ""}
+                    {benefits.length} processo
+                    {benefits.length !== 1 ? "s" : ""} com inscrição aprovada e benefício homologado no edital
                   </p>
                 </div>
               </div>

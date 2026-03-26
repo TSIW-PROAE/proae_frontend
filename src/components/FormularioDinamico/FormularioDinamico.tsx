@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { FormProvider } from 'react-hook-form';
 import { useFormBuilder } from '@/hooks/useFormBuilder';
 import { DynamicField } from './DynamicField';
@@ -14,6 +14,7 @@ import { InscricaoService } from "@/services/InscricaoService/inscricao.service.
 import { useNavigate } from "react-router-dom"
 import BarraProgresso  from '@/components/BarraProgresso/BarraProgresso';
 import type { PaginaConfig } from "@/types/dynamicForm";
+import { getApiErrorMessage } from "@/utils/apiError";
 
 interface FormularioDinamicoProps {
   editalId?: string;
@@ -33,6 +34,14 @@ interface FormularioDinamicoProps {
   loading?: React.ReactNode;
   className?: string;
   initialData?: Record<string, any>;
+  /** Abre direto na etapa/pergunta pendente quando houver step_id alvo. */
+  focusStepId?: string | number | null;
+  /** Faz scroll/foco no campo de pergunta específico (ex.: pergunta_123). */
+  focusQuestionId?: string | number | null;
+  /** Pré-seleciona a vaga/benefício (ex.: query vaga_id vinda de pendências). */
+  focusVagaId?: string | number | null;
+  /** Quando definido, envio usa PATCH /inscricoes/:id/correcao-respostas (correção) em vez de POST. */
+  correcaoInscricaoId?: string | number | null;
 }
 
 export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => {
@@ -48,19 +57,51 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
   const inscricaoService = InscricaoService.getInstance();
   const navigate = useNavigate();
 
+  const pularWizardIntro =
+    (props.focusQuestionId != null && String(props.focusQuestionId).trim() !== "") ||
+    (props.focusStepId != null && String(props.focusStepId).trim() !== "");
+
   const builderProps = {
     editalId: editalId || "",
     titulo: props.titulo,
     subtitulo: props.subtitulo,
+    initialCurrentPage: pularWizardIntro ? 1 : 0,
     initialPaginas: props.initialPaginas,
     onSubmit: async (data: Record<string, any>) => {
       try {
-        await inscricaoService.submeterRespostas(data);
-        if (props.onSuccess) {
-          props.onSuccess(data);
+        const corrRaw = props.correcaoInscricaoId;
+        const corrId =
+          corrRaw != null && String(corrRaw).trim() !== ""
+            ? String(corrRaw).trim()
+            : null;
+        if (corrId) {
+          const respostas = (data.respostas ?? [])
+            .map((r: any) => ({
+              perguntaId:
+                typeof r.perguntaId === "number"
+                  ? r.perguntaId
+                  : Number(r.perguntaId),
+              valorTexto: r.valorTexto,
+              valorOpcoes: r.valorOpcoes,
+              urlArquivo: r.urlArquivo,
+            }))
+            .filter(
+              (r) =>
+                Number.isFinite(r.perguntaId) && (r.perguntaId as number) > 0,
+            );
+          if (respostas.length === 0) {
+            throw new Error(
+              "Nenhuma resposta válida para enviar. Confira o campo obrigatório e tente novamente.",
+            );
+          }
+          await inscricaoService.corrigirRespostasPendentes(corrId, {
+            respostas,
+          });
         } else {
-          navigate(props.successRedirectUrl ?? "/portal-aluno");
+          await inscricaoService.submeterRespostas(data);
         }
+        props.onSuccess?.(data);
+        navigate(props.successRedirectUrl ?? "/portal-aluno");
       } catch (err: any) {
         const msg =
           err?.message ||
@@ -83,6 +124,14 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
       setIsLoadingVagas(false);
       if (vagasData.length === 1) {
         setVagaSelecionada(vagasData[0].id);
+      } else if (
+        props.focusVagaId != null &&
+        String(props.focusVagaId).trim() !== ""
+      ) {
+        const target = String(props.focusVagaId);
+        if (vagasData.some((v) => String(v.id) === target)) {
+          setVagaSelecionada(target);
+        }
       }
       return;
     }
@@ -99,6 +148,14 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
 
         if (vagasData.length === 1) {
           setVagaSelecionada(vagasData[0].id);
+        } else if (
+          props.focusVagaId != null &&
+          String(props.focusVagaId).trim() !== ""
+        ) {
+          const target = String(props.focusVagaId);
+          if (vagasData.some((v) => String(v.id) === target)) {
+            setVagaSelecionada(target);
+          }
         }
       } catch (error: any) {
         setVagasError(error.message || 'Erro ao carregar vagas');
@@ -111,7 +168,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     if (editalId) {
       carregarVagas();
     }
-  }, [editalId, props.initialVagas]);
+  }, [editalId, props.initialVagas, props.focusVagaId]);
 
   const {
     form,
@@ -121,6 +178,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     nextPage,
     pageErrors,
     prevPage,
+    goToPage,
     submitForm,
     paginasVisiveis,
     isLoadingFromBackend,
@@ -133,12 +191,61 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     setSelectedVagaId
   } = useFormBuilder(builderProps);
 
+  const hasAppliedFocusRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!pularWizardIntro) return;
+    if (!paginasVisiveis?.length) return;
+    if (currentPage !== 0) return;
+    goToPage(1);
+  }, [pularWizardIntro, paginasVisiveis?.length, currentPage, goToPage]);
+
   const totalSteps = paginasVisiveis ? paginasVisiveis.length + 1 : 1;
   const currentStep = currentPage + 1;
 
   useEffect(() => {
     props.onStepChange?.(currentStep, totalSteps);
   }, [currentStep, totalSteps, props]);
+
+  useEffect(() => {
+    if (hasAppliedFocusRef.current) return;
+    const focusRaw = props.focusStepId;
+    if (focusRaw == null || focusRaw === "") return;
+    if (!paginasVisiveis?.length) return;
+
+    const targetStepId = String(focusRaw);
+    const idx = paginasVisiveis.findIndex(
+      (p: any) => p?.step_id != null && String(p.step_id) === targetStepId
+    );
+    if (idx >= 0) {
+      // currentPage=0 é a tela de apresentação; páginas começam em 1.
+      goToPage(idx + 1);
+      hasAppliedFocusRef.current = true;
+    }
+  }, [props.focusStepId, paginasVisiveis, goToPage]);
+
+  useEffect(() => {
+    const qid = props.focusQuestionId;
+    if (qid == null || qid === "") return;
+    const inputName = `pergunta_${String(qid)}`;
+
+    const tryFocus = () => {
+      const el =
+        document.getElementById(`field-${inputName}`) ??
+        document.querySelector(`[data-input-name="${inputName}"]`);
+      if (el instanceof HTMLElement) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      try {
+        form.setFocus(inputName as any);
+      } catch {
+        // Campo pode não estar visível ainda (condicional); ignora.
+      }
+    };
+
+    const t = window.setTimeout(tryFocus, 250);
+    return () => window.clearTimeout(t);
+  }, [props.focusQuestionId, currentPage, form]);
 
   useEffect(() => {
     if (form && vagaSelecionada !== null) {
@@ -179,9 +286,9 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     try {
       await submitForm();
       toast.success("Formulário enviado com sucesso!");
-    } catch (err: any) {
-      const msg = err?.message || "Não foi possível enviar o formulário.";
-      toast.error(msg, { duration: 6000 });
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(err);
+      toast.error(msg, { duration: 8000 });
     }
   }
 
@@ -272,7 +379,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     );
   }
 
-  if (currentPage === 0) {
+  if (currentPage === 0 && !pularWizardIntro) {
     const vagaAtual = vagas.find(v => v.id === vagaSelecionada);
 
     return (
@@ -350,6 +457,15 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     )
   }
 
+  if (pularWizardIntro && currentPage === 0 && paginasVisiveis.length > 0) {
+    return (
+      <div className="flex justify-center items-center p-8 min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <span className="ml-2">Abrindo ajuste...</span>
+      </div>
+    );
+  }
+
   const currentPageConfig = paginasVisiveis[currentPage - 1];
   if (!currentPageConfig) {
     const safePageIdx = Math.min(currentPage, paginasVisiveis.length);
@@ -367,6 +483,14 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
   const formData = form.watch();
   const inputsDaPagina = currentPageConfig.inputs ?? [];
   const inputsVisiveis = filtrarInputsCondicionais(inputsDaPagina, formData);
+  const focusQuestionName =
+    props.focusQuestionId != null && props.focusQuestionId !== ""
+      ? `pergunta_${String(props.focusQuestionId)}`
+      : null;
+  const isModoAjusteFocado = !!focusQuestionName && currentPage > 0;
+  const inputFoco = focusQuestionName
+    ? inputsVisiveis.find((i) => i.nome === focusQuestionName)
+    : undefined;
 
   return (
     <FormProvider {...form}>
@@ -381,6 +505,9 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
               currentStep={currentStep}
               totalSteps={totalSteps}
               className="mb-6"
+              variant={
+                isModoAjusteFocado && inputFoco ? "correction" : "default"
+              }
             />
           </div>
 
@@ -388,13 +515,25 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
           <section className='formulario-conteudo'>
             <h1>{currentPageConfig.titulo ?? 'Formulário'}</h1>
           </section>
-          {inputsVisiveis.map((input) => (
-            <DynamicField
-              key={input.nome}
-              input={input}
-              form={form}
-            />
-          ))}
+          {isModoAjusteFocado && inputFoco && (
+            <div className="w-full rounded-xl border border-amber-300 bg-amber-50 p-4">
+              <p className="m-0 mb-3 text-sm font-semibold text-amber-900">
+                Ajuste solicitado pela PROAE: corrija este campo.
+              </p>
+              <div id={`field-${inputFoco.nome}`} data-input-name={inputFoco.nome}>
+                <DynamicField input={inputFoco} form={form} />
+              </div>
+            </div>
+          )}
+
+          {(!isModoAjusteFocado || !inputFoco) &&
+            inputsVisiveis.map((input) => (
+              <div key={input.nome} id={`field-${input.nome}`} data-input-name={input.nome}>
+                <DynamicField input={input} form={form} />
+              </div>
+            ))}
+
+          {/* Modo de ajuste estrito: mostra somente o campo pendente. */}
           </section>
 
           {/* Status de salvamento */}

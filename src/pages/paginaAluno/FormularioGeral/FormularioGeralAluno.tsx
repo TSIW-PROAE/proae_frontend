@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@heroui/button";
 import {
   CheckCircle,
@@ -23,11 +23,17 @@ const STATUS_EM_AJUSTE = "Ajuste Necessário";
 
 export default function FormularioGeralAluno() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState<FormularioGeralResponse | null | undefined>(
     undefined
   );
   const [error, setError] = useState<string | null>(null);
   const [corrigindo, setCorrigindo] = useState(false);
+  const stepIdParam = searchParams.get("step_id");
+  const perguntaIdParam = searchParams.get("pergunta_id");
+  const vagaIdParam = searchParams.get("vaga_id");
+  const inscricaoIdParam = searchParams.get("inscricao_id");
+  const autoCorrigir = searchParams.get("corrigir") === "1";
 
   const reload = useCallback(async () => {
     try {
@@ -47,6 +53,12 @@ export default function FormularioGeralAluno() {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  useEffect(() => {
+    if (autoCorrigir) {
+      setCorrigindo(true);
+    }
+  }, [autoCorrigir]);
 
   const paginasFromFG = useMemo(
     () =>
@@ -132,14 +144,12 @@ export default function FormularioGeralAluno() {
         titulo={data.titulo_edital || "Formulário Geral — Correção"}
         subtitulo="Preencha novamente as informações solicitadas e reenvie o formulário."
         botaoFinal="Reenviar correção"
-        successRedirectUrl="/portal-aluno/formulario-geral"
+        successRedirectUrl="/portal-aluno"
         initialPaginas={paginasFromFG.length > 0 ? paginasFromFG : undefined}
         initialVagas={data.vagas}
-        onSuccess={() => {
-          setCorrigindo(false);
-          setData(null);
-          reload();
-        }}
+        focusStepId={stepIdParam}
+        focusQuestionId={perguntaIdParam}
+        focusVagaId={vagaIdParam}
         onError={(msg) => {
           console.error(msg);
         }}
@@ -310,9 +320,18 @@ export default function FormularioGeralAluno() {
       titulo={data.titulo_edital || "Formulário Geral"}
       subtitulo={data.descricao}
       botaoFinal="Enviar formulário geral"
-      successRedirectUrl="/portal-aluno/formulario-geral"
+      successRedirectUrl="/portal-aluno"
       initialPaginas={paginasFromFG.length > 0 ? paginasFromFG : undefined}
       initialVagas={data.vagas}
+      focusStepId={stepIdParam}
+      focusQuestionId={perguntaIdParam}
+      focusVagaId={vagaIdParam}
+      correcaoInscricaoId={
+        inscricaoIdParam ??
+        (autoCorrigir && data?.minha_inscricao?.id != null
+          ? String(data.minha_inscricao.id)
+          : undefined)
+      }
       onError={(msg) => {
         console.error(msg);
       }}

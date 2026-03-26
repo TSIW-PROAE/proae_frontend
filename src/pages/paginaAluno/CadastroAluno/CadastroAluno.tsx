@@ -6,11 +6,16 @@ import { DatePicker } from "@heroui/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DateValue } from "@internationalized/date";
 import { toast, Toaster } from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
 import "./CadastroAluno.css";
 import AuthService from "../../../services/AuthService/auth.service";
 import useFormValidation, { FormData } from "@/hooks/useFormValidation";
 import { formatarData, formatarCelular, formatCPF } from "../../../utils/validations";
 import {campus} from "../../../utils/cadastroop";
+import {
+  NIVEL_GRADUACAO,
+  NIVEL_POS_GRADUACAO,
+} from "@/constants/nivelAcademico";
 
 export default function Cadastro() {
   const [formData, setFormData] = useState<FormData>({
@@ -27,7 +32,10 @@ export default function Cadastro() {
     confirmarSenha: "",
   });
 
+  const [nivelAcademico, setNivelAcademico] = useState<string>(NIVEL_GRADUACAO);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
+  const [showConfirmarSenha, setShowConfirmarSenha] = useState(false);
   const anoAtual = new Date().getFullYear();
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,6 +78,7 @@ export default function Cadastro() {
         cpf: formData.cpf.replace(/\D/g, ""),
         data_ingresso: formatarData(formData.dataIngresso),
         celular: formatarCelular(formData.celular),
+        nivel_academico: nivelAcademico,
       };
 
       const authService = new AuthService();
@@ -77,7 +86,18 @@ export default function Cadastro() {
       try {
         const response = await authService.signupAluno(dadosFormatados);
         console.log(response);
-        toast.success("Cadastro realizado com sucesso!");
+        const body = response as {
+          aguardando_confirmacao_email?: boolean;
+          mensagem?: string;
+        };
+        if (body.aguardando_confirmacao_email) {
+          toast.success(
+            body.mensagem ||
+              "Enviamos um link de confirmação para seu email. Abra o link antes de fazer login."
+          );
+        } else {
+          toast.success(body.mensagem || "Cadastro realizado com sucesso!");
+        }
         navigate("/login");
       } catch (error: any) {
         console.log(error);
@@ -201,6 +221,24 @@ export default function Cadastro() {
               <div className="select-container">
                 <Select
                   className="select-campus"
+                  label="Graduação ou Pós-graduação"
+                  variant="bordered"
+                  radius="lg"
+                  fullWidth
+                  selectedKeys={new Set([nivelAcademico])}
+                  onSelectionChange={(keys) => {
+                    const v = Array.from(keys)[0] as string;
+                    if (v) setNivelAcademico(v);
+                  }}
+                >
+                  <SelectItem key={NIVEL_GRADUACAO}>Graduação</SelectItem>
+                  <SelectItem key={NIVEL_POS_GRADUACAO}>Pós-graduação</SelectItem>
+                </Select>
+              </div>
+
+              <div className="select-container">
+                <Select
+                  className="select-campus"
                   label="Campus"
                   variant="bordered"
                   radius="lg"
@@ -308,14 +346,28 @@ export default function Cadastro() {
                   label="Senha"
                   variant="bordered"
                   radius="lg"
-                  type="password"
+                  type={showSenha ? "text" : "password"}
                   placeholder="Digite sua senha"
                   value={formData.senha}
                   onChange={(e) => handleInputChange("senha", e.target.value)}
                   isInvalid={!!errors.senha}
                   errorMessage={errors.senha}
                   fullWidth
-                  classNames={{ base: "custom-input" }}
+                  classNames={{ base: "custom-input", innerWrapper: "items-center", input: "pr-10" }}
+                  endContent={
+                    <button
+                      type="button"
+                      className="focus:outline-none p-1"
+                      onClick={() => setShowSenha(!showSenha)}
+                      aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showSenha ? (
+                        <EyeOff className="w-5 h-5 text-gray-400" />
+                      ) : (
+                        <Eye className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                  }
                 />
               </div>
 
@@ -325,7 +377,7 @@ export default function Cadastro() {
                   label="Repita sua senha"
                   variant="bordered"
                   radius="lg"
-                  type="password"
+                  type={showConfirmarSenha ? "text" : "password"}
                   placeholder="Digite sua senha novamente"
                   value={formData.confirmarSenha}
                   onChange={(e) =>
@@ -334,7 +386,21 @@ export default function Cadastro() {
                   isInvalid={!!errors.confirmarSenha}
                   errorMessage={errors.confirmarSenha}
                   fullWidth
-                  classNames={{ base: "custom-input" }}
+                  classNames={{ base: "custom-input", innerWrapper: "items-center", input: "pr-10" }}
+                  endContent={
+                    <button
+                      type="button"
+                      className="focus:outline-none p-1"
+                      onClick={() => setShowConfirmarSenha(!showConfirmarSenha)}
+                      aria-label={showConfirmarSenha ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showConfirmarSenha ? (
+                        <EyeOff className="w-5 h-5 text-gray-400" />
+                      ) : (
+                        <Eye className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                  }
                 />
               </div>
 

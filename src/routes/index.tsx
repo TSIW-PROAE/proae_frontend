@@ -9,6 +9,7 @@ import NotFound from "../pages/NotFound/NotFound";
 import ConfiguracaoAluno from "../pages/paginaAluno/ConfiguracaoAluno/ConfiguracaoAluno";
 import PortalAluno from "../pages/paginaAluno/PortalAluno/PortalAluno";
 import FormularioGeralAluno from "@/pages/paginaAluno/FormularioGeral/FormularioGeralAluno";
+import FormularioRenovacaoAluno from "@/pages/paginaAluno/FormularioRenovacao/FormularioRenovacaoAluno";
 
 // PROAE
 import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.tsx";
@@ -19,6 +20,7 @@ import ParecerQuestionarios from "../pages/paginaProae/ParecerQuestionarios/Pare
 import CadastroProae from "@/pages/paginaProae/CadastroProae/CadastroProae.tsx";
 import TelaDeEspera from "@/pages/paginaProae/TelaDeEspera/TelaDeEspera";
 import FormularioGeralAdmin from "@/pages/paginaProae/FormularioGeral/FormularioGeralAdmin";
+import FormularioRenovacaoAdmin from "@/pages/paginaProae/FormularioRenovacao/FormularioRenovacaoAdmin";
 import ListaAlunos from "@/pages/paginaProae/ListaAlunos/ListaAlunos";
 import GerenciarInscricoes from "@/pages/paginaProae/GerenciarInscricoes/GerenciarInscricoes";
 import RanqueamentoProae from "@/pages/paginaProae/RanqueamentoProae/RanqueamentoProae";
@@ -26,6 +28,7 @@ import AdminAprovado from "@/pages/paginaProae/AdminAprovado/AdminAprovado";
 
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
+import AlunoCadastroConfirmado from "@/pages/paginaAluno/AlunoCadastroConfirmado/AlunoCadastroConfirmado";
 import PendenciasAluno from "@/pages/paginaAluno/PendenciasAluno/PendenciasAluno";
 import ProtectedProaeRoute from "@/Auth/ProtectedProaeRoute";
 import ProtectedRouteAluno from "@/Auth/ProtectedAlunoRoute";
@@ -45,6 +48,7 @@ const routes = [
       },
       { path: "login", element: <Login /> },
       { path: "cadastro-aluno", element: <CadastroAluno /> },
+      { path: "aluno/cadastro-confirmado", element: <AlunoCadastroConfirmado /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
       {
@@ -52,6 +56,7 @@ const routes = [
         children: [
           { path: "portal-aluno", element: <PortalAluno /> },
           { path: "portal-aluno/formulario-geral", element: <FormularioGeralAluno /> },
+          { path: "portal-aluno/formulario-renovacao", element: <FormularioRenovacaoAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
           { path: "portal-aluno/pendencias/", element: <PendenciasAluno /> },
@@ -69,6 +74,7 @@ const routes = [
           { path: "portal-proae/ranqueamento", element: <RanqueamentoProae /> },
           { path: "portal-proae/processos", element: <ProcessosProae /> },
           { path: "portal-proae/formulario-geral", element: <FormularioGeralAdmin /> },
+          { path: "portal-proae/formulario-renovacao", element: <FormularioRenovacaoAdmin /> },
           { path: "portal-proae/pareceres", element: <ParecerQuestionarios /> },
           { path: "portal-proae/alunos", element: <ListaAlunos /> },
           { path: "portal-proae/configuracao", element: <ConfiguracaoProae /> },
