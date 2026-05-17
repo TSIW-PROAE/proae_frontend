@@ -26,7 +26,7 @@ export interface NotaCalculada {
 }
 
 export interface CalculoNotasRequest {
-  edital_id: string;
+  edital_id: number;
   step_id?: string;
 }
 

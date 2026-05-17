@@ -109,10 +109,8 @@ export default function LoginProae() {
       const isAluno = hasAlunoRole(roles);
 
       if (loginAs === "admin") {
-        if (isAdmin && aprovado) {
-          navigate("/portal-proae/inscricoes", { replace: true });
-        } else if (isAdmin && !aprovado) {
-          navigate("/tela-de-espera", { replace: true });
+        if (isAdmin && userInfo.aprovado) {
+          navigate("/portal-proae/inscricoes");
         } else if (isAluno) {
           navigate("/portal-aluno", { replace: true });
         }
@@ -322,9 +320,7 @@ export default function LoginProae() {
                 isLoading={isLoading || isSubmitting}
                 disabled={isLoading || isSubmitting}
               >
-                {isLoading || isSubmitting ? (
-                  <Spinner size="md" className="text-white" />
-                ) : loginAs === "aluno" ? (
+                { loginAs === "aluno" ? (
                   "Entrar como Aluno"
                 ) : (
                   "Entrar como Servidor PROAE"

@@ -13,7 +13,7 @@ export class StepService {
 
   async criarStep(editalId: string, texto: string): Promise<StepResponseDto> {
     // Cria um Step para um edital
-    const payload = { texto, edital_id: editalId } as const;
+    const payload = { texto, edital_id: Number(editalId) } as const;
     const resp = await this.httpClient.post<StepResponseDto>(`${BASE_URL}`, payload);
     return resp.data;
   }
