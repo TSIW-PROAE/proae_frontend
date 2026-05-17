@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useEffect, useRef, useContext, type CSSProperties } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X, History, Loader2, Save } from "lucide-react";
+import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X, History, Loader2, Save, Lock } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { Edital } from "@/types/edital";
 import { inscricaoServiceManager } from "@/services/InscricaoService/inscricaoService";
@@ -9,6 +9,8 @@ import { AlunoInscrito } from "@/types/inscricao";
 import type { InscricaoStatusAuditEntry } from "@/types/inscricaoStatusAudit";
 import { respostaService } from "@/services/RespostaService/respostaService";
 import { getApiErrorMessage } from "@/utils/apiError";
+import { AuthContext } from "@/context/AuthContext";
+import { canAnalyzeInscricoes, canManageEditais, isReadOnlyAdmin } from "@/utils/authRoles";
 import "./InscricoesProae.css";
 
 /** Valores aceitos pelo PATCH admin de status (alinhado à Central / backend). */
@@ -127,6 +129,12 @@ function mergeAlunoInformacoesGerais(ins: AlunoInscrito, sc?: StepsCompletos["al
 }
 
 export default function InscricoesProae() {
+  const { userInfo } = useContext(AuthContext);
+  const adminPerfil = userInfo?.adminPerfil ?? null;
+  const isReadOnly = isReadOnlyAdmin(adminPerfil);
+  const podeAnalisarInscricoes = canAnalyzeInscricoes(adminPerfil);
+  const podeAlterarBeneficio = canManageEditais(adminPerfil);
+
   const [searchParams] = useSearchParams();
   const editalIdFromUrl = searchParams.get("editalId");
   const expandInscricaoFromUrl = searchParams.get("expandInscricao");
@@ -429,7 +437,10 @@ export default function InscricoesProae() {
   ]);
 
   const podeEditarBeneficioEdital =
-    !!editalSelecionado && !editalSelecionado.is_formulario_geral && !editalSelecionado.is_formulario_renovacao;
+    !!editalSelecionado &&
+    !editalSelecionado.is_formulario_geral &&
+    !editalSelecionado.is_formulario_renovacao &&
+    podeAlterarBeneficio;
 
   const salvarStatusInscricaoAdmin = async () => {
     if (!inscricaoSelecionada?.inscricao_id) return;
@@ -510,6 +521,10 @@ export default function InscricoesProae() {
   };
 
   const abrirModalValidar = (respostaId: string, perguntaTitulo?: string) => {
+    if (!podeAnalisarInscricoes) {
+      toast.error("Seu perfil não permite validar respostas.");
+      return;
+    }
     setValidarRespostaId(respostaId);
     setValidarPerguntaTitulo(perguntaTitulo || "");
     setModalValidarOpen(true);
@@ -555,6 +570,10 @@ export default function InscricoesProae() {
   };
 
   const abrirModalInvalidar = (respostaId: string, perguntaTitulo?: string) => {
+    if (!podeAnalisarInscricoes) {
+      toast.error("Seu perfil não permite alterar respostas.");
+      return;
+    }
     setInvalidarRespostaId(respostaId);
     setInvalidarPerguntaTitulo(perguntaTitulo || "");
     setInvalidarParecer("");
@@ -588,6 +607,10 @@ export default function InscricoesProae() {
   };
 
   const abrirModalEditar = () => {
+    if (!podeAnalisarInscricoes) {
+      toast.error("Seu perfil não permite editar respostas.");
+      return;
+    }
     setConfirmarEdicaoOpen(false);
     // Inicializar campo de edição com o valor atual
     if (
@@ -749,6 +772,10 @@ export default function InscricoesProae() {
 
   // ── Reabrir prazo de complemento ──
   const abrirModalReabrirComplemento = (respostaId: string, perguntaTitulo: string) => {
+    if (!podeAnalisarInscricoes) {
+      toast.error("Seu perfil não permite reabrir prazos.");
+      return;
+    }
     setReabrirRespostaId(respostaId);
     setReabrirPerguntaTitulo(perguntaTitulo);
     setReabrirNovoPrazo("");
@@ -926,6 +953,41 @@ export default function InscricoesProae() {
     }
   };
 
+  /**
+   * Exporta a relação completa de inscrições do edital em CSV (UTF-8 com BOM).
+   * O backend gera 1 linha por inscrição com colunas dinâmicas para cada
+   * pergunta, ordenadas conforme `ordem` no formulário.
+   */
+  const baixarCsvInscricoesEdital = async () => {
+    if (!editalSelecionado?.id) {
+      toast.error("Selecione um edital primeiro.");
+      return;
+    }
+    try {
+      await inscricaoServiceManager.downloadCsvInscricoesEdital(
+        String(editalSelecionado.id),
+      );
+    } catch (err: unknown) {
+      console.error("Erro ao baixar CSV de inscrições:", err);
+      const msg = err instanceof Error ? err.message : "Não foi possível baixar o CSV.";
+      toast.error(msg);
+    }
+  };
+
+  /**
+   * Gera o PDF detalhado de uma inscrição (perguntas e respostas), via endpoint
+   * específico do backend.
+   */
+  const baixarPdfDaInscricao = async (inscricaoId: string | number) => {
+    try {
+      await inscricaoServiceManager.downloadPdfInscricao(inscricaoId);
+    } catch (err: unknown) {
+      console.error("Erro ao baixar PDF da inscrição:", err);
+      const msg = err instanceof Error ? err.message : "Não foi possível baixar o PDF.";
+      toast.error(msg);
+    }
+  };
+
   const handleCloseModal = async () => {
     setIsModalOpen(false);
     setInscricaoSelecionada(null);
@@ -1079,6 +1141,14 @@ export default function InscricoesProae() {
                   >
                     <Download className="w-4 h-4" />
                     <span>{downloadingPdfBeneficio ? "Baixando..." : "PDF — Beneficiários"}</span>
+                  </button>
+                  <button
+                    onClick={() => void baixarCsvInscricoesEdital()}
+                    className="download-pdf-button download-pdf-button--secondary"
+                    title="Exporta uma planilha CSV com 1 linha por inscrição e 1 coluna por pergunta. Abre direto no Excel."
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>CSV — Inscrições do edital</span>
                   </button>
                 </div>
               </div>
@@ -1258,7 +1328,44 @@ export default function InscricoesProae() {
 
             {/* Conteúdo do Modal */}
             <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-              <h2 style={{ marginTop: 0, marginBottom: "16px", color: "#1e293b" }}>Detalhes da Inscrição</h2>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: 0,
+                  marginBottom: 16,
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <h2 style={{ margin: 0, color: "#1e293b" }}>Detalhes da Inscrição</h2>
+                {inscricaoSelecionada?.inscricao_id && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void baixarPdfDaInscricao(inscricaoSelecionada.inscricao_id)
+                    }
+                    title="Baixa um PDF com os dados da inscrição e todas as respostas."
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "8px 14px",
+                      borderRadius: 6,
+                      border: "1px solid #c7d2fe",
+                      background: "#eef2ff",
+                      color: "#1e3a8a",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      marginRight: 36,
+                    }}
+                  >
+                    <Download className="w-4 h-4" />
+                    Gerar PDF da inscrição
+                  </button>
+                )}
+              </div>
 
               {/* Abas */}
               <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: "2px solid #e2e8f0" }}>
@@ -2218,6 +2325,25 @@ export default function InscricoesProae() {
                           </div>
                         </div>
 
+                        {isReadOnly ? (
+                          <div
+                            style={{
+                              marginBottom: "24px",
+                              padding: "12px 14px",
+                              background: "#f8fafc",
+                              borderRadius: "10px",
+                              border: "1px dashed #cbd5e1",
+                              color: "#475569",
+                              fontSize: "13px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <Lock style={{ width: "16px", height: "16px" }} />
+                            Seu perfil é de coordenação (somente consulta). Decisões e ajustes só estão disponíveis para perfis técnico ou gerencial.
+                          </div>
+                        ) : (
                         <div
                           style={{
                             marginBottom: "24px",
@@ -2376,6 +2502,7 @@ export default function InscricoesProae() {
                             );
                           })()}
                         </div>
+                        )}
 
                         <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: 700, color: "#334155", display: "flex", alignItems: "center", gap: "8px" }}>
                           <User style={{ width: "18px", height: "18px", color: "#2563eb" }} />

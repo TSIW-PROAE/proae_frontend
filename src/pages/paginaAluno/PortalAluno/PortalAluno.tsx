@@ -197,7 +197,15 @@ export default function PortalAluno() {
     {
       icon: BookOpen,
       label: "Seleções Abertas",
-      value: openSelections?.filter((s) => s.status_edital?.toLowerCase().includes("aberto")).length || 0,
+      // Conta só editais com inscrições liberadas. O endpoint do aluno
+      // também devolve EM_ANDAMENTO e ENCERRADO (visualização), então
+      // checamos explicitamente o código de domínio "ABERTO" — substring
+      // "aberto" cobre tanto o código quanto o label "Edital em aberto".
+      value:
+        openSelections?.filter((s) => {
+          const st = (s.status_edital ?? "").toString().toLowerCase();
+          return st === "aberto" || st.includes("em aberto");
+        }).length || 0,
       color: "bg-blue-500",
       bgColor: "bg-blue-50",
       textColor: "text-blue-700",

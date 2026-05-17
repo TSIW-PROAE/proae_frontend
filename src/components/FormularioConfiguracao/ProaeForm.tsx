@@ -1,7 +1,7 @@
 // ProaeForm.tsx
 import { Button } from "@heroui/react";
 import { useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { Save, ShieldCheck } from "lucide-react";
 import { FetchAdapter } from "../../services/api";
 import EditarPerfilService from "../../services/EditarPerfil.service/editarPerfil.service";
 import {
@@ -10,6 +10,7 @@ import {
   validarFormatacao,
 } from "../../utils/validations";
 import { TipoFormatacao } from "../../utils/validations";
+import { adminPerfilLabel, normalizeAdminPerfil } from "../../utils/authRoles";
 import "./Form.css";
 import { formSectionsProae } from "./FormConfigProae";
 import FormField, { FormFieldProps } from "./FormField";
@@ -187,6 +188,30 @@ const ProaeForm = () => {
   return (
     <>
       <form className="aluno-form-wrapper" onSubmit={handleSubmit}>
+        <div
+          className="form-section"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            background: "#eef2ff",
+            border: "1px solid #c7d2fe",
+            color: "#3730a3",
+            padding: "12px 14px",
+            borderRadius: "10px",
+          }}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.8 }}>
+              Perfil de acesso
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>
+              {adminPerfilLabel(normalizeAdminPerfil(formData.perfil))}
+            </div>
+          </div>
+        </div>
+
         {formSectionsProae.map((section) => (
           <div className="form-section" key={section.title}>
             <h2>{section.title}</h2>

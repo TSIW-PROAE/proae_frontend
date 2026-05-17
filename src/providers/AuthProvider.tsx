@@ -3,7 +3,7 @@ import { AuthContext } from '@/context/AuthContext'
 import { UserInfo, UserLogin, UserSignup } from '@/types/auth'
 import AuthService from '@/services/AuthService/auth.service'
 import { CadastroFormData } from '@/pages/paginaProae/CadastroProae/CadastroProae';
-import { hasAdminRole, normalizeRoles } from '@/utils/authRoles';
+import { hasAdminRole, normalizeAdminPerfil, normalizeRoles } from '@/utils/authRoles';
 
 function AuthProvider({children}: {children: React.ReactNode}){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -18,12 +18,14 @@ function AuthProvider({children}: {children: React.ReactNode}){
       const aprovado = response.user?.aprovado ?? response.user?.adminAprovado ?? response.adminAprovado;
       // API / TypeORM podem mandar roles como string "aluno,admin" — não descartar com Array.isArray
       const roles = normalizeRoles(response.user?.roles);
+      const isAdmin = hasAdminRole(roles);
       const fillUserInfo: UserInfo = {
         email: response.user.email,
         id: String(response.user.usuario_id),
         nome: response.user.nome,
         roles,
-        aprovado: hasAdminRole(roles) ? Boolean(aprovado) : undefined
+        aprovado: isAdmin ? Boolean(aprovado) : undefined,
+        adminPerfil: isAdmin ? normalizeAdminPerfil(response.user?.adminPerfil) : null,
       }
       setUserInfo(fillUserInfo);
       setIsAuthenticated(true);
@@ -74,12 +76,14 @@ function AuthProvider({children}: {children: React.ReactNode}){
             }
             const aprovado = response.user?.aprovado ?? response.user?.adminAprovado ?? response.adminAprovado;
             const roles = normalizeRoles(response.user?.roles);
+            const isAdmin = hasAdminRole(roles);
              const fillUserInfo: UserInfo = {
                 email: response.user.email,
                 id: String(response.user.usuario_id),
                 nome: response.user.nome,
                 roles,
-                aprovado: hasAdminRole(roles) ? Boolean(aprovado) : undefined
+                aprovado: isAdmin ? Boolean(aprovado) : undefined,
+                adminPerfil: isAdmin ? normalizeAdminPerfil(response.user?.adminPerfil) : null,
               }
             setUserInfo(fillUserInfo);
             setIsAuthenticated(true);

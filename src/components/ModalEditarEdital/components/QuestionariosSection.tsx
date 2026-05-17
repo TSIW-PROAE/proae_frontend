@@ -6,6 +6,7 @@ import {
   Trash2,
   Plus,
   ListChecks,
+  FileDown,
 } from "lucide-react";
 import { EditableQuestionario } from "../types";
 
@@ -16,6 +17,8 @@ interface QuestionariosSectionProps {
   onToggleOpen: () => void;
   onOpenQuestionario: (index: number) => void;
   onAddQuestionario: () => void;
+  /** Abre o modal para importar formulário de outro edital. */
+  onImportarFormulario?: () => void;
 }
 
 const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
@@ -25,6 +28,7 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
   onToggleOpen,
   onOpenQuestionario,
   onAddQuestionario,
+  onImportarFormulario,
 }) => {
   const updateQuestionario = (
     index: number,
@@ -154,10 +158,28 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
           {questionarios.length === 0 && (
             <div className="empty-state">Nenhum questionário adicionado.</div>
           )}
-          <button onClick={onAddQuestionario} className="btn-add-questionario">
-            <Plus size={16} />
-            Adicionar Questionário
-          </button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={onAddQuestionario} className="btn-add-questionario">
+              <Plus size={16} />
+              Adicionar Questionário
+            </button>
+            {onImportarFormulario && (
+              <button
+                type="button"
+                onClick={onImportarFormulario}
+                className="btn-add-questionario"
+                style={{
+                  background: "#eef2ff",
+                  color: "#1e40af",
+                  borderColor: "#c7d2fe",
+                }}
+                title="Copiar todos os questionários de outro edital"
+              >
+                <FileDown size={16} />
+                Importar formulário de outro edital
+              </button>
+            )}
+          </div>
         </div>
       )}
     </section>

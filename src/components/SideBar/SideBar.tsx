@@ -1,6 +1,6 @@
 import "./sidebar.css";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, FileText, Settings, BookOpen, LogOut, Users, ClipboardList, RefreshCw } from "lucide-react";
+import { Home, FileText, Settings, BookOpen, LogOut, Users, ClipboardList, RefreshCw, ShieldCheck } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
 export interface ISideBarProps {
@@ -15,6 +15,8 @@ export interface ISideBarProps {
   formularioRenovacaoRedirect?: string;
   alunosIconRedirect?: string;
   inscricoesIconRedirect?: string;
+  /** Tela de gerenciamento da equipe administrativa (apenas perfil gerencial). */
+  equipeIconRedirect?: string;
   logoutIconRedirect: string;
   logoutOnClick: () => void;
 }
@@ -38,6 +40,7 @@ const SideBar: React.FC<ISideBarProps> = ({
   formularioGeralRedirect = "",
   formularioRenovacaoRedirect = "",
   alunosIconRedirect = "",
+  equipeIconRedirect = "",
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -103,6 +106,13 @@ const SideBar: React.FC<ISideBarProps> = ({
       label: "Pendências",
       redirect: pendenciasIconRedirect,
       shouldShowIcon: pendenciasIconRedirect !== "",
+    },
+    {
+      icon: ShieldCheck,
+      alt: "Equipe PROAE",
+      label: "Equipe",
+      redirect: equipeIconRedirect,
+      shouldShowIcon: equipeIconRedirect !== "",
     },
     {
       icon: Settings,

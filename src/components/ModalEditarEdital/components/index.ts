@@ -9,3 +9,4 @@ export { default as DocumentosSection } from "./DocumentosSection";
 export { default as ModalFooter } from "./ModalFooter";
 export { default as QuestionarioDrawer } from "./QuestionarioDrawer";
 export { default as CelebrationOverlay } from "./CelebrationOverlay";
+export { default as ImportarFormularioModal } from "./ImportarFormularioModal";

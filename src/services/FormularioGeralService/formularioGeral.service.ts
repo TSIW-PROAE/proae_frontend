@@ -18,11 +18,18 @@ export interface FormularioGeralPergunta {
   opcoes: string[] | null;
   tipo_formatacao: any;
   placeholder?: string;
+  ordem?: number;
+  condicao?: {
+    pergunta_id_origem: number;
+    operador: 'equals' | 'notEquals' | 'includes' | 'notIncludes';
+    valor: string | string[];
+  } | null;
 }
 
 export interface FormularioGeralStep {
   id: number;
   texto: string;
+  ordem?: number;
   perguntas: FormularioGeralPergunta[];
 }
 

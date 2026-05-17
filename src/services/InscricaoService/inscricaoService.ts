@@ -156,6 +156,62 @@ export class InscricaoServiceManager {
     const q = `?editalId=${encodeURIComponent(editalId)}`;
     await downloadPdfBlob(`${BASE_URL}/inscricoes/beneficiarios/pdf${q}`, "beneficiarios-edital.pdf");
   }
+
+  /** PDF detalhado de uma única inscrição (perguntas e respostas). */
+  async downloadPdfInscricao(inscricaoId: string | number): Promise<void> {
+    await downloadPdfBlob(
+      `${BASE_URL}/inscricoes/admin/${inscricaoId}/pdf`,
+      `inscricao-${inscricaoId}.pdf`,
+    );
+  }
+
+  /**
+   * CSV agregado das inscrições de um edital.
+   * UTF-8 com BOM e separador ";", abre direto no Excel-pt-BR.
+   */
+  async downloadCsvInscricoesEdital(editalId: string | number): Promise<void> {
+    await downloadFileBlob(
+      `${BASE_URL}/inscricoes/admin/edital/${editalId}/export.csv`,
+      `inscricoes-edital-${editalId}.csv`,
+      "text/csv",
+    );
+  }
+}
+
+/**
+ * Baixa um arquivo arbitrário (CSV, txt, etc.) com cookie. Aceita um
+ * `expectedContentType` opcional para diferenciar erro JSON de payload válido.
+ */
+async function downloadFileBlob(
+  url: string,
+  fallbackFilename: string,
+  expectedContentType: string,
+): Promise<void> {
+  const axios = (await import("axios")).default;
+  try {
+    const response = await axios.get<Blob>(url, {
+      responseType: "blob",
+      withCredentials: true,
+    });
+
+    const ct = (response.headers["content-type"] || "").toLowerCase();
+    if (!ct.includes(expectedContentType)) {
+      const text = await blobToText(response.data as unknown as Blob);
+      throw new Error(parseJsonMessage(text) || "Resposta inesperada do servidor.");
+    }
+    const blob = new Blob([response.data as BlobPart], {
+      type: expectedContentType,
+    });
+    triggerDownload(blob, pickFilename(response.headers["content-disposition"], fallbackFilename));
+  } catch (err: unknown) {
+    const e = err as { response?: { status?: number; data?: Blob }; message?: string };
+    if (e.response?.data instanceof Blob) {
+      const text = await blobToText(e.response.data);
+      const msg = parseJsonMessage(text) || text?.slice(0, 400) || `Erro ${e.response.status ?? ""}`;
+      throw new Error(msg);
+    }
+    throw new Error(e?.message || "Erro ao baixar arquivo.");
+  }
 }
 
 /** Baixa PDF com cookie; interpreta erros JSON quando a API não retorna PDF. */

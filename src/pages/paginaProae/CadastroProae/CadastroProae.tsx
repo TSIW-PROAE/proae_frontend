@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { verificarEmailInstitucional, validarCPFReal, formatCPF, formatPhone, formatarData } from "@/utils/validations";
 import z from "zod"
 import { Input } from '@heroui/input';
-import { DatePicker } from '@heroui/react';
+import { DatePicker, Select, SelectItem } from '@heroui/react';
 import {Button} from '@heroui/react';
 import { toast, Toaster } from "react-hot-toast";
 import { DefaultResponse } from '@/types/auth';
@@ -13,8 +13,17 @@ import { AuthContext } from '@/context/AuthContext';
 import { useContext, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
+const ADMIN_PERFIL_OPCOES = [
+    { value: "tecnico", label: "Técnico — análise (sem gestão de editais)" },
+    { value: "gerencial", label: "Gerencial — criação e gestão de editais" },
+    { value: "coordenacao", label: "Coordenação — somente consulta" },
+] as const;
+
 export const cadastroProaeFormSchema = z.object({
     cargo: z.string({error: 'Cargo não pode estar vazio'}).min(5, "O campo cargo é obrigatório"),
+    perfil: z.enum(["tecnico", "gerencial", "coordenacao"], {
+        error: "Selecione um perfil de acesso",
+    }),
     email: z.email({error: "Email inválido"}).refine((val) => {
         return verificarEmailInstitucional(val, "@ufba.br");
     }, {error: "O email deve ser do domínio @ufba.br"}),
@@ -36,6 +45,7 @@ export default function CadastroProae() {
     const {control, handleSubmit, formState: { errors } } = useForm<CadastroFormData>({
         resolver: zodResolver(cadastroProaeFormSchema),
         mode: "onBlur",
+        defaultValues: { perfil: "gerencial" },
     }); 
     const [isLoading, setIsLoading] = useState(false);
     const [showSenha, setShowSenha] = useState(false);
@@ -117,6 +127,31 @@ export default function CadastroProae() {
                             errorMessage={errors.cargo?.message}
                             />
                     }
+                    />
+                </div>
+                <div>
+                    <Controller
+                        name='perfil'
+                        control={control}
+                        render={({ field }) => (
+                            <Select
+                                label='Perfil de acesso'
+                                variant='bordered'
+                                placeholder='Selecione o perfil'
+                                selectedKeys={field.value ? [field.value] : []}
+                                onSelectionChange={(keys) => {
+                                    const value = Array.from(keys)[0];
+                                    if (value) field.onChange(String(value));
+                                }}
+                                isInvalid={!!errors.perfil}
+                                errorMessage={errors.perfil?.message}
+                                description='Será revisado pela equipe na aprovação do cadastro.'
+                            >
+                                {ADMIN_PERFIL_OPCOES.map((opt) => (
+                                    <SelectItem key={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                            </Select>
+                        )}
                     />
                 </div>
                 <div>

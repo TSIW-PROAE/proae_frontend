@@ -37,6 +37,12 @@ export interface DadoAluno {
   opcoes?: string[];
 }
 
+export interface PerguntaCondicaoEditor {
+  pergunta_id_origem: number;
+  operador: 'equals' | 'notEquals' | 'includes' | 'notIncludes';
+  valor: string | string[];
+}
+
 export interface PerguntaEditorItem {
   id?: string; // ID da pergunta no backend
   texto: string;
@@ -55,6 +61,10 @@ export interface PerguntaEditorItem {
   dadoVinculado?: string; // nome do dado do aluno vinculado
   dadoId?: string; // ID do dado vinculado no backend
   isEditing?: boolean;
+  /** Posição relativa dentro do step (asc). */
+  ordem?: number;
+  /** Regra de exibição condicional (referencia outra pergunta deste edital). */
+  condicao?: PerguntaCondicaoEditor | null;
 }
 
 export const statusLabelMap: Record<StatusEdital, string> = {

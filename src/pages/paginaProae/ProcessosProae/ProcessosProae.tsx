@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   Edital,
   CreateEditalRequest,
@@ -6,7 +6,6 @@ import {
 } from "../../../types/edital";
 import { editalService } from "../../../services/EditalService/editalService";
 import { stepService } from "../../../services/StepService/stepService";
-import { perguntaService } from "../../../services/PerguntaService/perguntaService";
 import FormularioEdital from "../../../components/FormularioEdital/FormularioEdital";
 import ListaEditais from "../../../components/ListaEditais/ListaEditais";
 import ModalEditarEdital from "../../../components/ModalEditarEdital/ModalEditarEdital";
@@ -15,6 +14,7 @@ import {
   Plus,
   AlertCircle,
   BookOpen,
+  Lock,
   X,
   Settings,
   Trash2,
@@ -25,8 +25,13 @@ import {
   NIVEL_GRADUACAO,
   NIVEL_POS_GRADUACAO,
 } from "@/constants/nivelAcademico";
+import { AuthContext } from "@/context/AuthContext";
+import { canManageEditais } from "@/utils/authRoles";
 
 export default function ProcessosProae() {
+  const { userInfo } = useContext(AuthContext);
+  const podeGerenciarEditais = canManageEditais(userInfo?.adminPerfil ?? null);
+
   const [editais, setEditais] = useState<Edital[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -260,42 +265,14 @@ export default function ProcessosProae() {
         }
       }
 
-      // 4) Clonar steps e 5) perguntas
-      if (novo?.id && Array.isArray(duplicatingEdital.etapa_edital)) {
-        // Buscar steps originais via stepService (se necessário, caso etapas venham sem id)
-        // Aqui, se não houver listagem de steps por edital além de etapa_edital, pulamos e criamos apenas texto dos steps do edital original
-      }
-
-      // Buscar steps reais do edital original
-      // Alguns locais usam StepService.listarStepsPorEdital
-      const stepsOriginais = duplicatingEdital.id
-        ? await stepService.listarStepsPorEdital(duplicatingEdital.id.toString())
-        : [];
-
-      // Criar steps do novo
-      if (novo?.id && stepsOriginais.length) {
-        for (const step of stepsOriginais) {
-          const novoStep = await stepService.criarStep( novo.id!, step.texto || step.titulo || "",);
-
-          // Clonar perguntas do step, se houver
-          const perguntas = step.id
-            ? await perguntaService.listarPerguntasPorStep(step.id)
-            : step.perguntas || [];
-          if (novoStep?.id && perguntas.length) {
-            for (const p of perguntas) {
-              await perguntaService.criarPergunta({
-                step_id: novoStep.id,
-                pergunta: (p as any).pergunta || p.pergunta || "",
-                obrigatoriedade:
-                  (p as any).obrigatoriedade ?? p.obrigatoriedade ?? false,
-                tipo_Pergunta:
-                  (p as any).tipo_Pergunta || p.tipo_Pergunta || "input",
-                ...(p as any).tipo_formatacao
-                  ? { tipo_formatacao: (p as any).tipo_formatacao }
-                  : {},
-              } as any);
-            }
-          }
+      // 4) Clonar steps e perguntas em uma única chamada transacional no
+      // backend, preservando opções, vínculos com dados, ordem manual e
+      // condições de exibição. Substitui a clonagem múltipla em N chamadas.
+      if (novo?.id && duplicatingEdital.id) {
+        try {
+          await stepService.clonarFormulario(novo.id, duplicatingEdital.id, false);
+        } catch (err) {
+          console.error("Falha ao clonar formulário do edital original", err);
         }
       }
 
@@ -337,14 +314,24 @@ export default function ProcessosProae() {
             </div>
 
             <div className="header-actions">
-              <button
-                onClick={handleNovoEdital}
-                className="btn-novo-edital"
-                disabled={isLoading}
-              >
-                <Plus className="w-5 h-5" />
-                <span>Novo Edital</span>
-              </button>
+              {podeGerenciarEditais ? (
+                <button
+                  onClick={handleNovoEdital}
+                  className="btn-novo-edital"
+                  disabled={isLoading}
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Novo Edital</span>
+                </button>
+              ) : (
+                <div
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
+                  title="Apenas perfis gerenciais podem criar editais."
+                >
+                  <Lock className="w-4 h-4" />
+                  Somente consulta
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -564,6 +551,7 @@ export default function ProcessosProae() {
                   onDelete={handleDeletarEdital}
                   isLoading={isLoading}
                   onRequestDuplicate={abrirModalDuplicar}
+                  canManage={podeGerenciarEditais}
                 />
               </div>
             </section>
