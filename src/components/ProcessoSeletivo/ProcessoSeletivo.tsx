@@ -16,10 +16,18 @@ interface Documento {
   url: string;
 }
 
+export type ProcessoSeletivoStatus =
+  | "aberto"
+  | "em_andamento"
+  | "encerrado"
+  | "fechado"
+  | "concluido"
+  | "default";
+
 export interface ProcessoSeletivoProps {
   titulo: string;
   codigo: string;
-  status: "aberto" | "fechado" | "concluido" | "default";
+  status: ProcessoSeletivoStatus;
   inscricoesAbertas: boolean;
   etapas: Etapa[];
   documentos: Documento[];
@@ -41,10 +49,14 @@ const ProcessoSeletivo: React.FC<ProcessoSeletivoProps> = ({
     setExpandido(!expandido);
   };
 
-  const obterCorChip = (): "success" | "primary" | "secondary" | undefined => {
+  const obterCorChip = (): "success" | "warning" | "primary" | "secondary" | "danger" | undefined => {
     switch (status) {
       case "aberto":
         return "success";
+      case "em_andamento":
+        return "warning";
+      case "encerrado":
+        return "danger";
       case "fechado":
         return "primary";
       case "concluido":
@@ -57,13 +69,17 @@ const ProcessoSeletivo: React.FC<ProcessoSeletivoProps> = ({
   const obterTextoStatus = (): string => {
     switch (status) {
       case "aberto":
-        return "Inscrições Abertas";
+        return "Inscrições abertas";
+      case "em_andamento":
+        return "Em andamento";
+      case "encerrado":
+        return "Edital encerrado";
       case "fechado":
-        return "Inscrições Encerradas";
+        return "Inscrições encerradas";
       case "concluido":
-        return "Processo Concluído";
+        return "Processo concluído";
       default:
-        return "Edital Aberto";
+        return "Em breve";
     }
   };
 

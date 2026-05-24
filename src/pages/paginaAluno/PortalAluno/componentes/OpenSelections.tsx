@@ -9,12 +9,19 @@ import {
   CheckCircle2,
   BookOpen,
 } from "lucide-react";
+import { resolvePrimeiroLinkDocumentoEdital } from "@/utils/utils";
+import {
+  classificarStatusEdital,
+  type EditalStatusCategoria,
+} from "@/utils/editalStatus";
+import type { DocumentoEdital } from "@/types/edital";
 
 interface Edital {
   id: string;
   tipo_edital?: string;
   descricao: string;
-  edital_url: string[];
+  /** API: `{ titulo_documento, url_documento }[]` */
+  edital_url?: DocumentoEdital[] | string[];
   titulo_edital: string;
   /** Soma de vagas por benefício (vem do backend a partir das linhas de vaga). */
   quantidade_bolsas?: number;
@@ -49,16 +56,8 @@ interface OpenSelectionsProps {
  *  - ENCERRADO    → resultado/histórico: visualização.
  *  - DESCONHECIDO → fallback (não deveria ocorrer pelo endpoint do aluno).
  */
-type Categoria = "ABERTO" | "EM_ANDAMENTO" | "ENCERRADO" | "DESCONHECIDO";
-
-function classificarStatus(status: string | undefined | null): Categoria {
-  const s = (status ?? "").toString().trim().toLowerCase();
-  if (!s) return "DESCONHECIDO";
-  if (s === "aberto" || s.includes("em aberto")) return "ABERTO";
-  if (s === "em_andamento" || s.includes("andamento")) return "EM_ANDAMENTO";
-  if (s === "encerrado" || s.includes("encerrado")) return "ENCERRADO";
-  return "DESCONHECIDO";
-}
+type Categoria = EditalStatusCategoria;
+const classificarStatus = classificarStatusEdital;
 
 const OpenSelectionCard: React.FC<
   Edital & {
@@ -107,11 +106,7 @@ const OpenSelectionCard: React.FC<
     return "Em Breve";
   };
 
-  // Link "Visualizar edital": pega o primeiro PDF disponível, se houver.
-  const primeiroLinkPdf =
-    Array.isArray(edital_url) && edital_url.length > 0
-      ? edital_url[0]
-      : null;
+  const linkDocumento = resolvePrimeiroLinkDocumentoEdital(edital_url);
 
   return (
     <div className="selection-card">
@@ -202,13 +197,13 @@ const OpenSelectionCard: React.FC<
               <span>Inscrição após cadastro na PROAE</span>
             </button>
           )
-        ) : primeiroLinkPdf ? (
+        ) : linkDocumento ? (
           <a
-            href={primeiroLinkPdf}
+            href={linkDocumento}
             target="_blank"
             rel="noopener noreferrer"
             className="selection-action-button"
-            title="Abrir PDF do edital"
+            title="Abrir documento do edital em nova aba"
           >
             <span>Visualizar edital</span>
             <ArrowRight className="w-3 h-3" />

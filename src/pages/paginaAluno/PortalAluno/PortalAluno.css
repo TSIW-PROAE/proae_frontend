@@ -332,9 +332,9 @@
 
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: 2rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 .benefits-container,
@@ -351,11 +351,15 @@
   flex-direction: column;
 }
 
-/* Garantir que ambos os containers de benefícios e seleções tenham altura similar */
-.benefits-container .card-container,
+/* Benefícios: mais altura e largura — conteúdo textual denso; editais mantém scroll */
+.benefits-container .card-container {
+  min-height: 480px;
+  max-height: none;
+}
+
 .selections-container .card-container {
   min-height: 400px;
-  max-height: 600px;
+  max-height: 640px;
 }
 
 /* Ajustar o componente de benefícios para ter altura controlada */
@@ -1401,11 +1405,15 @@ url(PortalAluno.css)
     gap: 1.5rem;
   }
 
-  /* Ajustar altura dos cards em mobile */
-  .benefits-container .card-container,
+  /* Benefícios em mobile: altura livre; editais com teto para não estourar a página */
+  .benefits-container .card-container {
+    min-height: 360px;
+    max-height: none;
+  }
+
   .selections-container .card-container {
     min-height: 350px;
-    max-height: 500px;
+    max-height: 520px;
   }
 
   .stats-grid {
@@ -1534,8 +1542,12 @@ url(PortalAluno.css)
     grid-template-columns: 1fr;
   }
 
-  /* Ajustar altura dos cards em telas pequenas */
-  .benefits-container .card-container,
+  /* Benefícios: sem teto em telas pequenas */
+  .benefits-container .card-container {
+    min-height: 300px;
+    max-height: none;
+  }
+
   .selections-container .card-container {
     min-height: 300px;
     max-height: 450px;

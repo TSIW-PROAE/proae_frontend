@@ -17,6 +17,10 @@ import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
 import type { DocumentoEdital } from "@/types/edital";
 import { normalizeUrlForHref } from "@/utils/utils";
 import { normalizeRoles } from "@/utils/authRoles";
+import {
+  editalAceitaInscricao,
+  statusEditalParaProcessoSeletivo,
+} from "@/utils/editalStatus";
 
 /** API envia `edital_url` como `{ titulo_documento, url_documento }[]`, não como string[]. */
 function mapEditalUrlParaDocumentos(
@@ -145,14 +149,8 @@ export default function Home() {
                       key={edital.id || idx}
                       titulo={edital.titulo_edital}
                       codigo={edital.tipo_edital}
-                      status={
-                        edital.status_edital?.toLowerCase().includes("aberto")
-                          ? "aberto"
-                          : edital.status_edital?.toLowerCase().includes("fechado")
-                            ? "fechado"
-                            : "default"
-                      }
-                      inscricoesAbertas={edital.status_edital?.toLowerCase().includes("aberto")}
+                      status={statusEditalParaProcessoSeletivo(edital.status_edital)}
+                      inscricoesAbertas={editalAceitaInscricao(edital.status_edital)}
                       tema={idx % 2 === 0 ? "dourado" : "azul"}
                       etapas={
                         Array.isArray(edital.etapas)
