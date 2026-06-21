@@ -1,10 +1,9 @@
 /* ProcessosProae - Design fiel ao PortalAluno */
 
 .processos-container {
-  max-width: 1400px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 1rem;
-  max-height: 100vh;
+  padding: 1.25rem 1.25rem 2rem;
 }
 
 /* Modal de Criação Simples */
@@ -39,6 +38,8 @@
   width: 90%;
   max-height: 90vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   animation: slideInModal 0.3s ease-out;
 }
 
@@ -103,6 +104,8 @@
 
 .modal-body {
   padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(90vh - 180px);
 }
 
 .input-group {
@@ -340,8 +343,8 @@
 .processos-header {
   background: transparent;
   border-radius: 0;
-  padding: 2rem 0;
-  margin-bottom: 2rem;
+  padding: 0.5rem 0 1.25rem;
+  margin-bottom: 1.25rem;
   box-shadow: none;
   border: none;
 }
@@ -357,7 +360,7 @@
 .welcome-section {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0.9rem;
 }
 
 .avatar-container {
@@ -365,15 +368,15 @@
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
-  background: #4285f4;
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid #ffffff;
-  box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
 }
 
 .welcome-text {
@@ -381,8 +384,8 @@
 }
 
 .welcome-title {
-  font-size: 2.5rem;
-  font-weight: 500;
+  font-size: 2rem;
+  font-weight: 600;
   margin: 0;
   font-family:
     "Montserrat",
@@ -404,9 +407,9 @@
 }
 
 .welcome-subtitle {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   margin: 0.25rem 0 0 0;
-  color: #5f6368;
+  color: #64748b;
   font-weight: 400;
   font-family:
     "Montserrat",
@@ -428,21 +431,21 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: #4285f4;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: white;
   border: none;
-  border-radius: 12px;
-  font-size: 1rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.24);
 }
 
 .btn-novo-edital:hover:not(:disabled) {
-  background: #3367d6;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
 }
 
 .btn-novo-edital:disabled {
@@ -547,26 +550,43 @@
   background-color: rgba(220, 38, 38, 0.1);
 }
 
+.modal-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  margin-bottom: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #991b1b;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.modal-error-message svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
 /* Conteúdo Principal */
 .main-content {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  max-height: 100vh;
-  
+  gap: 1.25rem;
 }
 
 /* Seções */
 .form-section,
 .editais-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.9rem;
 }
 
 .header-info {
@@ -576,9 +596,9 @@
 }
 
 .section-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #202124;
+  color: #0f172a;
   margin: 0;
   font-family:
     "Montserrat",
@@ -605,19 +625,17 @@
 /* Containers */
 .form-container,
 .lista-container {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(229, 231, 235, 0.8);
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px -10px rgba(15, 23, 42, 0.3);
+  border: 1px solid #e2e8f0;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .form-container:hover,
 .lista-container:hover {
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 14px 28px -16px rgba(15, 23, 42, 0.45);
 }
 
 /* Responsividade */
@@ -684,6 +702,10 @@
   .modal-body,
   .modal-footer {
     padding: 1rem;
+  }
+
+  .modal-body {
+    max-height: calc(90vh - 150px);
   }
 
   .modal-footer {

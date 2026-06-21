@@ -1,54 +1,113 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import { Search, X, FileDown, Loader2 } from "lucide-react";
+import { Search, X, FileDown, Loader2, AlertTriangle } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { stepService } from "@/services/StepService/stepService";
 import type { Edital } from "@/types/edital";
+import { getApiErrorMessage } from "@/utils/apiError";
 
 interface ImportarFormularioModalProps {
   open: boolean;
-  /** Edital alvo (cuja edição está aberta). */
   editalAlvoId: number | string;
-  /** Quando true, oferece a opção de substituir o formulário existente. */
+  editalAlvoTitulo?: string;
+  temFormularioExistente?: boolean;
   podeSubstituir?: boolean;
   onClose: () => void;
-  /** Callback chamado após clonagem bem sucedida. */
   onImportado: () => void | Promise<void>;
 }
 
-/**
- * Permite ao admin Gerencial importar um formulário (steps + perguntas)
- * já existente em outro edital, evitando precisar recriar do zero.
- *
- * No backend a clonagem roda em transação e mantém: ordem, opções,
- * vínculo com `dado` e regras de exibição condicional (`condicao`).
- */
+interface OrigemPreview {
+  questionarios: number;
+  perguntas: number;
+  carregando: boolean;
+}
+
+type Passo = "selecao" | "confirmacao";
+
 const ImportarFormularioModal: React.FC<ImportarFormularioModalProps> = ({
   open,
   editalAlvoId,
-  podeSubstituir,
+  editalAlvoTitulo,
+  temFormularioExistente = false,
+  podeSubstituir = false,
   onClose,
   onImportado,
 }) => {
+  const [passo, setPasso] = useState<Passo>("selecao");
   const [editais, setEditais] = useState<Edital[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [selecionado, setSelecionado] = useState<number | null>(null);
   const [substituirExistente, setSubstituirExistente] = useState(false);
   const [importando, setImportando] = useState(false);
+  const [origemPreview, setOrigemPreview] = useState<OrigemPreview>({
+    questionarios: 0,
+    perguntas: 0,
+    carregando: false,
+  });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setPasso("selecao");
+      setSearch("");
+      setSelecionado(null);
+      setSubstituirExistente(false);
+      setOrigemPreview({ questionarios: 0, perguntas: 0, carregando: false });
+      return;
+    }
+
     setLoading(true);
     editalService
       .listarEditais()
       .then((lista) => setEditais(lista || []))
       .catch((err) => {
         console.error("Erro listando editais", err);
-        toast.error("Não foi possível carregar a lista de editais.");
+        toast.error(getApiErrorMessage(err));
       })
       .finally(() => setLoading(false));
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !selecionado) {
+      setOrigemPreview({ questionarios: 0, perguntas: 0, carregando: false });
+      return;
+    }
+
+    let cancelled = false;
+    setOrigemPreview((p) => ({ ...p, carregando: true }));
+
+    stepService
+      .listarStepsPorEdital(String(selecionado))
+      .then((steps) => {
+        if (cancelled) return;
+        const comPerguntas = (steps ?? []).filter(
+          (s) => (s.perguntas?.length ?? 0) > 0,
+        );
+        const perguntas = comPerguntas.reduce(
+          (acc, s) => acc + (s.perguntas?.length ?? 0),
+          0,
+        );
+        setOrigemPreview({
+          questionarios: comPerguntas.length,
+          perguntas,
+          carregando: false,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOrigemPreview({
+            questionarios: 0,
+            perguntas: 0,
+            carregando: false,
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, selecionado]);
 
   const editaisFiltrados = useMemo(() => {
     const alvoId = Number(editalAlvoId);
@@ -63,11 +122,18 @@ const ImportarFormularioModal: React.FC<ImportarFormularioModalProps> = ({
       );
   }, [editais, editalAlvoId, search]);
 
-  const confirmar = async () => {
-    if (!selecionado) {
-      toast.error("Selecione um edital de origem.");
-      return;
-    }
+  const editalOrigem = editais.find(
+    (e) => Number(e.id) === Number(selecionado),
+  );
+
+  const destinoLabel =
+    editalAlvoTitulo?.trim() || `edital #${editalAlvoId}`;
+  const origemLabel =
+    editalOrigem?.titulo_edital?.trim() ||
+    (selecionado != null ? `edital #${selecionado}` : "");
+
+  const executarImportacao = async () => {
+    if (!selecionado) return;
     setImportando(true);
     try {
       const r = await stepService.clonarFormulario(
@@ -75,237 +141,281 @@ const ImportarFormularioModal: React.FC<ImportarFormularioModalProps> = ({
         selecionado,
         substituirExistente,
       );
+      const steps = r?.stepsCriados ?? 0;
+      const perguntas = r?.perguntasCriadas ?? 0;
+      if (steps === 0 && perguntas === 0) {
+        toast.error(
+          "Nenhum questionário foi importado. Verifique se o edital de origem tem formulário.",
+        );
+        return;
+      }
       toast.success(
-        `Formulário importado: ${r.stepsCriados} questionário(s), ${r.perguntasCriadas} pergunta(s).`,
+        `Formulário importado: ${steps} questionário(s), ${perguntas} pergunta(s).`,
       );
       await onImportado();
       onClose();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Erro ao clonar formulário", e);
-      toast.error(
-        e?.response?.data?.message ||
-          e?.message ||
-          "Falha ao importar formulário.",
-      );
+      toast.error(getApiErrorMessage(e));
     } finally {
       setImportando(false);
     }
   };
 
-  if (!open) return null;
+  const irParaConfirmacao = () => {
+    if (!selecionado || !editalOrigem) {
+      toast.error("Selecione um edital de origem.");
+      return;
+    }
+    if (origemPreview.carregando) {
+      toast.error("Aguarde o carregamento do formulário de origem.");
+      return;
+    }
+    if (origemPreview.perguntas === 0) {
+      toast.error(
+        "O edital selecionado não possui perguntas para importar.",
+      );
+      return;
+    }
+    setPasso("confirmacao");
+  };
 
-  return (
+  const handleFechar = () => {
+    if (importando) return;
+    onClose();
+  };
+
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="modal-overlay"
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(15, 23, 42, 0.45)",
-        zIndex: 5000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
+      className="mini-modal-overlay importar-formulario-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="importar-formulario-titulo"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !importando) handleFechar();
       }}
     >
       <div
-        style={{
-          width: "min(640px, 100%)",
-          background: "white",
-          borderRadius: 12,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
-          overflow: "hidden",
-          maxHeight: "calc(100vh - 64px)",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        className="mini-modal-content"
+        style={{ maxWidth: 640 }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid #e5e7eb",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <FileDown size={20} />
-            Importar formulário de outro edital
+        <div className="mini-modal-header">
+          <h3 id="importar-formulario-titulo">
+            <FileDown
+              size={20}
+              style={{ verticalAlign: "middle", marginRight: 8 }}
+            />
+            {passo === "selecao"
+              ? "Importar formulário de outro edital"
+              : "Confirmar importação"}
           </h3>
           <button
             type="button"
-            onClick={onClose}
+            className="mini-modal-close"
+            onClick={handleFechar}
+            disabled={importando}
             aria-label="Fechar"
-            title="Fechar"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-            }}
           >
             <X size={20} />
           </button>
         </div>
 
-        <div style={{ padding: 20, overflow: "auto" }}>
-          <p style={{ marginTop: 0, color: "#475569", fontSize: 14 }}>
-            Selecione o edital cujo formulário será copiado para este edital.
-            Os questionários, perguntas, opções, vínculos com dados do aluno e
-            regras condicionais são preservados.
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              border: "1px solid #d4d4d8",
-              borderRadius: 8,
-              padding: "8px 10px",
-              marginBottom: 12,
-            }}
-          >
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="Buscar edital pelo título ou id..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                flex: 1,
-                border: "none",
-                outline: "none",
-                fontSize: 14,
-              }}
-              aria-label="Buscar edital"
-            />
-          </div>
-
-          <div
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
-              maxHeight: 320,
-              overflow: "auto",
-            }}
-          >
-            {loading ? (
-              <div style={{ padding: 24, textAlign: "center" }}>
-                <Loader2 className="animate-spin" /> Carregando editais...
+        {passo === "confirmacao" ? (
+          <>
+            <div className="mini-modal-body">
+              <div className="importar-formulario-confirm-box">
+                <AlertTriangle
+                  size={22}
+                  className="importar-formulario-confirm-icon"
+                  aria-hidden
+                />
+                <p>
+                  Copiar o formulário de <strong>{origemLabel}</strong> (
+                  {origemPreview.questionarios} questionário(s),{" "}
+                  {origemPreview.perguntas} pergunta(s)) para{" "}
+                  <strong>{destinoLabel}</strong>?
+                </p>
+                {substituirExistente && (
+                  <p className="importar-formulario-confirm-warn">
+                    O formulário atual será removido antes da cópia. Perguntas e
+                    respostas vinculadas serão apagadas.
+                  </p>
+                )}
+                {!substituirExistente && temFormularioExistente && (
+                  <p className="importar-formulario-confirm-info">
+                    Os questionários importados serão{" "}
+                    <strong>acrescentados</strong> aos que já têm perguntas neste
+                    edital. Questionários vazios (sem perguntas) serão removidos
+                    automaticamente.
+                  </p>
+                )}
+                {!substituirExistente && !temFormularioExistente && (
+                  <p className="importar-formulario-confirm-info">
+                    Questionários vazios deste edital (sem perguntas) serão
+                    removidos automaticamente antes da cópia.
+                  </p>
+                )}
               </div>
-            ) : editaisFiltrados.length === 0 ? (
-              <div style={{ padding: 24, textAlign: "center", color: "#64748b" }}>
-                Nenhum edital disponível para importar.
+            </div>
+            <div className="mini-modal-footer">
+              <button
+                type="button"
+                className="mini-modal-btn-cancel"
+                onClick={() => setPasso("selecao")}
+                disabled={importando}
+              >
+                Voltar
+              </button>
+              <button
+                type="button"
+                className="mini-modal-btn-save"
+                onClick={executarImportacao}
+                disabled={importando}
+              >
+                {importando ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Importando…
+                  </>
+                ) : (
+                  <>
+                    <FileDown size={14} /> Importar formulário
+                  </>
+                )}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mini-modal-body">
+              <p style={{ margin: 0, color: "#475569", fontSize: 14 }}>
+                Selecione o edital cujo formulário será copiado para{" "}
+                <strong>{destinoLabel}</strong>. Questionários, perguntas, opções
+                e regras condicionais são preservados.
+              </p>
+
+              <div className="importar-formulario-search">
+                <Search size={16} aria-hidden />
+                <input
+                  type="text"
+                  placeholder="Buscar edital pelo título ou id..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="Buscar edital"
+                />
               </div>
-            ) : (
-              editaisFiltrados.map((e) => {
-                const isSel = Number(selecionado) === Number(e.id);
-                return (
-                  <button
-                    key={e.id}
-                    type="button"
-                    onClick={() => setSelecionado(Number(e.id))}
-                    style={{
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "10px 12px",
-                      borderBottom: "1px solid #f1f5f9",
-                      background: isSel ? "#eff6ff" : "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ fontWeight: 600 }}>
-                      {e.titulo_edital || "(sem título)"}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>
-                      ID #{e.id} · {e.status_edital || "—"}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
 
-          {podeSubstituir && (
-            <label
-              style={{
-                marginTop: 16,
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 8,
-                fontSize: 13,
-                color: "#92400e",
-                background: "#fffbeb",
-                border: "1px solid #fde68a",
-                padding: 10,
-                borderRadius: 8,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={substituirExistente}
-                onChange={(e) => setSubstituirExistente(e.target.checked)}
-              />
-              <span>
-                Substituir formulário existente. Esta ação remove os
-                questionários atuais antes de copiar (em cascata, todas as
-                respostas a essas perguntas são apagadas).
-              </span>
-            </label>
-          )}
-        </div>
+              <div className="importar-formulario-lista">
+                {loading ? (
+                  <div className="importar-formulario-lista-empty">
+                    <Loader2 className="animate-spin" aria-hidden /> Carregando
+                    editais…
+                  </div>
+                ) : editaisFiltrados.length === 0 ? (
+                  <div className="importar-formulario-lista-empty">
+                    Nenhum edital disponível para importar.
+                  </div>
+                ) : (
+                  editaisFiltrados.map((e) => {
+                    const isSel = Number(selecionado) === Number(e.id);
+                    return (
+                      <button
+                        key={e.id}
+                        type="button"
+                        className={`importar-formulario-item${isSel ? " importar-formulario-item--selected" : ""}`}
+                        onClick={() => setSelecionado(Number(e.id))}
+                      >
+                        <div className="importar-formulario-item-titulo">
+                          {e.titulo_edital || "(sem título)"}
+                        </div>
+                        <div className="importar-formulario-item-meta">
+                          ID #{e.id} · {e.status_edital || "—"}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
 
-        <div
-          style={{
-            padding: "12px 20px",
-            borderTop: "1px solid #e5e7eb",
-            display: "flex",
-            gap: 8,
-            justifyContent: "flex-end",
-          }}
-        >
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={importando}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 6,
-              border: "1px solid #d4d4d8",
-              background: "white",
-              cursor: importando ? "not-allowed" : "pointer",
-            }}
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={confirmar}
-            disabled={!selecionado || importando}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 6,
-              border: "none",
-              background:
-                !selecionado || importando ? "#94a3b8" : "#2563eb",
-              color: "white",
-              cursor: !selecionado || importando ? "not-allowed" : "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            {importando ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
-            Importar formulário
-          </button>
-        </div>
+              {selecionado != null && (
+                <div className="importar-formulario-preview">
+                  {origemPreview.carregando ? (
+                    <>
+                      <Loader2
+                        size={14}
+                        className="animate-spin"
+                        aria-hidden
+                      />{" "}
+                      Carregando formulário de origem…
+                    </>
+                  ) : origemPreview.perguntas === 0 ? (
+                    <span className="importar-formulario-preview-warn">
+                      <AlertTriangle size={14} aria-hidden /> Este edital não
+                      possui perguntas para importar.
+                    </span>
+                  ) : (
+                    <>
+                      <strong>Prévia:</strong> {origemPreview.questionarios}{" "}
+                      questionário(s), {origemPreview.perguntas} pergunta(s).
+                    </>
+                  )}
+                </div>
+              )}
+
+              {temFormularioExistente && !podeSubstituir && (
+                <div className="importar-formulario-aviso">
+                  Este edital já tem questionários. A importação irá{" "}
+                  <strong>acrescentar</strong> novos questionários (não substitui
+                  os existentes enquanto houver inscrições).
+                </div>
+              )}
+
+              {podeSubstituir && (
+                <label className="mini-modal-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={substituirExistente}
+                    onChange={(e) => setSubstituirExistente(e.target.checked)}
+                    disabled={importando}
+                  />
+                  <span>
+                    Substituir formulário existente. Remove os questionários atuais
+                    antes de copiar (em cascata, respostas vinculadas são apagadas).
+                  </span>
+                </label>
+              )}
+            </div>
+
+            <div className="mini-modal-footer">
+              <button
+                type="button"
+                className="mini-modal-btn-cancel"
+                onClick={handleFechar}
+                disabled={importando}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="mini-modal-btn-save"
+                onClick={irParaConfirmacao}
+                disabled={
+                  !selecionado ||
+                  importando ||
+                  origemPreview.carregando ||
+                  origemPreview.perguntas === 0
+                }
+              >
+                <FileDown size={14} /> Revisar e importar
+              </button>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

@@ -16,8 +16,12 @@ export const Questionario: React.FC = () => {
   const stepIdParam = searchParams.get("step_id");
   const perguntaIdParam = searchParams.get("pergunta_id");
   const vagaIdParam = searchParams.get("vaga_id");
+  const beneficioParam = searchParams.get("beneficio");
   const inscricaoIdParam = searchParams.get("inscricao_id");
   const corrigir = searchParams.get("corrigir") === "1";
+  const [resolvedVagaId, setResolvedVagaId] = useState<string | null>(
+    () => vagaIdParam,
+  );
 
   const needsCorrectionContext =
     corrigir || !!stepIdParam || !!perguntaIdParam;
@@ -28,6 +32,48 @@ export const Questionario: React.FC = () => {
   const [loadingInscricao, setLoadingInscricao] = useState(
     () => needsCorrectionContext && !inscricaoIdParam,
   );
+  useEffect(() => {
+    if (vagaIdParam) {
+      setResolvedVagaId(vagaIdParam);
+      return;
+    }
+    if (!editalId || !beneficioParam) {
+      setResolvedVagaId(null);
+      return;
+    }
+
+    const normalize = (value: string) =>
+      value
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const vagas = await editalService.buscarVagasDoEdital(editalId);
+        const target = normalize(beneficioParam);
+        const match =
+          vagas.find((vaga) => normalize(vaga.beneficio ?? "") === target) ??
+          vagas.find((vaga) => {
+            const ben = normalize(vaga.beneficio ?? "");
+            return ben.includes(target) || target.includes(ben);
+          });
+        if (!cancelled && match?.id != null) {
+          setResolvedVagaId(String(match.id));
+        }
+      } catch {
+        if (!cancelled) setResolvedVagaId(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editalId, beneficioParam, vagaIdParam]);
+
   const editalService = new EditalService();
 
   const correcaoFinalId = useMemo(
@@ -141,7 +187,7 @@ export const Questionario: React.FC = () => {
       successRedirectUrl="/portal-aluno"
       focusStepId={stepIdParam}
       focusQuestionId={perguntaIdParam}
-      focusVagaId={vagaIdParam}
+      focusVagaId={resolvedVagaId ?? vagaIdParam}
       correcaoInscricaoId={correcaoFinalId}
       onError={handleError}
     />

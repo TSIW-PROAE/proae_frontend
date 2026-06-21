@@ -1,5 +1,5 @@
 import Inscricao from "@/pages/Enrollment/Inscricao.tsx";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import App from "../App";
 import DesignSystem from "../pages/DesignSystem/DesignSystem";
 import Home from "../pages/Home/Home";
@@ -8,24 +8,20 @@ import NotFound from "../pages/NotFound/NotFound";
 // Aluno
 import ConfiguracaoAluno from "../pages/paginaAluno/ConfiguracaoAluno/ConfiguracaoAluno";
 import PortalAluno from "../pages/paginaAluno/PortalAluno/PortalAluno";
-import FormularioGeralAluno from "@/pages/paginaAluno/FormularioGeral/FormularioGeralAluno";
-import FormularioRenovacaoAluno from "@/pages/paginaAluno/FormularioRenovacao/FormularioRenovacaoAluno";
+import TutorialAluno from "@/pages/paginaAluno/TutorialAluno/TutorialAluno";
 
 // PROAE
-import CadastroEdital from "@/pages/paginaProae/CadastroEdital/CadastroEdital.tsx";
 import ConfiguracaoProae from "../pages/paginaProae/ConfiguracaoProae/ConfiguracaoProae";
 import InscricoesProae from "../pages/paginaProae/InscricoesProae/InscricoesProae";
 import ProcessosProae from "../pages/paginaProae/ProcessosProae/ProcessosProae";
 import ParecerQuestionarios from "../pages/paginaProae/ParecerQuestionarios/ParecerQuestionarios";
 import CadastroProae from "@/pages/paginaProae/CadastroProae/CadastroProae.tsx";
 import TelaDeEspera from "@/pages/paginaProae/TelaDeEspera/TelaDeEspera";
-import FormularioGeralAdmin from "@/pages/paginaProae/FormularioGeral/FormularioGeralAdmin";
-import FormularioRenovacaoAdmin from "@/pages/paginaProae/FormularioRenovacao/FormularioRenovacaoAdmin";
 import ListaAlunos from "@/pages/paginaProae/ListaAlunos/ListaAlunos";
-import GerenciarInscricoes from "@/pages/paginaProae/GerenciarInscricoes/GerenciarInscricoes";
 import RanqueamentoProae from "@/pages/paginaProae/RanqueamentoProae/RanqueamentoProae";
 import AdminAprovado from "@/pages/paginaProae/AdminAprovado/AdminAprovado";
 import GerenciarAdmins from "@/pages/paginaProae/GerenciarAdmins/GerenciarAdmins";
+import TutorialProae from "@/pages/paginaProae/TutorialProae/TutorialProae";
 
 // Auth
 import CadastroAluno from "@/pages/paginaAluno/CadastroAluno/CadastroAluno";
@@ -57,8 +53,7 @@ const routes = [
         element: <ProtectedRouteAluno />,
         children: [
           { path: "portal-aluno", element: <PortalAluno /> },
-          { path: "portal-aluno/formulario-geral", element: <FormularioGeralAluno /> },
-          { path: "portal-aluno/formulario-renovacao", element: <FormularioRenovacaoAluno /> },
+          { path: "portal-aluno/tutorial", element: <TutorialAluno /> },
           { path: "portal-aluno/configuracao", element: <ConfiguracaoAluno /> },
           { path: "portal-aluno/candidatura", element: <Inscricao /> },
           { path: "portal-aluno/pendencias/", element: <PendenciasAluno /> },
@@ -71,23 +66,24 @@ const routes = [
       {
         element: <ProtectedProaeRoute />,
         children: [
-          // { path: "portal-proae/inscricoes-gerenciar", element: <GerenciarInscricoes /> },
+          {
+            path: "portal-proae/inscricoes-gerenciar",
+            element: <Navigate to="/portal-proae/inscricoes" replace />,
+          },
           { path: "portal-proae/inscricoes", element: <InscricoesProae /> },
           { path: "portal-proae/ranqueamento", element: <RanqueamentoProae /> },
           { path: "portal-proae/pareceres", element: <ParecerQuestionarios /> },
           { path: "portal-proae/alunos", element: <ListaAlunos /> },
+          { path: "portal-proae/tutorial", element: <TutorialProae /> },
           { path: "portal-proae/configuracao", element: <ConfiguracaoProae /> },
           // Telas que combinam configuração + listagem de inscrições continuam acessíveis a
           // todos os admins; o backend bloqueia operações de edição/configuração para perfis
           // não-gerenciais e os botões correspondentes ficam ocultos no front.
-          { path: "portal-proae/formulario-geral", element: <FormularioGeralAdmin /> },
-          { path: "portal-proae/formulario-renovacao", element: <FormularioRenovacaoAdmin /> },
           // Rotas restritas a perfil "gerencial" (criação/gestão de editais e equipe).
           {
             element: <ProtectedAdminPerfilRoute requires="gerencial" />,
             children: [
               { path: "portal-proae/processos", element: <ProcessosProae /> },
-              { path: "portal-proae/cadastro-edital", element: <CadastroEdital /> },
               { path: "portal-proae/equipe", element: <GerenciarAdmins /> },
             ],
           },

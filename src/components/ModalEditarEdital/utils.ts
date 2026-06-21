@@ -73,6 +73,7 @@ export const makeSnapshot = (
     })),
     etapas: (etapasArr || []).map((x) => ({
       etapa: (x.etapa || "").trim(),
+      tipo_etapa: (x.tipo_etapa || "").trim(),
       data_inicio: x.data_inicio || "",
       data_fim: x.data_fim || "",
       ordem_elemento: x.ordem_elemento ?? null,

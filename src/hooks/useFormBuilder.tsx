@@ -16,6 +16,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     editalId,
     initialData,
     onSubmit: backendOnSubmit,
+    isCorrecaoMode = false,
     initialPaginas,
     initialCurrentPage,
   } = props;
@@ -164,10 +165,30 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
         throw new Error("Nenhuma vaga selecionada. Recarregue a página e tente novamente.");
       }
 
-      const isValid = await form.trigger();
-      if (!isValid) throw new Error("Formulário contém erros");
+      const allFormData = form.getValues();
+      const dirtyQuestionFields = Object.keys(form.formState.dirtyFields || {}).filter((key) =>
+        key.startsWith("pergunta_"),
+      );
 
-      const formData = form.getValues();
+      if (isCorrecaoMode) {
+        if (dirtyQuestionFields.length === 0) {
+          throw new Error("Faça ao menos uma correção antes de enviar.");
+        }
+        const isValidDirty = await form.trigger(dirtyQuestionFields as any);
+        if (!isValidDirty) throw new Error("Formulário contém erros");
+      } else {
+        const isValid = await form.trigger();
+        if (!isValid) throw new Error("Formulário contém erros");
+      }
+
+      const formData =
+        isCorrecaoMode && dirtyQuestionFields.length > 0
+          ? Object.fromEntries(
+              Object.entries(allFormData).filter(
+                ([key]) => !key.startsWith("pergunta_") || dirtyQuestionFields.includes(key),
+              ),
+            )
+          : allFormData;
       const dadosAdicionais = extractDadosAdicionais(formData);
       const vagaId = Number(dadosAdicionais.vaga_id) || selectedVagaId;
 
@@ -193,7 +214,7 @@ export function useFormBuilder(props: UseFormBuilderProps): UseFormBuilderReturn
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, paginasVisiveis, selectedVagaId, backendOnSubmit, minioService, clearCacheState]);
+  }, [form, paginasVisiveis, selectedVagaId, backendOnSubmit, minioService, clearCacheState, isCorrecaoMode]);
 
   const resetForm = useCallback(() => {
     form.reset(initialData || {});

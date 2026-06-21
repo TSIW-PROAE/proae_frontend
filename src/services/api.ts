@@ -36,6 +36,18 @@ export class FetchAdapter implements IHttpClient {
     this.axiosInstance.defaults.headers.common[name] = value;
   }
 
+  private extractErrorPayload(error: unknown): unknown {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error
+    ) {
+      const response = (error as { response?: { data?: unknown } }).response;
+      if (response?.data !== undefined) return response.data;
+    }
+    return error;
+  }
+
   async get<T>(url: string): Promise<T> {
     try {
 
@@ -44,8 +56,8 @@ export class FetchAdapter implements IHttpClient {
       });
 
       return response.data;
-    } catch (error: any) {
-      throw error.response.data;
+    } catch (error: unknown) {
+      throw this.extractErrorPayload(error);
     }
   }
 
@@ -60,8 +72,8 @@ export class FetchAdapter implements IHttpClient {
         headers: response.headers as Record<string, string>,
         status: response.status,
       };
-    } catch (error: any) {
-      throw error.response.data;
+    } catch (error: unknown) {
+      throw this.extractErrorPayload(error);
     }
   }
 
@@ -71,8 +83,8 @@ export class FetchAdapter implements IHttpClient {
         withCredentials: true,
       });
       return response.data;
-    } catch (error: any) {
-      throw error.response.data;
+    } catch (error: unknown) {
+      throw this.extractErrorPayload(error);
     }
   }
 
@@ -83,8 +95,8 @@ export class FetchAdapter implements IHttpClient {
         withCredentials: true,
       });
       return response.data;
-    } catch (error: any) {
-      throw error.response.data;
+    } catch (error: unknown) {
+      throw this.extractErrorPayload(error);
     }
   }
 
@@ -94,8 +106,8 @@ export class FetchAdapter implements IHttpClient {
         withCredentials: true,
       });
       return response.data;
-    } catch (error: any) {
-      throw error.response.data;
+    } catch (error: unknown) {
+      throw this.extractErrorPayload(error);
     }
   }
 }

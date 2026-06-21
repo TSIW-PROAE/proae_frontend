@@ -1,14 +1,24 @@
-import { useState, useEffect } from "react";
-import { Users, Mail, BookOpen, MapPin, Calendar, Phone, LayoutList, Filter } from "lucide-react";
+import { useState, useEffect, useContext } from "react";
+import { Users, Mail, BookOpen, MapPin, Calendar, Phone, LayoutList, Filter, Trash2 } from "lucide-react";
 import { Aluno } from "../../../types/aluno";
 import { alunoService } from "../../../services/AlunoService/alunoService";
 import { editalService } from "../../../services/EditalService/editalService";
 import type { Edital } from "../../../types/edital";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import CentralEstudanteDrawer from "./CentralEstudanteDrawer";
+import { AuthContext } from "@/context/AuthContext";
+import { canManageEditais } from "@/utils/authRoles";
+import { getApiErrorMessage } from "@/utils/apiError";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import ConfirmDialog from "@/components/ConfirmDialog/ConfirmDialog";
 import "./ListaAlunos.css";
 
+const PAGE_SIZE = 20;
+
 export default function ListaAlunos() {
+  const { userInfo } = useContext(AuthContext);
+  const { confirm, dialogProps } = useConfirmDialog();
+  const podeGerenciarPerfisAluno = canManageEditais(userInfo?.adminPerfil ?? null);
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [editais, setEditais] = useState<Edital[]>([]);
   const [editalFiltroId, setEditalFiltroId] = useState<string>("");
@@ -16,6 +26,9 @@ export default function ListaAlunos() {
   const [apenasInscricaoAprovada, setApenasInscricaoAprovada] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalItens, setTotalItens] = useState(0);
   const [drawerAlunoId, setDrawerAlunoId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -31,8 +44,18 @@ export default function ListaAlunos() {
   }, []);
 
   useEffect(() => {
-    void carregarAlunos();
+    setPaginaAtual(1);
   }, [editalFiltroId, apenasBeneficiariosEdital, apenasInscricaoAprovada]);
+
+  useEffect(() => {
+    void carregarAlunos();
+  }, [editalFiltroId, apenasBeneficiariosEdital, apenasInscricaoAprovada, paginaAtual]);
+
+  useEffect(() => {
+    if (paginaAtual > totalPaginas) {
+      setPaginaAtual(totalPaginas);
+    }
+  }, [paginaAtual, totalPaginas]);
 
   const carregarAlunos = async () => {
     try {
@@ -42,6 +65,8 @@ export default function ListaAlunos() {
         const resp = await alunoService.listarAlunosPorEditalComFiltros(editalFiltroId, {
           apenasBeneficiariosEdital: apenasBeneficiariosEdital,
           apenasInscricaoAprovada: apenasInscricaoAprovada,
+          page: paginaAtual,
+          limit: PAGE_SIZE,
         });
         const raw = resp?.dados ?? [];
         setAlunos(
@@ -50,21 +75,59 @@ export default function ListaAlunos() {
             aluno_id: String(a.aluno_id),
           })),
         );
+        setTotalItens(resp?.paginacao?.total_itens ?? raw.length);
+        setTotalPaginas(Math.max(1, resp?.paginacao?.total_paginas ?? 1));
       } else {
-        const dados = await alunoService.listarTodosAlunos();
+        const resp = await alunoService.listarTodosAlunos({
+          page: paginaAtual,
+          limit: PAGE_SIZE,
+        });
+        const dados = resp?.dados ?? [];
         setAlunos(
           dados.map((a) => ({
             ...a,
             aluno_id: String(a.aluno_id),
           })),
         );
+        setTotalItens(resp?.paginacao?.total_itens ?? dados.length);
+        setTotalPaginas(Math.max(1, resp?.paginacao?.total_paginas ?? 1));
       }
     } catch (err: any) {
       console.error("Erro ao carregar alunos:", err);
       setError(err.message || "Erro ao carregar alunos");
       setAlunos([]);
+      setTotalItens(0);
+      setTotalPaginas(1);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleExcluirPerfilAluno = async (aluno: Aluno) => {
+    if (!podeGerenciarPerfisAluno) {
+      toast.error("Apenas perfil gerencial pode excluir perfil de aluno.");
+      return;
+    }
+    const nomeOuEmail = aluno.nome || aluno.email || `Matrícula ${aluno.matricula}`;
+    const ok = await confirm({
+      title: "Excluir perfil de aluno?",
+      message: `O perfil de aluno de ${nomeOuEmail} será removido.\n\nA exclusão só é permitida para aluno sem inscrições e remove o acesso do perfil aluno.`,
+      confirmLabel: "Excluir perfil",
+      tone: "danger",
+    });
+    if (!ok) return;
+
+    try {
+      const resp = await alunoService.excluirPerfilAlunoAdmin(String(aluno.aluno_id));
+      setAlunos((prev) => prev.filter((a) => String(a.aluno_id) !== String(aluno.aluno_id)));
+      if (drawerAlunoId === String(aluno.aluno_id)) {
+        setDrawerOpen(false);
+        setDrawerAlunoId(null);
+      }
+      toast.success(resp.mensagem || "Perfil de aluno removido.");
+      await carregarAlunos();
+    } catch (e) {
+      toast.error(getApiErrorMessage(e));
     }
   };
 
@@ -156,8 +219,6 @@ export default function ListaAlunos() {
                         {editais.map((e) => (
                           <option key={String(e.id)} value={String(e.id)}>
                             {e.titulo_edital}
-                            {e.is_formulario_geral ? " (Form. Geral)" : ""}
-                            {e.is_formulario_renovacao ? " (Renovação)" : ""}
                           </option>
                         ))}
                       </select>
@@ -199,7 +260,7 @@ export default function ListaAlunos() {
                           <th className="table-header-cell">Campus</th>
                           <th className="table-header-cell">Contato</th>
                           <th className="table-header-cell">Data Ingresso</th>
-                          <th className="table-header-cell">Central</th>
+                          <th className="table-header-cell">Ações</th>
                         </tr>
                       </thead>
                     </table>
@@ -250,19 +311,32 @@ export default function ListaAlunos() {
                                 <span>{aluno.data_ingresso ? new Date(aluno.data_ingresso).toLocaleDateString("pt-BR") : "N/A"}</span>
                               </div>
                             </td>
-                            <td className="table-cell">
-                              <button
-                                type="button"
-                                className="central-hub-btn"
-                                title="Abrir histórico e status das inscrições"
-                                onClick={() => {
-                                  setDrawerAlunoId(String(aluno.aluno_id));
-                                  setDrawerOpen(true);
-                                }}
-                              >
-                                <LayoutList className="w-4 h-4" />
-                                <span>Hub</span>
-                              </button>
+                            <td className="table-cell actions-cell">
+                              <div className="central-actions">
+                                <button
+                                  type="button"
+                                  className="central-hub-btn"
+                                  title="Abrir histórico e status das inscrições"
+                                  onClick={() => {
+                                    setDrawerAlunoId(String(aluno.aluno_id));
+                                    setDrawerOpen(true);
+                                  }}
+                                >
+                                  <LayoutList className="w-4 h-4" />
+                                  <span>Hub</span>
+                                </button>
+                                {podeGerenciarPerfisAluno && (
+                                  <button
+                                    type="button"
+                                    className="central-delete-btn"
+                                    title="Excluir perfil de aluno"
+                                    onClick={() => void handleExcluirPerfilAluno(aluno)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Excluir</span>
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -274,9 +348,34 @@ export default function ListaAlunos() {
                 <div className="alunos-footer">
                   <div className="footer-info">
                     <span className="total-count">
-                      {alunos.length} aluno{alunos.length !== 1 ? "s" : ""} total
+                      {totalItens} aluno{totalItens !== 1 ? "s" : ""} total
                     </span>
                     <span className="last-updated">Atualizado agora</span>
+                  </div>
+                  <div className="footer-pagination">
+                    <button
+                      type="button"
+                      className="pagination-btn"
+                      onClick={() => setPaginaAtual((prev) => Math.max(1, prev - 1))}
+                      disabled={paginaAtual <= 1}
+                    >
+                      Anterior
+                    </button>
+                    <span className="pagination-info">
+                      Página {paginaAtual} de {Math.max(1, totalPaginas)}
+                    </span>
+                    <button
+                      type="button"
+                      className="pagination-btn"
+                      onClick={() =>
+                        setPaginaAtual((prev) =>
+                          Math.min(Math.max(1, totalPaginas), prev + 1),
+                        )
+                      }
+                      disabled={paginaAtual >= totalPaginas}
+                    >
+                      Próxima
+                    </button>
                   </div>
                 </div>
               </div>
@@ -293,6 +392,7 @@ export default function ListaAlunos() {
           setDrawerAlunoId(null);
         }}
       />
+      <ConfirmDialog {...dialogProps} />
       <Toaster position="top-right" />
     </div>
   );

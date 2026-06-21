@@ -19,7 +19,7 @@ interface Props {
  *
  * Exemplo de uso (somente gerencial):
  *   <Route element={<ProtectedAdminPerfilRoute />}>
- *     <Route path="cadastro-edital" element={<CadastroEdital />} />
+ *     <Route path="processos" element={<ProcessosProae />} />
  *   </Route>
  */
 export default function ProtectedAdminPerfilRoute({

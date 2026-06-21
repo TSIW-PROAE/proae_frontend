@@ -544,6 +544,49 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
             </div>
           )}
 
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px dashed #d1d5db",
+              background: "#fcfcff",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}
+            >
+              <Hash size={16} />
+              <strong style={{ fontSize: 13 }}>Calculadora inteligente</strong>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "#666" }}>
+                Pontos por validação
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label style={{ fontSize: 12, color: "#475569" }} htmlFor={`pontuacao-${index}`}>
+                Pontuação se validada
+              </label>
+              <input
+                id={`pontuacao-${index}`}
+                type="number"
+                min={0}
+                step="0.5"
+                value={String(pergunta.pontuacao_validacao ?? 0)}
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  onUpdate(
+                    "pontuacao_validacao",
+                    Number.isFinite(raw) && raw >= 0 ? raw : 0,
+                  );
+                }}
+                style={{ width: 120 }}
+              />
+              <span style={{ fontSize: 12, color: "#64748b" }}>
+                pontos
+              </span>
+            </div>
+          </div>
+
           {/* Bloco de condicional: a pergunta só aparece quando outra pergunta tiver determinado valor. */}
           <div
             className="pergunta-condicao-card"
@@ -782,6 +825,12 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                     : "Vinculada"}
                 </span>
               )}
+              <span
+                className="tipo-badge-saved"
+                title="Pontuação aplicada quando esta resposta for validada na análise."
+              >
+                {Number(pergunta.pontuacao_validacao ?? 0).toFixed(2)} pts
+              </span>
             </div>
           </div>
         </>

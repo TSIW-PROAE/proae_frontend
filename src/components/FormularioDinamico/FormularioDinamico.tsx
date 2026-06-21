@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom"
 import BarraProgresso  from '@/components/BarraProgresso/BarraProgresso';
 import type { PaginaConfig } from "@/types/dynamicForm";
 import { getApiErrorMessage } from "@/utils/apiError";
+import "./FormularioDinamico.css";
 
 interface FormularioDinamicoProps {
   editalId?: string;
@@ -27,9 +28,9 @@ interface FormularioDinamicoProps {
   onSubmit?: (data: Record<string, any>) => void;
   /** URL para redirecionar após envio com sucesso (default: /portal-aluno) */
   successRedirectUrl?: string;
-  /** Páginas/perguntas já carregadas (ex.: steps do GET /formulario-geral). Quando informado, não busca steps na API. */
+  /** Páginas/perguntas já carregadas. Quando informado, não busca steps na API. */
   initialPaginas?: PaginaConfig[];
-  /** Vagas já carregadas (ex.: do GET /formulario-geral). Quando informado, não busca vagas na API — evita dessincronia. */
+  /** Vagas já carregadas. Quando informado, não busca vagas na API — evita dessincronia. */
   initialVagas?: Array<{ id: number; beneficio?: string; descricao_beneficio?: string; numero_vagas?: number }>;
   loading?: React.ReactNode;
   className?: string;
@@ -65,6 +66,9 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     editalId: editalId || "",
     titulo: props.titulo,
     subtitulo: props.subtitulo,
+    isCorrecaoMode:
+      props.correcaoInscricaoId != null &&
+      String(props.correcaoInscricaoId).trim() !== "",
     initialCurrentPage: pularWizardIntro ? 1 : 0,
     initialPaginas: props.initialPaginas,
     onSubmit: async (data: Record<string, any>) => {
@@ -86,8 +90,8 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
               urlArquivo: r.urlArquivo,
             }))
             .filter(
-              (r) =>
-                Number.isFinite(r.perguntaId) && (r.perguntaId as number) > 0,
+              (r: { perguntaId: number }) =>
+                Number.isFinite(r.perguntaId) && r.perguntaId > 0,
             );
           if (respostas.length === 0) {
             throw new Error(
@@ -495,49 +499,54 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
   return (
     <FormProvider {...form}>
       <Toaster position="top-right" />
-      <div className={`
-        min-h-screen flex items-center flex-col justify-between p-4 ${props.className || ''}
-      `}>
+      <div className={`formulario-pagina ${props.className || ""}`}>
+        <div className="formulario-pagina-inner">
+          <BarraProgresso
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            className="mb-4"
+            variant={
+              isModoAjusteFocado && inputFoco ? "correction" : "default"
+            }
+          />
 
-        <div className="w-full mx-auto flex flex-col flex-1 justify-between max-w-3xl px-4">
-          <div className="w-full">
-            <BarraProgresso
-              currentStep={currentStep}
-              totalSteps={totalSteps}
-              className="mb-6"
-              variant={
-                isModoAjusteFocado && inputFoco ? "correction" : "default"
-              }
-            />
+          <div className="formulario-step-body">
+            <h1 className="formulario-step-titulo">
+              {currentPageConfig.titulo ?? "Formulário"}
+            </h1>
+
+            {isModoAjusteFocado && inputFoco && (
+              <div className="formulario-ajuste-aviso">
+                <p className="formulario-ajuste-aviso-texto">
+                  Ajuste solicitado pela PROAE: corrija este campo.
+                </p>
+                <div
+                  id={`field-${inputFoco.nome}`}
+                  className="formulario-campo"
+                  data-input-name={inputFoco.nome}
+                >
+                  <DynamicField input={inputFoco} form={form} />
+                </div>
+              </div>
+            )}
+
+            {(!isModoAjusteFocado || !inputFoco) && (
+              <div className="inputs-container">
+                {inputsVisiveis.map((input) => (
+                  <div
+                    key={input.nome}
+                    id={`field-${input.nome}`}
+                    className="formulario-campo"
+                    data-input-name={input.nome}
+                  >
+                    <DynamicField input={input} form={form} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <section className="flex flex-col w-full gap-8 justify-start items-start flex-1">
-          <section className='formulario-conteudo'>
-            <h1>{currentPageConfig.titulo ?? 'Formulário'}</h1>
-          </section>
-          {isModoAjusteFocado && inputFoco && (
-            <div className="w-full rounded-xl border border-amber-300 bg-amber-50 p-4">
-              <p className="m-0 mb-3 text-sm font-semibold text-amber-900">
-                Ajuste solicitado pela PROAE: corrija este campo.
-              </p>
-              <div id={`field-${inputFoco.nome}`} data-input-name={inputFoco.nome}>
-                <DynamicField input={inputFoco} form={form} />
-              </div>
-            </div>
-          )}
-
-          {(!isModoAjusteFocado || !inputFoco) &&
-            inputsVisiveis.map((input) => (
-              <div key={input.nome} id={`field-${input.nome}`} data-input-name={input.nome}>
-                <DynamicField input={input} form={form} />
-              </div>
-            ))}
-
-          {/* Modo de ajuste estrito: mostra somente o campo pendente. */}
-          </section>
-
-          {/* Status de salvamento */}
-          <div className="w-full flex items-center justify-center gap-4 py-3 text-sm">
+          <div className="formulario-save-status">
             {isSavingCache && (
               <div className="flex items-center gap-2 text-blue-600">
                 <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -569,13 +578,12 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
               color="primary"
               onPress={() => saveProgress()}
               disabled={isSavingCache || !hasUnsavedChanges}
-              className="ml-2"
             >
               Salvar progresso
             </Button>
           </div>
 
-          <div className="footer w-full flex justify-center gap-4 pt-6">
+          <div className="formulario-rodape">
             <Button
               onPress={prevPage}
               disabled={currentPage === 0}
@@ -607,7 +615,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
         </div>
       </div>
     </FormProvider>
-  )
+  );
 }
 
 export default FormularioDinamico

@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
 import {
-  Trophy,
-  Award,
+  ListOrdered,
   TrendingUp,
-  FileText,
   Search,
   Download,
   BarChart3,
   User,
   Mail,
-  Hash,
+  Calculator,
 } from "lucide-react";
 import { editalService } from "@/services/EditalService/editalService";
 import { stepService } from "@/services/StepService/stepService";
@@ -82,18 +80,6 @@ export default function RanqueamentoProae() {
     );
   });
 
-  const getRankingBadgeClass = (ranking: number) => {
-    if (ranking === 1) return "ranking-badge gold";
-    if (ranking === 2) return "ranking-badge silver";
-    if (ranking === 3) return "ranking-badge bronze";
-    return "ranking-badge default";
-  };
-
-  const getRankingIcon = (ranking: number) => {
-    if (ranking <= 3) return <Trophy className="w-4 h-4" />;
-    return <Hash className="w-4 h-4" />;
-  };
-
   const exportarResultados = () => {
     const csv = [
       ["Ranking", "Nome", "Matrícula", "Email", "Nota Documentos", "Nota Respostas", "Nota Pareceres", "Nota Final"].join(","),
@@ -128,7 +114,7 @@ export default function RanqueamentoProae() {
             <div className="welcome-section">
               <div className="avatar-container">
                 <div className="avatar">
-                  <Trophy className="w-6 h-6 text-white" />
+                  <ListOrdered className="w-6 h-6 text-white" />
                 </div>
               </div>
               <div className="welcome-text">
@@ -183,7 +169,7 @@ export default function RanqueamentoProae() {
                 </div>
                 <div className="stat-card">
                   <div className="stat-icon bg-green-100">
-                    <Award className="w-5 h-5 text-green-600" />
+                    <Calculator className="w-5 h-5 text-green-600" />
                   </div>
                   <div className="stat-content">
                     <p className="stat-label">Média Geral</p>
@@ -252,7 +238,7 @@ export default function RanqueamentoProae() {
                 </div>
               ) : notasFiltradas.length === 0 ? (
                 <div className="empty-state">
-                  <Trophy className="w-12 h-12 text-gray-400" />
+                  <ListOrdered className="w-12 h-12 text-gray-400" />
                   <h3>Nenhum resultado encontrado</h3>
                   <p>
                     {termoBusca
@@ -269,20 +255,16 @@ export default function RanqueamentoProae() {
                         <th>Nome</th>
                         <th>Matrícula</th>
                         <th>Email</th>
-                        <th>Nota Documentos</th>
-                        <th>Nota Respostas</th>
-                        <th>Nota Pareceres</th>
-                        <th>Nota Final</th>
+                        <th>Pontuação validada</th>
+                        <th>Pontuação máxima</th>
+                        <th>Nota final</th>
                       </tr>
                     </thead>
                     <tbody>
                       {notasFiltradas.map((nota) => (
                         <tr key={nota.inscricao_id}>
                           <td>
-                            <div className={getRankingBadgeClass(nota.ranking)}>
-                              {getRankingIcon(nota.ranking)}
-                              <span>{nota.ranking}º</span>
-                            </div>
+                            <span className="ranking-badge">{nota.ranking}º</span>
                           </td>
                           <td>
                             <div className="nome-cell">
@@ -301,29 +283,12 @@ export default function RanqueamentoProae() {
                           </td>
                           <td>
                             <div className="nota-cell">
-                              <span className="nota-value">{nota.nota_documentos.toFixed(2)}</span>
-                              <span className="nota-detail">
-                                ({nota.detalhes.documentos_aprovados}/
-                                {nota.detalhes.documentos_total})
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="nota-cell">
                               <span className="nota-value">{nota.nota_respostas.toFixed(2)}</span>
-                              <span className="nota-detail">
-                                ({nota.detalhes.respostas_completas}/
-                                {nota.detalhes.respostas_total})
-                              </span>
                             </div>
                           </td>
                           <td>
                             <div className="nota-cell">
                               <span className="nota-value">{nota.nota_pareceres.toFixed(2)}</span>
-                              <span className="nota-detail">
-                                ({nota.detalhes.pareceres_aprovados}/
-                                {nota.detalhes.pareceres_total})
-                              </span>
                             </div>
                           </td>
                           <td>

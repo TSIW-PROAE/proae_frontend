@@ -1,6 +1,12 @@
 import { FetchAdapter } from "../BaseRequestService/HttpClient";
+import axios from "axios";
 import type { InscricaoStatusAuditEntry } from "../../types/inscricaoStatusAudit";
-import { AlunoInscrito, ListaAlunosInscritosResponse } from "../../types/inscricao";
+import {
+  AlunoInscrito,
+  ListaAlunosInscritosResponse,
+  ListaInscritosEditalResponse,
+  PaginacaoPadrao,
+} from "../../types/inscricao";
 import { API_BASE_URL } from "@/config/api";
 
 const BASE_URL = API_BASE_URL;
@@ -32,23 +38,54 @@ export class InscricaoServiceManager {
     this.httpClient = new FetchAdapter();
   }
 
-  async listarAlunosPorQuestionario(editalId: string, stepId: string): Promise<AlunoInscrito[]> {
+  async listarAlunosPorQuestionarioPaginado(
+    editalId: string,
+    stepId: string,
+    opts?: {
+      page?: number;
+      limit?: number;
+      busca?: string;
+      status?: string;
+    },
+  ): Promise<ListaAlunosInscritosResponse["dados"]> {
     try {
-      const response = await this.httpClient.get<ListaAlunosInscritosResponse>(`${BASE_URL}/aluno/edital/${editalId}/step/${stepId}/alunos`);
+      const params = new URLSearchParams();
+      if (opts?.page != null) params.set("page", String(opts.page));
+      if (opts?.limit != null) params.set("limit", String(opts.limit));
+      if (opts?.busca && opts.busca.trim() !== "") {
+        params.set("busca", opts.busca.trim());
+      }
+      if (opts?.status && opts.status.trim() !== "") {
+        params.set("status", opts.status.trim());
+      }
+      const query = params.toString();
+      const response = await this.httpClient.get<ListaAlunosInscritosResponse>(
+        `${BASE_URL}/aluno/edital/${editalId}/step/${stepId}/alunos${query ? `?${query}` : ""}`,
+      );
 
       // Verifica se a resposta tem a estrutura esperada
       if (response.sucesso && response.dados && Array.isArray(response.dados.alunos)) {
-        return response.dados.alunos;
+        return response.dados;
       }
 
       console.warn("Formato de resposta inesperado:", response);
-      return [];
+      return {
+        edital: { id: String(editalId), titulo: "", descricao: "", status: "" },
+        step: { id: String(stepId), texto: "" },
+        total_alunos: 0,
+        alunos: [],
+      };
     } catch (error: any) {
       console.error("Erro ao buscar alunos do questionário:", error);
 
       // Se der 404, retorna array vazio
       if (error.response?.status === 404) {
-        return [];
+        return {
+          edital: { id: String(editalId), titulo: "", descricao: "", status: "" },
+          step: { id: String(stepId), texto: "" },
+          total_alunos: 0,
+          alunos: [],
+        };
       }
 
       // Se der 400, lança erro com mensagem específica
@@ -65,6 +102,24 @@ export class InscricaoServiceManager {
       // Para outros erros, repassa a mensagem
       throw new Error(error.response?.data?.message || error.message || "Erro ao carregar alunos");
     }
+  }
+
+  async listarAlunosPorQuestionario(editalId: string, stepId: string): Promise<AlunoInscrito[]> {
+    const todos: AlunoInscrito[] = [];
+    let page = 1;
+    const limit = 100;
+
+    while (true) {
+      const resp = await this.listarAlunosPorQuestionarioPaginado(editalId, stepId, {
+        page,
+        limit,
+      });
+      todos.push(...(resp.alunos ?? []));
+      if (!resp.paginacao?.tem_proxima) break;
+      page += 1;
+    }
+
+    return todos;
   }
 
   async buscarInscricaoPorId(id: string): Promise<AlunoInscrito | null> {
@@ -109,9 +164,25 @@ export class InscricaoServiceManager {
   /** Situação de benefício no edital (separada do status de análise da inscrição). */
   async adminAlterarBeneficioEdital(
     inscricaoId: string,
-    body: { status_beneficio_edital: string },
+    body: {
+      status_beneficio_edital: string;
+      permitir_exceder_vagas?: boolean;
+      justificativa_override?: string;
+    },
   ): Promise<void> {
     await this.httpClient.patch(`${BASE_URL}/inscricoes/admin/${inscricaoId}/beneficio-edital`, body);
+  }
+
+  /** [Admin] Atualiza fase de resultado (preliminar/final) e situação do recurso. */
+  async adminAlterarResultadoRecurso(
+    inscricaoId: string,
+    body: {
+      resultado_fase: string;
+      recurso_status: string;
+      recurso_observacao?: string;
+    },
+  ): Promise<void> {
+    await this.httpClient.patch(`${BASE_URL}/inscricoes/admin/${inscricaoId}/resultado-recurso`, body);
   }
 
   /** [Admin] Histórico de alterações de status (auditoria). */
@@ -122,27 +193,129 @@ export class InscricaoServiceManager {
     return Array.isArray(data) ? data : [];
   }
 
-  async listarInscritosPorEdital(editalId: string): Promise<AlunoInscrito[]> {
+  async listarInscritosPorEditalPaginado(
+    editalId: string,
+    opts?: {
+      page?: number;
+      limit?: number;
+      busca?: string;
+      status?: string;
+      situacao_solicitacao?: "SELECIONADA" | "CLASSIFICADA" | "INDEFERIDA" | "DESISTENTE";
+      ordenacao?: "data_desc" | "data_asc" | "pontuacao_desc" | "pontuacao_asc";
+    },
+  ): Promise<ListaInscritosEditalResponse> {
     try {
-      const response = await this.httpClient.get<AlunoInscrito[]>(`${BASE_URL}/editais/${editalId}/inscritos`);
+      const params = new URLSearchParams();
+      if (opts?.page != null) params.set("page", String(opts.page));
+      if (opts?.limit != null) params.set("limit", String(opts.limit));
+      if (opts?.busca && opts.busca.trim() !== "") {
+        params.set("busca", opts.busca.trim());
+      }
+      if (opts?.status && opts.status.trim() !== "") {
+        params.set("status", opts.status.trim());
+      }
+      if (opts?.situacao_solicitacao) {
+        params.set("situacao_solicitacao", opts.situacao_solicitacao);
+      }
+      if (opts?.ordenacao) params.set("ordenacao", opts.ordenacao);
+
+      const query = params.toString();
+      const response = await this.httpClient.get<
+        ListaInscritosEditalResponse | AlunoInscrito[] | { sucesso?: boolean; dados?: AlunoInscrito[] }
+      >(`${BASE_URL}/editais/${editalId}/inscritos${query ? `?${query}` : ""}`);
 
       if (Array.isArray(response)) {
-        return response.map((r) => normalizeAlunoInscrito(r as AlunoInscrito & { usuario?: AlunoInscrito["usuario"] }));
+        return {
+          dados: response.map((r) =>
+            normalizeAlunoInscrito(r as AlunoInscrito & { usuario?: AlunoInscrito["usuario"] }),
+          ),
+          paginacao: {
+            pagina: 1,
+            limite: response.length || 20,
+            total_itens: response.length,
+            total_paginas: 1,
+            tem_anterior: false,
+            tem_proxima: false,
+          },
+        };
       }
 
-      // Caso a API retorne com wrapper { sucesso, dados }
+      const paginado = response as ListaInscritosEditalResponse;
+      if (Array.isArray(paginado?.dados) && paginado?.paginacao) {
+        return {
+          dados: paginado.dados.map((r) =>
+            normalizeAlunoInscrito(r as AlunoInscrito & { usuario?: AlunoInscrito["usuario"] }),
+          ),
+          paginacao: paginado.paginacao as PaginacaoPadrao,
+        };
+      }
+
+      // Caso a API retorne com wrapper legado { sucesso, dados }
       const wrapped = response as unknown as { sucesso?: boolean; dados?: AlunoInscrito[] };
       if (wrapped?.dados && Array.isArray(wrapped.dados)) {
-        return wrapped.dados.map((r) => normalizeAlunoInscrito(r as AlunoInscrito & { usuario?: AlunoInscrito["usuario"] }));
+        const dadosNormalizados = wrapped.dados.map((r) =>
+          normalizeAlunoInscrito(r as AlunoInscrito & { usuario?: AlunoInscrito["usuario"] }),
+        );
+        return {
+          dados: dadosNormalizados,
+          paginacao: {
+            pagina: 1,
+            limite: dadosNormalizados.length || 20,
+            total_itens: dadosNormalizados.length,
+            total_paginas: 1,
+            tem_anterior: false,
+            tem_proxima: false,
+          },
+        };
       }
 
       console.warn("Formato de resposta inesperado em listarInscritosPorEdital:", response);
-      return [];
+      return {
+        dados: [],
+        paginacao: {
+          pagina: 1,
+          limite: 20,
+          total_itens: 0,
+          total_paginas: 1,
+          tem_anterior: false,
+          tem_proxima: false,
+        },
+      };
     } catch (error: any) {
       console.error("Erro ao buscar inscritos do edital:", error);
-      if (error.response?.status === 404) return [];
+      if (error.response?.status === 404) {
+        return {
+          dados: [],
+          paginacao: {
+            pagina: 1,
+            limite: 20,
+            total_itens: 0,
+            total_paginas: 1,
+            tem_anterior: false,
+            tem_proxima: false,
+          },
+        };
+      }
       throw new Error(error.response?.data?.message || error.message || "Erro ao carregar inscritos");
     }
+  }
+
+  async listarInscritosPorEdital(editalId: string): Promise<AlunoInscrito[]> {
+    const todos: AlunoInscrito[] = [];
+    let page = 1;
+    const limit = 100;
+
+    while (true) {
+      const resp = await this.listarInscritosPorEditalPaginado(editalId, {
+        page,
+        limit,
+      });
+      todos.push(...resp.dados);
+      if (!resp.paginacao?.tem_proxima) break;
+      page += 1;
+    }
+
+    return todos;
   }
 
   /** PDF: inscrições com status "Inscrição Aprovada" (análise). */
@@ -187,7 +360,6 @@ async function downloadFileBlob(
   fallbackFilename: string,
   expectedContentType: string,
 ): Promise<void> {
-  const axios = (await import("axios")).default;
   try {
     const response = await axios.get<Blob>(url, {
       responseType: "blob",
@@ -216,7 +388,6 @@ async function downloadFileBlob(
 
 /** Baixa PDF com cookie; interpreta erros JSON quando a API não retorna PDF. */
 async function downloadPdfBlob(url: string, fallbackFilename: string): Promise<void> {
-  const axios = (await import("axios")).default;
   try {
     const response = await axios.get<Blob>(url, {
       responseType: "blob",

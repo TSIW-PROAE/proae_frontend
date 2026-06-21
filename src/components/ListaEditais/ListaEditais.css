@@ -32,11 +32,11 @@
 /* Usar os mesmos estilos do OpenSelections */
 .open-selections-container {
   background: white;
-  border-radius: 20px;
-  padding: 1.25rem;
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(229, 231, 235, 0.8);
-  min-height: 70vh;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 8px 20px -10px rgba(15, 23, 42, 0.25);
+  border: 1px solid #e2e8f0;
+  min-height: 420px;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
@@ -52,8 +52,9 @@
 
 .selections-stats {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .stat-item {
@@ -61,8 +62,8 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
+  color: #475569;
+  font-weight: 600;
 }
 
 .stat-dot {
@@ -159,30 +160,28 @@
 
 .selections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1rem;
   align-content: start;
 }
 
 .selection-card {
-  background: #f8fafc;
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 14px;
   padding: 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbe4f0;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  min-height: 180px;
-  max-height: 200px;
+  min-height: 210px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .selection-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px -5px rgba(0, 0, 0, 0.15);
-  border-color: #cbd5e1;
-  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px -14px rgba(15, 23, 42, 0.35);
+  border-color: #b9c8dc;
 }
 
 .selection-card-header {
@@ -327,9 +326,9 @@
 }
 
 .selection-card-title {
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #0f172a;
   margin: 0;
   line-height: 1.25;
   display: -webkit-box;
@@ -341,13 +340,13 @@
 }
 
 .selection-card-description {
-  color: #6b7280;
-  font-size: 0.75rem;
-  line-height: 1.2;
+  color: #475569;
+  font-size: 0.8rem;
+  line-height: 1.35;
   margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
@@ -357,15 +356,15 @@
 .selection-card-meta {
   display: flex;
   gap: 1rem;
-  margin-top: auto;
+  margin-top: 0.15rem;
 }
 
 .meta-item {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.6875rem;
-  color: #6b7280;
+  font-size: 0.75rem;
+  color: #334155;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -374,15 +373,15 @@
 .selection-card-footer {
   margin-top: 0.75rem;
   padding-top: 0.5rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #e8eef7;
 }
 
 .card-type {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.75rem;
-  color: #6b7280;
+  font-size: 0.74rem;
+  color: #64748b;
   font-weight: 500;
 }
 
@@ -558,8 +557,7 @@
   }
 
   .selection-card {
-    min-height: 170px;
-    max-height: 190px;
+    min-height: 190px;
     padding: 0.875rem;
   }
 
@@ -570,16 +568,14 @@
   }
 
   .open-selections-container {
-    min-height: 300px;
-    max-height: 400px;
+    min-height: 340px;
     padding: 1rem;
   }
 }
 
 @media (max-width: 750px) and (min-width: 513px) {
   .selection-card {
-    min-height: 200px;
-    max-height: 230px;
+    min-height: 210px;
     padding: 1rem;
   }
 
@@ -610,8 +606,7 @@
   }
 
   .selection-card {
-    min-height: 150px;
-    max-height: 180px;
+    min-height: 185px;
     padding: 0.75rem;
   }
 
@@ -645,7 +640,6 @@
 
   .open-selections-container {
     min-height: 300px;
-    max-height: 400px;
     padding: 1rem;
   }
 }

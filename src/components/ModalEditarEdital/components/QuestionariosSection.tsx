@@ -140,8 +140,12 @@ const QuestionariosSection: React.FC<QuestionariosSectionProps> = ({
                     </h4>
                     <div className="questionario-meta">
                       <span className="questionario-count">
-                        {q.value.previewPerguntas?.length || 0}{" "}
-                        {(q.value.previewPerguntas?.length || 0) === 1
+                        {q.value.totalPerguntas ??
+                          q.value.previewPerguntas?.length ??
+                          0}{" "}
+                        {(q.value.totalPerguntas ??
+                          q.value.previewPerguntas?.length ??
+                          0) === 1
                           ? "pergunta"
                           : "perguntas"}
                       </span>

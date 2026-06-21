@@ -33,6 +33,16 @@ import ModalRespostaAluno from "../../../components/ModalRespostaAluno/ModalResp
 import "./GerenciarInscricoes.css";
 
 type StatusFilter = "TODOS" | "PENDENTE" | "APROVADA" | "REPROVADA" | "EM_ANALISE";
+const PAGE_SIZE = 20;
+
+const normalizeStatusInscricao = (status?: string): string => {
+  if (!status) return "PENDENTE";
+  return status
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+};
 
 export default function GerenciarInscricoes() {
   const [inscricoes, setInscricoes] = useState<AlunoInscrito[]>([]);
@@ -54,6 +64,9 @@ export default function GerenciarInscricoes() {
   // Filtros
   const [termoBusca, setTermoBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<StatusFilter>("TODOS");
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalItens, setTotalItens] = useState(0);
 
   // Carregar edital e questionário salvos no sessionStorage ao montar
   useEffect(() => {
@@ -70,15 +83,18 @@ export default function GerenciarInscricoes() {
 
     if (questionarioSalvo && editalSalvo) {
       const questionario = JSON.parse(questionarioSalvo);
-      const edital = JSON.parse(editalSalvo);
       setQuestionarioSelecionado(questionario);
-      if (edital.id && questionario.id) {
-        carregarInscricoes(edital.id, questionario.id);
-      }
     }
 
     carregarEditais();
   }, []);
+
+  useEffect(() => {
+    if (editalSelecionado?.id && questionarioSelecionado?.id) {
+      void carregarInscricoes(editalSelecionado.id, questionarioSelecionado.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editalSelecionado?.id, questionarioSelecionado?.id, paginaAtual, termoBusca, filtroStatus]);
 
   const carregarEditais = async () => {
     try {
@@ -111,11 +127,27 @@ export default function GerenciarInscricoes() {
     try {
       setIsLoading(true);
       setError(null);
-      const dados = await inscricaoServiceManager.listarAlunosPorQuestionario(editalId, stepId);
-      setInscricoes(dados);
+      const response = await inscricaoServiceManager.listarAlunosPorQuestionarioPaginado(editalId, stepId, {
+        page: paginaAtual,
+        limit: PAGE_SIZE,
+        busca: termoBusca.trim() || undefined,
+        status: filtroStatus !== "TODOS" ? filtroStatus : undefined,
+      });
+      const alunos = response.alunos ?? [];
+      const totalPaginasApi = Math.max(1, response.paginacao?.total_paginas ?? 1);
+      if (paginaAtual > totalPaginasApi) {
+        setPaginaAtual(totalPaginasApi);
+        return;
+      }
+      setInscricoes(alunos);
+      setTotalItens(response.paginacao?.total_itens ?? response.total_alunos ?? alunos.length);
+      setTotalPaginas(totalPaginasApi);
     } catch (err: any) {
       console.error("Erro ao carregar inscrições:", err);
       setError(err.message || "Erro ao carregar inscrições");
+      setInscricoes([]);
+      setTotalItens(0);
+      setTotalPaginas(1);
     } finally {
       setIsLoading(false);
     }
@@ -125,6 +157,7 @@ export default function GerenciarInscricoes() {
     setEditalSelecionado(edital);
     setQuestionarioSelecionado(null);
     setInscricoes([]);
+    setPaginaAtual(1);
     sessionStorage.setItem("editalSelecionadoInscricoes", JSON.stringify(edital));
     sessionStorage.removeItem("questionarioSelecionadoInscricoes");
     setShowModalEditais(false);
@@ -136,41 +169,47 @@ export default function GerenciarInscricoes() {
 
   const handleSelecionarQuestionario = (questionario: StepResponseDto) => {
     setQuestionarioSelecionado(questionario);
+    setPaginaAtual(1);
     sessionStorage.setItem("questionarioSelecionadoInscricoes", JSON.stringify(questionario));
     setShowModalQuestionarios(false);
-    if (editalSelecionado?.id && questionario.id) {
-      carregarInscricoes(editalSelecionado.id, questionario.id);
-    }
   };
 
   const getStatusIcon = (status: AlunoInscrito["status_inscricao"]) => {
-    const normalizedStatus = status?.toUpperCase();
+    const normalizedStatus = normalizeStatusInscricao(status || undefined);
     switch (normalizedStatus) {
       case "APROVADA":
       case "APROVADO":
+      case "INSCRICAO_APROVADA":
         return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case "NEGADA":
       case "REPROVADA":
       case "REPROVADO":
+      case "INSCRICAO_NEGADA":
         return <XCircle className="w-4 h-4 text-red-500" />;
       case "EM_ANALISE":
-      case "EM ANÁLISE":
+      case "INSCRICAO_PENDENTE":
         return <Clock className="w-4 h-4 text-blue-500" />;
-      default:
+      case "AJUSTE_NECESSARIO":
         return <AlertCircle className="w-4 h-4 text-yellow-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-blue-500" />;
     }
   };
 
   const getStatusBadgeClass = (status: AlunoInscrito["status_inscricao"]) => {
-    const normalizedStatus = status?.toUpperCase();
+    const normalizedStatus = normalizeStatusInscricao(status || undefined);
     switch (normalizedStatus) {
       case "APROVADA":
       case "APROVADO":
+      case "INSCRICAO_APROVADA":
         return "status-badge status-aprovada";
+      case "NEGADA":
       case "REPROVADA":
       case "REPROVADO":
+      case "INSCRICAO_NEGADA":
         return "status-badge status-reprovada";
       case "EM_ANALISE":
-      case "EM ANÁLISE":
+      case "INSCRICAO_PENDENTE":
         return "status-badge status-analise";
       default:
         return "status-badge status-pendente";
@@ -178,51 +217,33 @@ export default function GerenciarInscricoes() {
   };
 
   const getStatusLabel = (status: AlunoInscrito["status_inscricao"]) => {
-    const normalizedStatus = status?.toUpperCase();
+    const normalizedStatus = normalizeStatusInscricao(status || undefined);
     switch (normalizedStatus) {
       case "APROVADA":
       case "APROVADO":
+      case "INSCRICAO_APROVADA":
         return "Aprovada";
+      case "NEGADA":
       case "REPROVADA":
       case "REPROVADO":
+      case "INSCRICAO_NEGADA":
         return "Reprovada";
       case "EM_ANALISE":
-      case "EM ANÁLISE":
+      case "INSCRICAO_PENDENTE":
         return "Em Análise";
+      case "AJUSTE_NECESSARIO":
+        return "Ajuste Necessário";
       default:
         return "Pendente";
     }
   };
 
-  // Filtragem das inscrições
-  const inscricoesFiltradas = useMemo(() => {
-    return inscricoes.filter((inscricao) => {
-      // Filtro de busca
-      const matchBusca =
-        termoBusca === "" ||
-        inscricao.nome?.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        inscricao.email?.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        inscricao.matricula?.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        inscricao.curso?.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        inscricao.campus?.toLowerCase().includes(termoBusca.toLowerCase());
-
-      // Filtro de status
-      const normalizedStatus = inscricao.status_inscricao?.toUpperCase().replace(" ", "_") || "PENDENTE";
-      const matchStatus =
-        filtroStatus === "TODOS" ||
-        normalizedStatus === filtroStatus ||
-        (filtroStatus === "APROVADA" && (normalizedStatus === "APROVADA" || normalizedStatus === "APROVADO")) ||
-        (filtroStatus === "REPROVADA" && (normalizedStatus === "REPROVADA" || normalizedStatus === "REPROVADO")) ||
-        (filtroStatus === "EM_ANALISE" && (normalizedStatus === "EM_ANALISE" || normalizedStatus === "EM ANÁLISE"));
-
-      return matchBusca && matchStatus;
-    });
-  }, [inscricoes, termoBusca, filtroStatus]);
+  const inscricoesFiltradas = inscricoes;
 
   // Estatísticas
   const estatisticas = useMemo(() => {
     const stats = {
-      total: inscricoes.length,
+      total: totalItens,
       aprovadas: 0,
       reprovadas: 0,
       pendentes: 0,
@@ -230,12 +251,24 @@ export default function GerenciarInscricoes() {
     };
 
     inscricoes.forEach((inscricao) => {
-      const normalizedStatus = inscricao.status_inscricao?.toUpperCase().replace(" ", "_") || "PENDENTE";
-      if (normalizedStatus === "APROVADA" || normalizedStatus === "APROVADO") {
+      const normalizedStatus = normalizeStatusInscricao(inscricao.status_inscricao || undefined);
+      if (
+        normalizedStatus === "APROVADA" ||
+        normalizedStatus === "APROVADO" ||
+        normalizedStatus === "INSCRICAO_APROVADA"
+      ) {
         stats.aprovadas++;
-      } else if (normalizedStatus === "REPROVADA" || normalizedStatus === "REPROVADO") {
+      } else if (
+        normalizedStatus === "REPROVADA" ||
+        normalizedStatus === "REPROVADO" ||
+        normalizedStatus === "NEGADA" ||
+        normalizedStatus === "INSCRICAO_NEGADA"
+      ) {
         stats.reprovadas++;
-      } else if (normalizedStatus === "EM_ANALISE" || normalizedStatus === "EM ANÁLISE") {
+      } else if (
+        normalizedStatus === "EM_ANALISE" ||
+        normalizedStatus === "INSCRICAO_PENDENTE"
+      ) {
         stats.emAnalise++;
       } else {
         stats.pendentes++;
@@ -243,7 +276,7 @@ export default function GerenciarInscricoes() {
     });
 
     return stats;
-  }, [inscricoes]);
+  }, [inscricoes, totalItens]);
 
   // PDF: inscrições aprovadas na análise vs beneficiários no edital
   const handleDownloadPdfAprovadosAnalise = async () => {
@@ -286,6 +319,7 @@ export default function GerenciarInscricoes() {
   const limparFiltros = () => {
     setTermoBusca("");
     setFiltroStatus("TODOS");
+    setPaginaAtual(1);
   };
 
   if (isLoadingEditais) {
@@ -437,7 +471,7 @@ export default function GerenciarInscricoes() {
                   <div className="estatistica-card estatistica-total">
                     <Users className="w-5 h-5" />
                     <div className="estatistica-info">
-                      <span className="estatistica-valor">{estatisticas.total}</span>
+                      <span className="estatistica-valor">{totalItens}</span>
                       <span className="estatistica-label">Total</span>
                     </div>
                   </div>
@@ -481,7 +515,10 @@ export default function GerenciarInscricoes() {
                       type="text"
                       placeholder="Buscar por nome, email, matrícula, curso ou campus..."
                       value={termoBusca}
-                      onChange={(e) => setTermoBusca(e.target.value)}
+                      onChange={(e) => {
+                        setPaginaAtual(1);
+                        setTermoBusca(e.target.value);
+                      }}
                       className="filtro-input"
                     />
                   </div>
@@ -489,7 +526,10 @@ export default function GerenciarInscricoes() {
                     <Filter className="w-4 h-4 filtro-icon" />
                     <select
                       value={filtroStatus}
-                      onChange={(e) => setFiltroStatus(e.target.value as StatusFilter)}
+                      onChange={(e) => {
+                        setPaginaAtual(1);
+                        setFiltroStatus(e.target.value as StatusFilter);
+                      }}
                       className="filtro-select"
                     >
                       <option value="TODOS">Todos os status</option>
@@ -615,11 +655,35 @@ export default function GerenciarInscricoes() {
                     <div className="inscricoes-footer">
                       <div className="footer-info">
                         <span className="total-count">
-                          {inscricoesFiltradas.length === inscricoes.length
-                            ? `${inscricoes.length} inscrição${inscricoes.length !== 1 ? "ões" : ""} total`
-                            : `${inscricoesFiltradas.length} de ${inscricoes.length} inscrição${inscricoes.length !== 1 ? "ões" : ""}`}
+                          Mostrando {inscricoesFiltradas.length} de {totalItens} inscrição
+                          {totalItens !== 1 ? "ões" : ""}
                         </span>
                         <span className="last-updated">Atualizado agora</span>
+                      </div>
+                      <div className="footer-pagination">
+                        <button
+                          type="button"
+                          className="footer-pagination-btn"
+                          onClick={() => setPaginaAtual((prev) => Math.max(1, prev - 1))}
+                          disabled={paginaAtual <= 1 || isLoading}
+                        >
+                          Anterior
+                        </button>
+                        <span className="footer-pagination-info">
+                          Página {paginaAtual} de {Math.max(1, totalPaginas)}
+                        </span>
+                        <button
+                          type="button"
+                          className="footer-pagination-btn"
+                          onClick={() =>
+                            setPaginaAtual((prev) =>
+                              Math.min(Math.max(1, totalPaginas), prev + 1),
+                            )
+                          }
+                          disabled={paginaAtual >= totalPaginas || isLoading}
+                        >
+                          Próxima
+                        </button>
                       </div>
                     </div>
                   </>

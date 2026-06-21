@@ -22,6 +22,8 @@ export interface QuestionarioItem {
   titulo: string;
   nome: string;
   previewPerguntas: string[];
+  /** Total de perguntas no step (quando conhecido via API). */
+  totalPerguntas?: number;
 }
 
 export interface EditableQuestionario {
@@ -65,6 +67,8 @@ export interface PerguntaEditorItem {
   ordem?: number;
   /** Regra de exibição condicional (referencia outra pergunta deste edital). */
   condicao?: PerguntaCondicaoEditor | null;
+  /** Pontos aplicados quando a resposta for validada na análise. */
+  pontuacao_validacao?: number;
 }
 
 export const statusLabelMap: Record<StatusEdital, string> = {

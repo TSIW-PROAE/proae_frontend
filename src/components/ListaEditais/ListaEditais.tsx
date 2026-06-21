@@ -19,6 +19,7 @@ import {
   NIVEL_GRADUACAO,
   NIVEL_POS_GRADUACAO,
 } from "@/constants/nivelAcademico";
+import { getTituloEdital } from "@/utils/editalDisplay";
 import "./ListaEditais.css";
 
 /** Badge de nível (Graduação / Pós-graduação) na lista e no grid. */
@@ -86,7 +87,7 @@ const EditalTableRow: React.FC<{
     } finally {
       setLoadingVagas(false);
     }
-  }, [edital.id]);
+  }, [edital.id, loadingVagas]);
 
   useEffect(() => {
     loadVagas();
@@ -226,7 +227,7 @@ const EditalCard: React.FC<{
     } finally {
       setLoadingVagas(false);
     }
-  }, [edital.id]);
+  }, [edital.id, loadingVagas]);
 
   // Carregar vagas automaticamente quando o componente é montado
   useEffect(() => {
@@ -327,18 +328,18 @@ const EditalCard: React.FC<{
       </div>
 
       <div className="selection-card-body">
+        <div className="selection-card-title-row">
+          <h3 className="selection-card-title" title={getTituloEdital(edital)}>
+            {getTituloEdital(edital)}
+          </h3>
+          <NivelAcademicoBadge nivel={edital.nivel_academico} />
+        </div>
+
         <div className="selection-card-meta">
           <div className="meta-item">
             <Users className="w-3 h-3" />
             <span>{totalVagas} vagas total</span>
           </div>
-        </div>
-
-        <div className="selection-card-title-row">
-          <h3 className="selection-card-title">
-            {edital.titulo_edital || "Título não informado"}
-          </h3>
-          <NivelAcademicoBadge nivel={edital.nivel_academico} />
         </div>
         <p className="selection-card-description">
           {edital.descricao && edital.descricao.length > 90

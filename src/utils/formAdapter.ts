@@ -1,6 +1,5 @@
 import { CondicaoLogica, PaginaConfig, TipoInput, FormatacaoInput } from "@/types/dynamicForm";
 import { StepResponseDto, PerguntaResponseDto, PerguntaCondicaoApi } from "@/types/step";
-import type { FormularioGeralStep, FormularioGeralPergunta } from "@/services/FormularioGeralService/formularioGeral.service";
 
 /** Compara em (ordem ASC, id ASC) — replica o comportamento do backend. */
 function compararPorOrdem<T extends { ordem?: number; id: string | number }>(
@@ -32,17 +31,58 @@ function mapearCondicao(
   };
 }
 
+function sanitizeOptionToken(token: unknown): string {
+  const raw = String(token ?? "").trim();
+  if (!raw) return "";
+  return raw
+    .replace(/^[\s{"]+/, "")
+    .replace(/[\s}"]+$/, "")
+    .replace(/\\"/g, '"')
+    .trim();
+}
+
+function normalizePerguntaOpcoes(rawOpcoes: unknown): string[] {
+  const items = Array.isArray(rawOpcoes) ? rawOpcoes : [rawOpcoes];
+  const normalized: string[] = [];
+
+  for (const item of items) {
+    const text = String(item ?? "").trim();
+    if (!text) continue;
+
+    // Caso legado: literal de array do Postgres, ex.: {"Sim","Nao"}.
+    if (text.startsWith("{") && text.endsWith("}")) {
+      const inner = text.slice(1, -1);
+      const parts = inner
+        .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+        .map((p) => sanitizeOptionToken(p))
+        .filter(Boolean);
+      normalized.push(...parts);
+      continue;
+    }
+
+    const clean = sanitizeOptionToken(text);
+    if (clean) normalized.push(clean);
+  }
+
+  return Array.from(new Set(normalized));
+}
+
 /**
  * Adapta a resposta de Steps do backend para o formato de páginas/inputs.
  * Aplica ordenação por (ordem, id) tanto em steps quanto em perguntas, e
  * propaga a regra `condicao` para o `useFormBuilder` filtrar dinamicamente.
  */
 export const mapStepsToPaginas = (steps: StepResponseDto[]): PaginaConfig[] => {
+  const toStepId = (value: string | number): number => {
+    const parsed = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
   return steps
     .slice()
     .sort(compararPorOrdem)
     .map((step: StepResponseDto) => ({
-      step_id: step.id,
+      step_id: toStepId(step.id),
       titulo: step.texto,
       inputs: step.perguntas
         .slice()
@@ -53,7 +93,7 @@ export const mapStepsToPaginas = (steps: StepResponseDto[]): PaginaConfig[] => {
           tipo: pergunta.tipo_Pergunta as TipoInput,
           obrigatorio: pergunta.obrigatoriedade,
           formatacao: pergunta.tipo_formatacao as FormatacaoInput,
-          options: (pergunta.opcoes || []).map((opcao: string) => ({
+          options: normalizePerguntaOpcoes(pergunta.opcoes).map((opcao: string) => ({
             value: opcao,
             label: opcao,
           })),
@@ -61,42 +101,4 @@ export const mapStepsToPaginas = (steps: StepResponseDto[]): PaginaConfig[] => {
           condicao: mapearCondicao(pergunta.condicao),
         })),
     }));
-};
-
-/**
- * Adapta os steps retornados por GET /formulario-geral para o formato de páginas/inputs.
- * Permite que o Formulário Geral use as mesmas perguntas e respostas que os outros editais.
- * Defensivo: ignora perguntas sem id (necessário para o envio das respostas).
- */
-export const mapFormularioGeralStepsToPaginas = (
-  steps: FormularioGeralStep[]
-): PaginaConfig[] => {
-  if (!steps?.length) return [];
-  return steps
-    .slice()
-    .sort(compararPorOrdem)
-    .map((step: FormularioGeralStep, stepIndex: number) => {
-      const texto = step.texto ?? (step.id != null ? `Etapa ${step.id}` : `Etapa ${stepIndex + 1}`);
-      const perguntas = (step.perguntas ?? [])
-        .filter((p: FormularioGeralPergunta) => p.id != null && p.id !== undefined)
-        .slice()
-        .sort(compararPorOrdem);
-      return {
-        step_id: step.id,
-        titulo: texto,
-        inputs: perguntas.map((pergunta: FormularioGeralPergunta) => ({
-          nome: `pergunta_${pergunta.id}`,
-          titulo: pergunta.pergunta ?? "",
-          tipo: (pergunta.tipo_Pergunta || "texto") as TipoInput,
-          obrigatorio: Boolean(pergunta.obrigatoriedade),
-          formatacao: (pergunta.tipo_formatacao as FormatacaoInput) ?? undefined,
-          options: Array.isArray(pergunta.opcoes)
-            ? pergunta.opcoes.map((opcao: string) => ({ value: opcao, label: opcao }))
-            : [],
-          placeholder: pergunta.placeholder ?? undefined,
-          condicao: mapearCondicao(pergunta.condicao ?? null),
-        })),
-      };
-    })
-    .filter((p) => p.inputs.length > 0);
 };

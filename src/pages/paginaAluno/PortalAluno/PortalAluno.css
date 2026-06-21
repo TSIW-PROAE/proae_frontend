@@ -571,8 +571,6 @@
   margin: 0;
 }
 
-url(PortalAluno.css)
-
 /* Estilos para OpenSelections - Cards Quadráticos */
 .open-selections-container {
   background: white;
@@ -587,43 +585,94 @@ url(PortalAluno.css)
   flex-direction: column;
 }
 
-.selections-header {
+/* Cabeçalho do card Editais (portal aluno) — classes próprias para não colidir com ListaEditais.css */
+.portal-editais-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.875rem;
   margin-bottom: 1.25rem;
 }
 
-.selections-stats {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-}
-
-.stat-item {
+.portal-editais-header-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
+  flex-shrink: 0;
 }
 
-.stat-dot {
+.portal-editais-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-editais-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.8125rem;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.portal-editais-stat-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.stat-dot.open {
+.portal-editais-stat--open .portal-editais-stat-dot {
   background: #10b981;
 }
 
-.stat-dot.closed {
+.portal-editais-stat--progress .portal-editais-stat-dot {
+  background: #f59e0b;
+}
+
+.portal-editais-stat--closed .portal-editais-stat-dot {
   background: #ef4444;
+}
+
+.portal-editais-stat-count {
+  font-weight: 700;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.portal-editais-stat-label {
+  color: #64748b;
+}
+
+@media (min-width: 640px) {
+  .portal-editais-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .portal-editais-stats {
+    justify-content: flex-end;
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .selections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 0.75rem;
   margin-bottom: 1.25rem;
   flex: 1;
@@ -641,10 +690,14 @@ url(PortalAluno.css)
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  min-height: 180px;
-  max-height: 200px;
+  min-height: 200px;
+  height: auto;
   position: relative;
   overflow: hidden;
+}
+
+.selection-card--dual-actions {
+  min-height: 248px;
 }
 
 .selection-card:hover {
@@ -656,16 +709,38 @@ url(PortalAluno.css)
 
 .selection-card-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 0.375rem 0.75rem;
   margin-bottom: 0.5rem;
+}
+
+.meta-vagas-note {
+  color: #b45309;
+  font-weight: 500;
+}
+
+.selection-card-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+  display: block;
+  overflow: hidden;
+  word-wrap: break-word;
 }
 
 .card-status-indicator {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex: 1;
+  flex: 0 0 auto;
+}
+
+.selection-card-meta--inline {
+  margin-left: auto;
 }
 
 .status-badge-small {
@@ -695,11 +770,13 @@ url(PortalAluno.css)
 }
 
 .selection-card-body {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-height: auto;
   overflow: hidden;
+  margin-bottom: 0.25rem;
 }
 
 .selection-card-title {
@@ -714,26 +791,26 @@ url(PortalAluno.css)
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-wrap: break-word;
+  flex-shrink: 0;
+  min-height: 1.25em;
 }
 
 .selection-card-description {
-  color: #6b7280;
-  font-size: 0.75rem;
-  line-height: 1.2;
+  color: #64748b;
+  font-size: 0.8125rem;
+  line-height: 1.45;
   margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: block;
   overflow: hidden;
-  flex: 1;
   word-wrap: break-word;
+  max-height: 4.5em;
 }
 
 .selection-card-meta {
   display: flex;
   gap: 1rem;
-  margin-top: auto;
+  margin-top: 0;
+  flex-shrink: 0;
 }
 
 .meta-item {
@@ -748,9 +825,20 @@ url(PortalAluno.css)
 }
 
 .selection-card-footer {
-  margin-top: 0.75rem;
-  padding-top: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.625rem;
   border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.selection-card-footer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.selection-card-footer-actions--dual .selection-action-button {
+  min-height: 36px;
 }
 
 .selection-action-button {
@@ -777,6 +865,19 @@ url(PortalAluno.css)
 
 .selection-action-button.primary:hover {
   background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.selection-action-button.secondary {
+  background: #ffffff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  text-decoration: none;
+}
+
+.selection-action-button.secondary:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
   transform: translateY(-1px);
 }
 
@@ -1436,9 +1537,12 @@ url(PortalAluno.css)
   }
 
   .selection-card {
-    min-height: 170px;
-    max-height: 190px;
+    min-height: 200px;
     padding: 0.875rem;
+  }
+
+  .selection-card--dual-actions {
+    min-height: 240px;
   }
 
   .status-header {
@@ -1466,19 +1570,21 @@ url(PortalAluno.css)
     align-items: flex-start;
   }
 
-  .selections-stats {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: flex-start;
+  .portal-editais-stats {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 
 /* Media query específica para resolver corte de texto entre 750px e 512px */
 @media (max-width: 750px) and (min-width: 513px) {
   .selection-card {
-    min-height: 200px;
-    max-height: 230px;
+    min-height: 220px;
     padding: 1rem;
+  }
+
+  .selection-card--dual-actions {
+    min-height: 260px;
   }
 
   .selection-card-title {
@@ -1559,9 +1665,12 @@ url(PortalAluno.css)
   }
 
   .selection-card {
-    min-height: 150px;
-    max-height: 180px;
+    min-height: 200px;
     padding: 0.75rem;
+  }
+
+  .selection-card--dual-actions {
+    min-height: 248px;
   }
 
   .selection-card-title {

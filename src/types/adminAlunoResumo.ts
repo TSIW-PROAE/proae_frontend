@@ -6,12 +6,12 @@ export interface AdminAlunoResumoInscricao {
   titulo_edital: string;
   status_edital: string;
   nivel_academico?: string;
-  is_formulario_geral: boolean;
-  is_formulario_renovacao: boolean;
-  processo_tipo: "FORMULARIO_GERAL" | "RENOVACAO" | "EDITAL";
+  processo_tipo: "EDITAL";
   data_inscricao: string;
   /** Análise da inscrição (documentos, parecer PROAE) */
   status_inscricao: string;
+  /** Categoria operacional do resultado no edital. */
+  situacao_solicitacao?: "SELECIONADA" | "CLASSIFICADA" | "INDEFERIDA" | "DESISTENTE";
   /** Seleção / homologação do benefício no edital (independe da linha acima) */
   status_beneficio_edital: string;
   beneficio_nome: string | null;

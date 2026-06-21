@@ -81,11 +81,13 @@ export interface FormularioDinamicoProps {
 export interface UseFormBuilderProps {
   editalId: string;
   onSubmit?: (data: FormData) => Promise<void> | void;
+  /** Quando true, envia somente respostas alteradas (fluxo de correção). */
+  isCorrecaoMode?: boolean;
   titulo?: string;
   subtitulo?: string;
   initialData?: FormData;
   initialCurrentPage?: number;
-  /** Quando informado (ex.: steps do GET /formulario-geral), usa em vez de buscar steps da API */
+  /** Quando informado, usa em vez de buscar steps da API */
   initialPaginas?: PaginaConfig[];
 }
 

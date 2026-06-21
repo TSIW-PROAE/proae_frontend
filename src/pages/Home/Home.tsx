@@ -10,10 +10,11 @@ import bolsaIcon from "../../assets/dashboard icons/bolsa.svg";
 import crecheIcon from "../../assets/dashboard icons/creche.svg";
 import buzufbaIcon from "../../assets/dashboard icons/bus.svg";
 import residenciaIcon from "../../assets/dashboard icons/apartamento.svg";
-import renovacaoIcon from "../../assets/dashboard icons/renvação.svg";
+import cadastroGeralIcon from "../../assets/dashboard icons/renvação.svg";
 import "./Home.css";
 import { AuthContext } from "@/context/AuthContext";
 import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
+import { getTituloEdital } from "@/utils/editalDisplay";
 import type { DocumentoEdital } from "@/types/edital";
 import { normalizeUrlForHref } from "@/utils/utils";
 import { normalizeRoles } from "@/utils/authRoles";
@@ -132,7 +133,7 @@ export default function Home() {
       <main className="home-content">
         <div className="home-title-container">
           <h2 className="home-title">Seu Portal de Benefícios Estudantis</h2>
-          <p className="home-subtitle">Acesse seus benefícios e acompanhe suas solicitações</p>
+          <p className="home-subtitle">Acesse seus benefícios e acompanhe suas inscrições em editais</p>
           <div className="about-section">
             <div className="processos-seletivos-section">
               <div className="processos-seletivos-header">
@@ -147,7 +148,7 @@ export default function Home() {
                   editais.map((edital, idx) => (
                     <ProcessoSeletivo
                       key={edital.id || idx}
-                      titulo={edital.titulo_edital}
+                      titulo={getTituloEdital(edital)}
                       codigo={edital.tipo_edital}
                       status={statusEditalParaProcessoSeletivo(edital.status_edital)}
                       inscricoesAbertas={editalAceitaInscricao(edital.status_edital)}
@@ -223,9 +224,9 @@ export default function Home() {
           />
 
           <InfoCard
-            icon={<img src={renovacaoIcon} alt="Renovação de Benefícios" />}
-            title="Renovação de Benefícios"
-            description="Processo semestral de renovação de auxílios PROAE."
+            icon={<img src={cadastroGeralIcon} alt="Template de Cadastro" />}
+            title="Template de Cadastro"
+            description="Inscrição no edital unificado com perguntas socioeconômicas e pesos."
             backgroundColor="var(--cor-azul-medio)"
             color="var(--cor-creme)"
           />

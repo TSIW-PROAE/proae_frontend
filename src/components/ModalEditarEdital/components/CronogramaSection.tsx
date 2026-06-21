@@ -10,6 +10,15 @@ interface CronogramaSectionProps {
   onPersist?: (etapas: EditableEtapa[]) => void;
 }
 
+const ETAPA_TIPO_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "", label: "Sem tipo (opcional)" },
+  { value: "INSCRICAO", label: "Inscrição" },
+  { value: "RESULTADO_PRELIMINAR", label: "Resultado preliminar" },
+  { value: "RECURSO", label: "Recurso" },
+  { value: "RESULTADO_FINAL", label: "Resultado final" },
+  { value: "ACOMPANHAMENTO", label: "Acompanhamento" },
+];
+
 /**
  * Ordena as etapas por data_inicio e recalcula ordem_elemento automaticamente.
  */
@@ -109,6 +118,7 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
     const newEtapa: EditableEtapa = {
       value: {
         etapa: "",
+        tipo_etapa: "",
         ordem_elemento: etapas.length + 1,
         data_inicio: "",
         data_fim: "",
@@ -194,6 +204,18 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
                     onChange={(e) => updateEtapa(index, "etapa", e.target.value)}
                     className="timeline-input"
                   />
+                  <select
+                    value={etapa.value.tipo_etapa || ""}
+                    onChange={(e) => updateEtapa(index, "tipo_etapa", e.target.value)}
+                    className="date-input"
+                    title="Tipo da etapa (opcional)"
+                  >
+                    {ETAPA_TIPO_OPTIONS.map((opt) => (
+                      <option key={opt.value || "none"} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                   <div className="timeline-dates">
                     <input
                       type="date"
@@ -202,7 +224,7 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
                       onChange={(e) => updateEtapa(index, "data_inicio", e.target.value)}
                       className="date-input"
                     />
-                    <span>até</span>
+                    <span className="timeline-dates-separator">até</span>
                     <input
                       type="date"
                       value={etapa.value.data_fim}
@@ -224,6 +246,11 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
                 <div className="timeline-display">
                   <div className="timeline-content">
                     <h4>{etapa.value.etapa}</h4>
+                    {etapa.value.tipo_etapa && (
+                      <div className="timeline-period">
+                        Tipo: {etapa.value.tipo_etapa}
+                      </div>
+                    )}
                     <div className="timeline-period">
                       {new Date(etapa.value.data_inicio).toLocaleDateString("pt-BR")} - {new Date(etapa.value.data_fim).toLocaleDateString("pt-BR")}
                     </div>

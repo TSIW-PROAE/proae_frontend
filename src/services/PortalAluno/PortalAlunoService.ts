@@ -1,5 +1,9 @@
 import IHttpClient from "../api";
 import { API_BASE_URL } from "@/config/api";
+import {
+  normalizeEditalPortalItem,
+  unwrapEditaisList,
+} from "@/utils/editalDisplay";
 
 export default class PortalAlunoService {
 
@@ -23,12 +27,17 @@ export default class PortalAlunoService {
     const q = encodeURIComponent(nivelAcademico);
     const url = `${API_BASE_URL}/editais/visiveis-aluno?nivel_academico=${q}`;
     const response = await this.httpClient.get(url);
-    return response;
+    return unwrapEditaisList(response).map(normalizeEditalPortalItem);
   }
 
   async getInscriptions() {
     const url = API_BASE_URL + "/aluno/inscricoes";
     const response = await this.httpClient.get(url);
     return response;
+  }
+
+  async solicitarRecurso(inscricaoId: number | string, justificativa: string) {
+    const url = `${API_BASE_URL}/aluno/inscricoes/${inscricaoId}/recurso`;
+    return this.httpClient.post(url, { justificativa });
   }
 }

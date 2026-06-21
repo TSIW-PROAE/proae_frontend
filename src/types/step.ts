@@ -16,6 +16,7 @@ export interface Pergunta {
   tipo_formatacao: FormatacaoInput;
   placeholder: string;
   opcoes: string[];
+  pontuacao_validacao?: number;
 }
 
 export interface StepResponseDto {
@@ -45,6 +46,8 @@ export interface PerguntaResponseDto {
   ordem?: number;
   /** Regra de exibição condicional (referencia outra pergunta). */
   condicao?: PerguntaCondicaoApi | null;
+  /** Pontos atribuídos quando a resposta desta pergunta for validada. */
+  pontuacao_validacao?: number;
 }
 
 export interface CreateRespostaDto {

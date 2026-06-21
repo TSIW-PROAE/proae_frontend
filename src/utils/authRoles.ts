@@ -60,7 +60,7 @@ export function normalizeAdminPerfil(
   return VALID_ADMIN_PERFIS.has(raw) ? (raw as AdminPerfil) : "gerencial";
 }
 
-/** Pode criar/editar/publicar/excluir editais e configurar formulários. */
+/** Pode criar/editar/publicar editais, configurar formulários e gerenciar a equipe PROAE. */
 export function canManageEditais(perfil: AdminPerfil | null | undefined): boolean {
   return normalizeAdminPerfil(perfil) === "gerencial";
 }
@@ -78,6 +78,13 @@ export function isReadOnlyAdmin(
   perfil: AdminPerfil | null | undefined,
 ): boolean {
   return normalizeAdminPerfil(perfil) === "coordenacao";
+}
+
+/** Inscrições: técnico e gerencial analisam; coordenação só consulta. */
+export function inscricoesSomenteConsulta(
+  perfil: AdminPerfil | null | undefined,
+): boolean {
+  return !canAnalyzeInscricoes(perfil);
 }
 
 /** Rótulo amigável para exibição na UI. */

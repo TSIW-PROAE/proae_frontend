@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useContext, type CSSProperties } from "react";
+import { useState, useEffect, useRef, useContext, type CSSProperties, type RefObject } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { FileText, Search, Filter, Calendar, User, Mail, BookOpen, MapPin, ChevronRight, Download, Pencil, Eye, X, History, Loader2, Save, Lock } from "lucide-react";
@@ -10,7 +10,12 @@ import type { InscricaoStatusAuditEntry } from "@/types/inscricaoStatusAudit";
 import { respostaService } from "@/services/RespostaService/respostaService";
 import { getApiErrorMessage } from "@/utils/apiError";
 import { AuthContext } from "@/context/AuthContext";
-import { canAnalyzeInscricoes, canManageEditais, isReadOnlyAdmin } from "@/utils/authRoles";
+import {
+  canAnalyzeInscricoes,
+  canManageEditais,
+  inscricoesSomenteConsulta,
+  normalizeAdminPerfil,
+} from "@/utils/authRoles";
 import "./InscricoesProae.css";
 
 /** Valores aceitos pelo PATCH admin de status (alinhado à Central / backend). */
@@ -22,6 +27,143 @@ const ADMIN_STATUS_OPCOES = [
 ] as const;
 
 const ADMIN_BENEFICIO_OPCOES = ["Pendente seleção", "Beneficiário no edital", "Não beneficiário"] as const;
+const ADMIN_RESULTADO_FASE_OPCOES = ["Nao publicado", "Resultado preliminar", "Resultado final"] as const;
+const ADMIN_RECURSO_STATUS_OPCOES = ["Sem recurso", "Recurso solicitado", "Recurso deferido", "Recurso indeferido"] as const;
+const DESISTENTE_MARKER = "[DESISTENTE]";
+type AdminStatusOpcao = (typeof ADMIN_STATUS_OPCOES)[number];
+type AdminBeneficioOpcao = (typeof ADMIN_BENEFICIO_OPCOES)[number];
+type AdminResultadoFaseOpcao = (typeof ADMIN_RESULTADO_FASE_OPCOES)[number];
+type AdminRecursoStatusOpcao = (typeof ADMIN_RECURSO_STATUS_OPCOES)[number];
+type SituacaoSolicitacaoOpcao = "SELECIONADA" | "CLASSIFICADA" | "INDEFERIDA" | "DESISTENTE";
+
+const ALLOWED_STATUS_TRANSITIONS: Record<AdminStatusOpcao, readonly AdminStatusOpcao[]> = {
+  "Inscrição Pendente": ADMIN_STATUS_OPCOES,
+  "Ajuste Necessário": ADMIN_STATUS_OPCOES,
+  "Inscrição Aprovada": ["Inscrição Aprovada", "Ajuste Necessário", "Inscrição Pendente"],
+  "Inscrição Negada": ["Inscrição Negada", "Ajuste Necessário", "Inscrição Pendente"],
+};
+
+const ALLOWED_BENEFICIO_TRANSITIONS: Record<AdminBeneficioOpcao, readonly AdminBeneficioOpcao[]> = {
+  "Pendente seleção": ADMIN_BENEFICIO_OPCOES,
+  "Beneficiário no edital": ["Beneficiário no edital", "Pendente seleção"],
+  "Não beneficiário": ["Não beneficiário", "Pendente seleção"],
+};
+
+const ALLOWED_RESULTADO_FASE_TRANSITIONS: Record<AdminResultadoFaseOpcao, readonly AdminResultadoFaseOpcao[]> = {
+  "Nao publicado": ["Nao publicado", "Resultado preliminar"],
+  "Resultado preliminar": ["Resultado preliminar", "Resultado final", "Nao publicado"],
+  "Resultado final": ["Resultado final", "Resultado preliminar"],
+};
+
+const ALLOWED_RECURSO_STATUS_TRANSITIONS: Record<AdminRecursoStatusOpcao, readonly AdminRecursoStatusOpcao[]> = {
+  "Sem recurso": ["Sem recurso", "Recurso solicitado"],
+  "Recurso solicitado": ["Recurso solicitado", "Recurso deferido", "Recurso indeferido"],
+  "Recurso deferido": ["Recurso deferido", "Sem recurso"],
+  "Recurso indeferido": ["Recurso indeferido", "Sem recurso"],
+};
+
+function hasDesistenteMarker(text: string | null | undefined): boolean {
+  return String(text ?? "").toUpperCase().includes(DESISTENTE_MARKER);
+}
+
+function addDesistenteMarker(text: string | null | undefined): string {
+  const base = String(text ?? "").trim();
+  if (hasDesistenteMarker(base)) return base;
+  return base ? `${DESISTENTE_MARKER} ${base}` : `${DESISTENTE_MARKER} Solicitação desistente.`;
+}
+
+function removeDesistenteMarker(text: string | null | undefined): string {
+  return String(text ?? "")
+    .replace(/\[DESISTENTE\]/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function resolveSituacaoSolicitacao(inscricao: AlunoInscrito): SituacaoSolicitacaoOpcao {
+  const situacao = String(inscricao.situacao_solicitacao ?? "").toUpperCase();
+  if (
+    situacao === "SELECIONADA" ||
+    situacao === "CLASSIFICADA" ||
+    situacao === "INDEFERIDA" ||
+    situacao === "DESISTENTE"
+  ) {
+    return situacao as SituacaoSolicitacaoOpcao;
+  }
+
+  if (hasDesistenteMarker(inscricao.observacao_admin)) return "DESISTENTE";
+  const status = String(inscricao.status_inscricao ?? "").toUpperCase();
+  if (status.includes("NEGADA") || status.includes("REJEITADA")) return "INDEFERIDA";
+  if (
+    status.includes("APROVADA") &&
+    String(inscricao.status_beneficio_edital ?? "").includes("Beneficiário")
+  ) {
+    return "SELECIONADA";
+  }
+  return "CLASSIFICADA";
+}
+
+function normalizeAdminStatusValue(statusRaw: string | null | undefined): AdminStatusOpcao {
+  const s = (statusRaw ?? "").trim().toUpperCase();
+  if (s === "INSCRIÇÃO APROVADA" || s === "APROVADA") return "Inscrição Aprovada";
+  if (s === "INSCRIÇÃO NEGADA" || s === "NEGADA" || s === "REJEITADA") return "Inscrição Negada";
+  if (
+    s === "AJUSTE NECESSÁRIO" ||
+    s === "AJUSTE NECESSARIO" ||
+    s === "PENDENTE DE REGULARIZAÇÃO" ||
+    s === "PENDENTE_REGULARIZACAO" ||
+    s === "AGUARDANDO COMPLEMENTO" ||
+    s === "AGUARDANDO_COMPLEMENTO" ||
+    s === "REJEITADA POR PRAZO DE COMPLEMENTO" ||
+    s === "REJEITADA_POR_PRAZO_COMPLEMENTO"
+  ) {
+    return "Ajuste Necessário";
+  }
+  return "Inscrição Pendente";
+}
+
+function getAllowedAdminStatusOptions(current: string): readonly AdminStatusOpcao[] {
+  const normalized = normalizeAdminStatusValue(current);
+  return ALLOWED_STATUS_TRANSITIONS[normalized] ?? ADMIN_STATUS_OPCOES;
+}
+
+function getAllowedAdminBeneficioOptions(current: string): readonly AdminBeneficioOpcao[] {
+  if (!ADMIN_BENEFICIO_OPCOES.includes(current as AdminBeneficioOpcao)) {
+    return ADMIN_BENEFICIO_OPCOES;
+  }
+  return ALLOWED_BENEFICIO_TRANSITIONS[current as AdminBeneficioOpcao] ?? ADMIN_BENEFICIO_OPCOES;
+}
+
+function normalizeResultadoFaseValue(value: string | null | undefined): AdminResultadoFaseOpcao {
+  if (ADMIN_RESULTADO_FASE_OPCOES.includes((value ?? "") as AdminResultadoFaseOpcao)) {
+    return (value ?? "Nao publicado") as AdminResultadoFaseOpcao;
+  }
+  return "Nao publicado";
+}
+
+function normalizeRecursoStatusValue(value: string | null | undefined): AdminRecursoStatusOpcao {
+  if (ADMIN_RECURSO_STATUS_OPCOES.includes((value ?? "") as AdminRecursoStatusOpcao)) {
+    return (value ?? "Sem recurso") as AdminRecursoStatusOpcao;
+  }
+  return "Sem recurso";
+}
+
+function getAllowedResultadoFaseOptions(current: string): readonly AdminResultadoFaseOpcao[] {
+  const normalized = normalizeResultadoFaseValue(current);
+  return ALLOWED_RESULTADO_FASE_TRANSITIONS[normalized] ?? ADMIN_RESULTADO_FASE_OPCOES;
+}
+
+function getAllowedRecursoStatusOptions(current: string): readonly AdminRecursoStatusOpcao[] {
+  const normalized = normalizeRecursoStatusValue(current);
+  return ALLOWED_RECURSO_STATUS_TRANSITIONS[normalized] ?? ADMIN_RECURSO_STATUS_OPCOES;
+}
+
+function buildBeneficioTransitionHint(current: string): string {
+  const from = (current || "Pendente seleção") as AdminBeneficioOpcao;
+  const allowed = getAllowedAdminBeneficioOptions(from).join(", ");
+  return `Transição inválida de benefício. Situação atual: "${from}". Opções permitidas: ${allowed}.`;
+}
+
+const PAGE_SIZE = 20;
 
 interface PerguntaPayload {
   id: string;
@@ -35,6 +177,7 @@ interface PerguntaPayload {
     id: string;
     nome: string;
   } | null;
+  pontuacao_validacao?: number | null;
 }
 
 interface RespostaPayload {
@@ -66,6 +209,16 @@ interface StepComStatus {
     texto: string;
   };
   status: string;
+  pendencias?: {
+    totalPerguntas: number;
+    totalRespondidas: number;
+    totalPendentes: number;
+    totalValidadas: number;
+    totalCorrecoesSolicitadas: number;
+    totalAguardandoComplemento: number;
+    totalPrazoVencido: number;
+    totalInvalidadas: number;
+  };
   perguntas: PerguntaComResposta[];
 }
 
@@ -128,17 +281,32 @@ function mergeAlunoInformacoesGerais(ins: AlunoInscrito, sc?: StepsCompletos["al
   };
 }
 
+function calcularPontuacaoPergunta(
+  pergunta?: PerguntaPayload | null,
+  resposta?: RespostaPayload | null,
+): { peso: number; ganho: number } {
+  const peso = Number(pergunta?.pontuacao_validacao ?? 0);
+  if (!Number.isFinite(peso) || peso <= 0) return { peso: 0, ganho: 0 };
+  return { peso, ganho: resposta?.validada === true ? peso : 0 };
+}
+
 export default function InscricoesProae() {
   const { userInfo } = useContext(AuthContext);
-  const adminPerfil = userInfo?.adminPerfil ?? null;
-  const isReadOnly = isReadOnlyAdmin(adminPerfil);
+  const adminPerfil = normalizeAdminPerfil(userInfo?.adminPerfil ?? null);
   const podeAnalisarInscricoes = canAnalyzeInscricoes(adminPerfil);
+  const somenteConsulta = inscricoesSomenteConsulta(adminPerfil);
   const podeAlterarBeneficio = canManageEditais(adminPerfil);
 
   const [searchParams] = useSearchParams();
   const editalIdFromUrl = searchParams.get("editalId");
   const expandInscricaoFromUrl = searchParams.get("expandInscricao");
+  const tourFromUrl = searchParams.get("tour");
   const deepLinkExpandHandled = useRef(false);
+  const deepLinkExpandAttempted = useRef(false);
+  const tourHandledRef = useRef<string | null>(null);
+  const selectorSectionRef = useRef<HTMLElement>(null);
+  const filtersSectionRef = useRef<HTMLElement>(null);
+  const listaSectionRef = useRef<HTMLElement>(null);
 
   const [editais, setEditais] = useState<Edital[]>([]);
   const [editalSelecionado, setEditalSelecionado] = useState<Edital | null>(null);
@@ -147,6 +315,15 @@ export default function InscricoesProae() {
   const [isLoadingEditais, setIsLoadingEditais] = useState(true);
   const [termoBusca, setTermoBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const [filtroSituacaoSolicitacao, setFiltroSituacaoSolicitacao] = useState<
+    "todos" | SituacaoSolicitacaoOpcao
+  >("todos");
+  const [filtroOrdenacao, setFiltroOrdenacao] = useState<
+    "data_desc" | "data_asc" | "pontuacao_desc" | "pontuacao_asc"
+  >("pontuacao_desc");
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalItens, setTotalItens] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inscricaoSelecionada, setInscricaoSelecionada] = useState<AlunoInscrito | null>(null);
   const [abaAtiva, setAbaAtiva] = useState<"questionarios" | "informacoes">("questionarios");
@@ -167,8 +344,15 @@ export default function InscricoesProae() {
   const [adminStatusDraft, setAdminStatusDraft] = useState("");
   const [adminObsDraft, setAdminObsDraft] = useState("");
   const [adminBeneficioDraft, setAdminBeneficioDraft] = useState("");
+  const [adminOverrideVagasDraft, setAdminOverrideVagasDraft] = useState(false);
+  const [adminOverrideJustificativaDraft, setAdminOverrideJustificativaDraft] = useState("");
+  const [adminResultadoFaseDraft, setAdminResultadoFaseDraft] = useState<AdminResultadoFaseOpcao>("Nao publicado");
+  const [adminRecursoStatusDraft, setAdminRecursoStatusDraft] = useState<AdminRecursoStatusOpcao>("Sem recurso");
+  const [adminRecursoObsDraft, setAdminRecursoObsDraft] = useState("");
+  const [adminDesistenteDraft, setAdminDesistenteDraft] = useState(false);
   const [salvandoAdminStatus, setSalvandoAdminStatus] = useState(false);
   const [salvandoAdminBeneficio, setSalvandoAdminBeneficio] = useState(false);
+  const [salvandoAdminResultadoRecurso, setSalvandoAdminResultadoRecurso] = useState(false);
 
   // Estado do modal de confirmação de validação
   const [modalValidarOpen, setModalValidarOpen] = useState(false);
@@ -213,16 +397,41 @@ export default function InscricoesProae() {
   }, []);
 
   useEffect(() => {
-    if (editalSelecionado?.id) {
-      carregarInscricoes();
-    }
-  }, [editalSelecionado]);
+    if (!editalSelecionado?.id) return;
+    carregarInscricoes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editalSelecionado?.id, paginaAtual, termoBusca, filtroStatus, filtroSituacaoSolicitacao, filtroOrdenacao]);
 
   useEffect(() => {
     if (!editais.length || !editalIdFromUrl) return;
     const ed = editais.find((e) => String(e.id) === String(editalIdFromUrl));
-    if (ed) setEditalSelecionado(ed);
+    if (ed) {
+      setPaginaAtual(1);
+      setEditalSelecionado(ed);
+    }
   }, [editais, editalIdFromUrl]);
+
+  useEffect(() => {
+    if (!tourFromUrl) return;
+    if (tourHandledRef.current === tourFromUrl) return;
+
+    if (!editalSelecionado && editais.length > 0) {
+      setPaginaAtual(1);
+      setEditalSelecionado(editais[0]);
+      return;
+    }
+
+    const map: Record<string, { ref: RefObject<HTMLElement>; label: string }> = {
+      seletor: { ref: selectorSectionRef, label: "seletor de edital" },
+      filtros: { ref: filtersSectionRef, label: "filtros e exportação" },
+      lista: { ref: listaSectionRef, label: "lista de inscrições" },
+    };
+    const target = map[tourFromUrl];
+    if (!target?.ref.current) return;
+    target.ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast(`Tutorial: foco em "${target.label}".`);
+    tourHandledRef.current = tourFromUrl;
+  }, [tourFromUrl, editalSelecionado, editais, isLoading, isLoadingEditais]);
 
   const carregarEditais = async () => {
     try {
@@ -241,62 +450,55 @@ export default function InscricoesProae() {
 
     try {
       setIsLoading(true);
-      const dados = await inscricaoServiceManager.listarInscritosPorEdital(editalSelecionado.id);
-      setInscricoes(dados);
-      return dados;
+      const resposta = await inscricaoServiceManager.listarInscritosPorEditalPaginado(editalSelecionado.id, {
+        page: paginaAtual,
+        limit: PAGE_SIZE,
+        busca: termoBusca.trim() || undefined,
+        status: filtroStatus !== "todos" ? filtroStatus : undefined,
+        situacao_solicitacao:
+          filtroSituacaoSolicitacao !== "todos"
+            ? filtroSituacaoSolicitacao
+            : undefined,
+        ordenacao: filtroOrdenacao,
+      });
+      const totalPaginasApi = Math.max(1, resposta.paginacao?.total_paginas ?? 1);
+      if (paginaAtual > totalPaginasApi) {
+        setPaginaAtual(totalPaginasApi);
+        return undefined;
+      }
+      setInscricoes(resposta.dados ?? []);
+      setTotalPaginas(totalPaginasApi);
+      setTotalItens(resposta.paginacao?.total_itens ?? (resposta.dados ?? []).length);
+      return resposta.dados;
     } catch (err: any) {
       console.error("Erro ao carregar inscrições:", err);
       setInscricoes([]);
+      setTotalPaginas(1);
+      setTotalItens(0);
       return undefined;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const inscricoesFiltradas = inscricoes.filter((inscricao) => {
-    const matchTermo =
-      !termoBusca ||
-      inscricao.nome?.toLowerCase().includes(termoBusca.toLowerCase()) ||
-      inscricao.email?.toLowerCase().includes(termoBusca.toLowerCase()) ||
-      inscricao.matricula?.toLowerCase().includes(termoBusca.toLowerCase());
+  const inscricoesFiltradas = [...inscricoes].sort((a, b) => {
+    const pa = Number(a.pontuacao_validada ?? 0);
+    const pb = Number(b.pontuacao_validada ?? 0);
+    const da = new Date(a.data_inscricao || 0).getTime();
+    const db = new Date(b.data_inscricao || 0).getTime();
 
-    let matchStatus = filtroStatus === "todos";
-    if (!matchStatus) {
-      const statusNorm = inscricao.status_inscricao?.toUpperCase() || "";
-      switch (filtroStatus) {
-        case "aprovada":
-          matchStatus = statusNorm === "APROVADA";
-          break;
-        case "rejeitada":
-          matchStatus = statusNorm === "REJEITADA";
-          break;
-        case "em_analise":
-          matchStatus = statusNorm === "EM ANÁLISE" || statusNorm === "EM_ANALISE";
-          break;
-        case "selecionada":
-          matchStatus = statusNorm === "SELECIONADA";
-          break;
-        case "nao_selecionada":
-          matchStatus = statusNorm === "NÃO SELECIONADA" || statusNorm === "NAO_SELECIONADA";
-          break;
-        case "pendente_regularizacao":
-          matchStatus = statusNorm === "PENDENTE DE REGULARIZAÇÃO" || statusNorm === "PENDENTE_REGULARIZACAO";
-          break;
-        case "aguardando_complemento":
-          matchStatus = statusNorm === "AGUARDANDO COMPLEMENTO" || statusNorm === "AGUARDANDO_COMPLEMENTO";
-          break;
-        case "rejeitada_prazo_complemento":
-          matchStatus = statusNorm === "REJEITADA POR PRAZO DE COMPLEMENTO" || statusNorm === "REJEITADA_POR_PRAZO_COMPLEMENTO";
-          break;
-        case "pendente":
-          matchStatus = statusNorm === "PENDENTE";
-          break;
-        default:
-          matchStatus = statusNorm === filtroStatus.toUpperCase();
-      }
+    if (filtroOrdenacao === "pontuacao_desc") {
+      if (pb !== pa) return pb - pa;
+      return db - da;
     }
-
-    return matchTermo && matchStatus;
+    if (filtroOrdenacao === "pontuacao_asc") {
+      if (pa !== pb) return pa - pb;
+      return db - da;
+    }
+    if (filtroOrdenacao === "data_asc") {
+      return da - db;
+    }
+    return db - da;
   });
 
   const getStatusBadgeClass = (status: string) => {
@@ -313,9 +515,15 @@ export default function InscricoesProae() {
         return "status-badge status-analise";
       case "SELECIONADA":
         return "status-badge status-selecionada";
+      case "CLASSIFICADA":
+        return "status-badge status-analise";
+      case "INDEFERIDA":
+        return "status-badge status-rejeitada";
       case "NÃO SELECIONADA":
       case "NAO_SELECIONADA":
         return "status-badge status-nao-selecionada";
+      case "DESISTENTE":
+        return "status-badge status-desistente";
       case "PENDENTE DE REGULARIZAÇÃO":
       case "PENDENTE_REGULARIZACAO":
         return "status-badge status-pendente-regularizacao";
@@ -340,30 +548,30 @@ export default function InscricoesProae() {
       case "APROVADA":
       case "INSCRIÇÃO APROVADA":
         return "Aprovada";
-      case "REJEITADA":
-      case "INSCRIÇÃO NEGADA":
-        return "Rejeitada";
-      case "EM ANÁLISE":
-      case "EM_ANALISE":
-        return "Em Análise";
       case "SELECIONADA":
         return "Selecionada";
-      case "NÃO SELECIONADA":
-      case "NAO_SELECIONADA":
-        return "Não Selecionada";
-      case "PENDENTE DE REGULARIZAÇÃO":
-      case "PENDENTE_REGULARIZACAO":
-        return "Pendente de Regularização";
-      case "AGUARDANDO COMPLEMENTO":
-      case "AGUARDANDO_COMPLEMENTO":
-        return "Aguardando Complemento";
-      case "REJEITADA POR PRAZO DE COMPLEMENTO":
-      case "REJEITADA_POR_PRAZO_COMPLEMENTO":
-        return "Rejeitada por Prazo";
+      case "CLASSIFICADA":
+        return "Classificada";
+      case "INDEFERIDA":
+        return "Indeferida";
+      case "REJEITADA":
+      case "NEGADA":
+      case "INSCRIÇÃO NEGADA":
+        return "Negada";
+      case "DESISTENTE":
+        return "Desistente";
+      case "EM ANÁLISE":
+      case "EM_ANALISE":
       case "PENDENTE":
       case "INSCRIÇÃO PENDENTE":
-        return "Pendente";
+        return "Em Análise";
+      case "PENDENTE DE REGULARIZAÇÃO":
+      case "PENDENTE_REGULARIZACAO":
+      case "AGUARDANDO COMPLEMENTO":
+      case "AGUARDANDO_COMPLEMENTO":
       case "AJUSTE NECESSÁRIO":
+      case "REJEITADA POR PRAZO DE COMPLEMENTO":
+      case "REJEITADA_POR_PRAZO_COMPLEMENTO":
         return "Ajuste necessário";
       default:
         return status?.trim() ? status : "Pendente";
@@ -377,14 +585,38 @@ export default function InscricoesProae() {
   };
 
   useEffect(() => {
-    if (!expandInscricaoFromUrl || !inscricoes.length || deepLinkExpandHandled.current) return;
+    if (!expandInscricaoFromUrl || deepLinkExpandHandled.current) return;
     const ins = inscricoes.find((i) => String(i.inscricao_id) === String(expandInscricaoFromUrl));
     if (ins) {
       deepLinkExpandHandled.current = true;
       void handleVerDetalhes(ins);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deep link uma vez ao carregar a lista
+    if (deepLinkExpandAttempted.current) return;
+    deepLinkExpandAttempted.current = true;
+    void inscricaoServiceManager
+      .buscarInscricaoPorId(String(expandInscricaoFromUrl))
+      .then((inscricao) => {
+        if (!inscricao) return;
+        deepLinkExpandHandled.current = true;
+        void handleVerDetalhes(inscricao);
+      })
+      .catch(() => {
+        /* deep link opcional: mantém silencioso se não encontrado */
+      });
   }, [inscricoes, expandInscricaoFromUrl]);
+
+  useEffect(() => {
+    deepLinkExpandAttempted.current = false;
+    deepLinkExpandHandled.current = false;
+  }, [editalSelecionado?.id]);
+
+  useEffect(() => {
+    if (expandInscricaoFromUrl) {
+      deepLinkExpandAttempted.current = false;
+      deepLinkExpandHandled.current = false;
+    }
+  }, [expandInscricaoFromUrl]);
 
   useEffect(() => {
     if (!isModalOpen || abaAtiva !== "informacoes" || !inscricaoSelecionada?.inscricao_id) {
@@ -419,39 +651,88 @@ export default function InscricoesProae() {
 
   useEffect(() => {
     if (!inscricaoSelecionada) return;
-    setAdminStatusDraft(inscricaoSelecionada.status_inscricao || "");
-    setAdminObsDraft(inscricaoSelecionada.observacao_admin?.trim() ?? "");
+    setAdminStatusDraft(normalizeAdminStatusValue(inscricaoSelecionada.status_inscricao));
+    const obs = inscricaoSelecionada.observacao_admin?.trim() ?? "";
+    setAdminObsDraft(obs);
+    setAdminDesistenteDraft(hasDesistenteMarker(obs));
     const b =
       inscricaoSelecionada.status_beneficio_edital &&
       ADMIN_BENEFICIO_OPCOES.includes(
-        inscricaoSelecionada.status_beneficio_edital as (typeof ADMIN_BENEFICIO_OPCOES)[number],
+        inscricaoSelecionada.status_beneficio_edital as AdminBeneficioOpcao,
       )
         ? inscricaoSelecionada.status_beneficio_edital
         : "Pendente seleção";
     setAdminBeneficioDraft(b);
+    setAdminOverrideVagasDraft(false);
+    setAdminOverrideJustificativaDraft("");
+    setAdminResultadoFaseDraft(normalizeResultadoFaseValue(inscricaoSelecionada.resultado_fase));
+    setAdminRecursoStatusDraft(normalizeRecursoStatusValue(inscricaoSelecionada.recurso_status));
+    setAdminRecursoObsDraft(inscricaoSelecionada.recurso_observacao?.trim() ?? "");
   }, [
     inscricaoSelecionada?.inscricao_id,
     inscricaoSelecionada?.status_inscricao,
     inscricaoSelecionada?.observacao_admin,
     inscricaoSelecionada?.status_beneficio_edital,
+    inscricaoSelecionada?.resultado_fase,
+    inscricaoSelecionada?.recurso_status,
+    inscricaoSelecionada?.recurso_observacao,
   ]);
 
   const podeEditarBeneficioEdital =
     !!editalSelecionado &&
-    !editalSelecionado.is_formulario_geral &&
-    !editalSelecionado.is_formulario_renovacao &&
     podeAlterarBeneficio;
+  const adminStatusOpcoesDisponiveis = getAllowedAdminStatusOptions(adminStatusDraft);
+  const adminBeneficioOpcoesDisponiveis = getAllowedAdminBeneficioOptions(adminBeneficioDraft);
+  const adminResultadoFaseOpcoesDisponiveis = getAllowedResultadoFaseOptions(adminResultadoFaseDraft);
+  const adminRecursoStatusOpcoesDisponiveis = getAllowedRecursoStatusOptions(adminRecursoStatusDraft);
 
   const salvarStatusInscricaoAdmin = async () => {
+    if (!podeAnalisarInscricoes) {
+      toast.error("Seu perfil não permite alterar o status da inscrição.");
+      return;
+    }
     if (!inscricaoSelecionada?.inscricao_id) return;
     const id = String(inscricaoSelecionada.inscricao_id);
     setSalvandoAdminStatus(true);
     try {
+      const observacaoFinal = adminDesistenteDraft
+        ? addDesistenteMarker(adminObsDraft)
+        : removeDesistenteMarker(adminObsDraft);
       await inscricaoServiceManager.adminAlterarStatusInscricao(id, {
         status: adminStatusDraft,
-        observacao: adminObsDraft.trim() || undefined,
+        observacao: observacaoFinal || undefined,
       });
       toast.success("Status da inscrição (análise) atualizado.");
+      const lista = await carregarInscricoes();
+      const fresh = lista?.find((i) => String(i.inscricao_id) === id);
+      if (fresh) setInscricaoSelecionada(fresh);
+      setAuditRefreshTick((t) => t + 1);
+    } catch (e: unknown) {
+      toast.error(getApiErrorMessage(e));
+    } finally {
+      setSalvandoAdminStatus(false);
+    }
+  };
+
+  const toggleDesistenciaAdmin = async (marcar: boolean) => {
+    if (!inscricaoSelecionada?.inscricao_id) return;
+    const id = String(inscricaoSelecionada.inscricao_id);
+    setSalvandoAdminStatus(true);
+    try {
+      const observacaoFinal = marcar
+        ? addDesistenteMarker(adminObsDraft)
+        : removeDesistenteMarker(adminObsDraft);
+      await inscricaoServiceManager.adminAlterarStatusInscricao(id, {
+        status: adminStatusDraft,
+        observacao: observacaoFinal || undefined,
+      });
+      setAdminObsDraft(observacaoFinal);
+      setAdminDesistenteDraft(marcar);
+      toast.success(
+        marcar
+          ? "Solicitação marcada como desistente."
+          : "Marcador de desistência removido.",
+      );
       const lista = await carregarInscricoes();
       const fresh = lista?.find((i) => String(i.inscricao_id) === id);
       if (fresh) setInscricaoSelecionada(fresh);
@@ -466,10 +747,32 @@ export default function InscricoesProae() {
   const salvarBeneficioEditalAdmin = async () => {
     if (!inscricaoSelecionada?.inscricao_id) return;
     const id = String(inscricaoSelecionada.inscricao_id);
+    const beneficioAtual = inscricaoSelecionada.status_beneficio_edital || "Pendente seleção";
+    const opcoesPermitidas = getAllowedAdminBeneficioOptions(beneficioAtual);
+    if (!opcoesPermitidas.includes(adminBeneficioDraft as AdminBeneficioOpcao)) {
+      toast.error(buildBeneficioTransitionHint(beneficioAtual));
+      return;
+    }
+    if (adminOverrideVagasDraft) {
+      if (adminBeneficioDraft !== "Beneficiário no edital") {
+        toast.error(
+          'Só é possível autorizar acima do limite de vagas quando a situação for "Beneficiário no edital".',
+        );
+        return;
+      }
+      if (adminOverrideJustificativaDraft.trim().length < 10) {
+        toast.error("Informe uma justificativa (mínimo 10 caracteres) para exceder vagas.");
+        return;
+      }
+    }
     setSalvandoAdminBeneficio(true);
     try {
       await inscricaoServiceManager.adminAlterarBeneficioEdital(id, {
         status_beneficio_edital: adminBeneficioDraft,
+        permitir_exceder_vagas: adminOverrideVagasDraft || undefined,
+        justificativa_override: adminOverrideVagasDraft
+          ? adminOverrideJustificativaDraft.trim()
+          : undefined,
       });
       toast.success("Situação de benefício no edital atualizada.");
       const lista = await carregarInscricoes();
@@ -477,9 +780,64 @@ export default function InscricoesProae() {
       if (fresh) setInscricaoSelecionada(fresh);
       setAuditRefreshTick((t) => t + 1);
     } catch (e: unknown) {
-      toast.error(getApiErrorMessage(e));
+      const msg = getApiErrorMessage(e);
+      if (msg.includes("Limite de vagas atingido")) {
+        toast.error(
+          `${msg} Se houver autorização gerencial, marque "Autorizar homologação acima do limite de vagas" e informe a justificativa.`,
+          { duration: 8000 },
+        );
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setSalvandoAdminBeneficio(false);
+    }
+  };
+
+  const salvarResultadoRecursoAdmin = async () => {
+    if (!inscricaoSelecionada?.inscricao_id) return;
+    const id = String(inscricaoSelecionada.inscricao_id);
+    const faseAtual = inscricaoSelecionada.resultado_fase || "Nao publicado";
+    const recursoAtual = inscricaoSelecionada.recurso_status || "Sem recurso";
+    const fasesPermitidas = getAllowedResultadoFaseOptions(faseAtual);
+    const recursosPermitidos = getAllowedRecursoStatusOptions(recursoAtual);
+    if (!fasesPermitidas.includes(adminResultadoFaseDraft)) {
+      toast.error(
+        `Transição de resultado inválida. Atual: "${faseAtual}". Permitidas: ${fasesPermitidas.join(", ")}.`,
+      );
+      return;
+    }
+    if (!recursosPermitidos.includes(adminRecursoStatusDraft)) {
+      toast.error(
+        `Transição de recurso inválida. Atual: "${recursoAtual}". Permitidas: ${recursosPermitidos.join(", ")}.`,
+      );
+      return;
+    }
+    if (
+      adminRecursoStatusDraft === "Recurso solicitado" &&
+      adminResultadoFaseDraft !== "Resultado preliminar"
+    ) {
+      toast.error(
+        'Para usar "Recurso solicitado", a fase de resultado precisa estar em "Resultado preliminar".',
+      );
+      return;
+    }
+    setSalvandoAdminResultadoRecurso(true);
+    try {
+      await inscricaoServiceManager.adminAlterarResultadoRecurso(id, {
+        resultado_fase: adminResultadoFaseDraft,
+        recurso_status: adminRecursoStatusDraft,
+        recurso_observacao: adminRecursoObsDraft.trim() || undefined,
+      });
+      toast.success("Resultado/recurso atualizados.");
+      const lista = await carregarInscricoes();
+      const fresh = lista?.find((i) => String(i.inscricao_id) === id);
+      if (fresh) setInscricaoSelecionada(fresh);
+      setAuditRefreshTick((t) => t + 1);
+    } catch (e: unknown) {
+      toast.error(getApiErrorMessage(e));
+    } finally {
+      setSalvandoAdminResultadoRecurso(false);
     }
   };
 
@@ -593,6 +951,10 @@ export default function InscricoesProae() {
 
   // ── Edição de resposta pela PROAE ──
   const abrirConfirmacaoEdicao = (respostaId: string, pergunta: PerguntaPayload, respostaAtual: string) => {
+    if (!podeAnalisarInscricoes) {
+      toast.error("Seu perfil não permite editar respostas.");
+      return;
+    }
     setEditarRespostaId(respostaId);
     setEditarPerguntaInfo(pergunta);
     setEditarRespostaAtual(respostaAtual);
@@ -735,6 +1097,10 @@ export default function InscricoesProae() {
   };
 
   const alterarPrazoReenvio = async (respostaId: string, novoPrazo: string, parecerExistente?: string) => {
+    if (!podeAnalisarInscricoes) {
+      toast.error("Seu perfil não permite alterar prazos de reenvio.");
+      return;
+    }
     setValidandoRespostas((prev) => ({ ...prev, [respostaId]: true }));
     try {
       const prazoDate = new Date(novoPrazo + "T23:59:59.000Z");
@@ -1058,11 +1424,11 @@ export default function InscricoesProae() {
                 </div>
               </div>
               <div className="welcome-text">
-                <h1 className="welcome-title">Visualização de Inscrições</h1>
+                <h1 className="welcome-title">Inscrições e análise</h1>
                 <p className="welcome-subtitle">
                   {editalSelecionado
-                    ? `Visualizando inscrições do edital: ${editalSelecionado.titulo_edital}`
-                    : "Selecione um edital para visualizar as inscrições"}
+                    ? `Inscrições do edital: ${editalSelecionado.titulo_edital}`
+                    : "Selecione um edital para analisar inscrições, respostas e benefícios"}
                 </p>
               </div>
             </div>
@@ -1071,7 +1437,11 @@ export default function InscricoesProae() {
 
         <main className="main-content">
           {/* Seletor de Edital */}
-          <section className="edital-selector-section">
+          <section
+            ref={selectorSectionRef}
+            className="edital-selector-section"
+            style={tourFromUrl === "seletor" ? { outline: "2px solid #60a5fa", borderRadius: "12px" } : undefined}
+          >
             <div className="selector-card">
               <label className="selector-label">Selecione um Edital</label>
               <select
@@ -1080,6 +1450,7 @@ export default function InscricoesProae() {
                 onChange={(e) => {
                   const selectedId = e.target.value;
                   const edital = editais.find((ed) => String(ed.id) === selectedId);
+                  setPaginaAtual(1);
                   setEditalSelecionado(edital || null);
                 }}
                 disabled={isLoadingEditais}
@@ -1096,7 +1467,11 @@ export default function InscricoesProae() {
 
           {/* Filtros */}
           {editalSelecionado && (
-            <section className="filters-section">
+            <section
+              ref={filtersSectionRef}
+              className="filters-section"
+              style={tourFromUrl === "filtros" ? { outline: "2px solid #f59e0b", borderRadius: "12px" } : undefined}
+            >
               <div className="filters-card">
                 <div className="search-container">
                   <Search className="w-4 h-4 search-icon" />
@@ -1104,23 +1479,69 @@ export default function InscricoesProae() {
                     type="text"
                     placeholder="Buscar por nome, email ou matrícula..."
                     value={termoBusca}
-                    onChange={(e) => setTermoBusca(e.target.value)}
+                    onChange={(e) => {
+                      setPaginaAtual(1);
+                      setTermoBusca(e.target.value);
+                    }}
                     className="search-input"
                   />
                 </div>
                 <div className="filter-container">
                   <Filter className="w-4 h-4 filter-icon" />
-                  <select className="status-filter" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+                  <select
+                    className="status-filter"
+                    value={filtroStatus}
+                    onChange={(e) => {
+                      setPaginaAtual(1);
+                      setFiltroStatus(e.target.value);
+                    }}
+                  >
                     <option value="todos">Todos os status</option>
-                    <option value="pendente">Pendente</option>
-                    <option value="em_analise">Em Análise</option>
+                    <option value="pendente">Em análise</option>
                     <option value="aprovada">Aprovada</option>
-                    <option value="rejeitada">Rejeitada</option>
-                    <option value="selecionada">Selecionada</option>
-                    <option value="nao_selecionada">Não Selecionada</option>
-                    <option value="pendente_regularizacao">Pendente de Regularização</option>
-                    <option value="aguardando_complemento">Aguardando Complemento</option>
-                    <option value="rejeitada_prazo_complemento">Rejeitada por Prazo de Complemento</option>
+                    <option value="negada">Negada</option>
+                    <option value="ajuste_necessario">Ajuste necessário</option>
+                  </select>
+                </div>
+                <div className="filter-container">
+                  <Filter className="w-4 h-4 filter-icon" />
+                  <select
+                    className="status-filter"
+                    value={filtroSituacaoSolicitacao}
+                    onChange={(e) => {
+                      setPaginaAtual(1);
+                      setFiltroSituacaoSolicitacao(
+                        (e.target.value as "todos" | SituacaoSolicitacaoOpcao) || "todos",
+                      );
+                    }}
+                  >
+                    <option value="todos">Todas as situações</option>
+                    <option value="SELECIONADA">Selecionadas</option>
+                    <option value="CLASSIFICADA">Classificadas</option>
+                    <option value="INDEFERIDA">Indeferidas</option>
+                    <option value="DESISTENTE">Desistentes</option>
+                  </select>
+                </div>
+                <div className="filter-container">
+                  <Filter className="w-4 h-4 filter-icon" />
+                  <select
+                    className="status-filter"
+                    value={filtroOrdenacao}
+                    onChange={(e) => {
+                      setPaginaAtual(1);
+                      setFiltroOrdenacao(
+                        (e.target.value as
+                          | "data_desc"
+                          | "data_asc"
+                          | "pontuacao_desc"
+                          | "pontuacao_asc") ?? "pontuacao_desc",
+                      );
+                    }}
+                  >
+                    <option value="pontuacao_desc">Pontuação (maior → menor)</option>
+                    <option value="pontuacao_asc">Pontuação (menor → maior)</option>
+                    <option value="data_desc">Data (mais recente)</option>
+                    <option value="data_asc">Data (mais antiga)</option>
                   </select>
                 </div>
                 <div className="download-pdf-button-group" style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
@@ -1157,7 +1578,11 @@ export default function InscricoesProae() {
 
           {/* Lista de Inscrições */}
           {editalSelecionado && (
-            <section className="inscricoes-list-section">
+            <section
+              ref={listaSectionRef}
+              className="inscricoes-list-section"
+              style={tourFromUrl === "lista" ? { outline: "2px solid #34d399", borderRadius: "12px" } : undefined}
+            >
               {isLoading ? (
                 <div className="loading-container">
                   <div className="loading-spinner"></div>
@@ -1168,7 +1593,7 @@ export default function InscricoesProae() {
                   <FileText className="w-12 h-12 text-gray-400" />
                   <h3>Nenhuma inscrição encontrada</h3>
                   <p>
-                    {termoBusca || filtroStatus !== "todos"
+                    {termoBusca || filtroStatus !== "todos" || filtroSituacaoSolicitacao !== "todos"
                       ? "Nenhuma inscrição corresponde aos filtros aplicados."
                       : "Não há inscrições para este edital no momento."}
                   </p>
@@ -1186,11 +1611,19 @@ export default function InscricoesProae() {
                         <th>Data Inscrição</th>
                         <th title="Análise da inscrição (documentos / parecer)">Análise</th>
                         <th title="Homologação do benefício no edital (vaga)">Benefício</th>
+                        <th title="Pontuação da calculadora inteligente (respostas validadas)">Pontuação</th>
                         <th style={{ width: "20px" }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {inscricoesFiltradas.map((inscricao, index) => (
+                        (() => {
+                          const situacaoSolicitacao = resolveSituacaoSolicitacao(inscricao);
+                          const statusVisual =
+                            situacaoSolicitacao === "DESISTENTE"
+                              ? "DESISTENTE"
+                              : (inscricao.status_inscricao || "PENDENTE");
+                          return (
                         <tr
                           key={inscricao.inscricao_id || index}
                           onClick={() => handleVerDetalhes(inscricao)}
@@ -1231,8 +1664,8 @@ export default function InscricoesProae() {
                             </div>
                           </td>
                           <td>
-                            <div className={getStatusBadgeClass(inscricao.status_inscricao || "PENDENTE")}>
-                              {getStatusLabel(inscricao.status_inscricao || "PENDENTE")}
+                            <div className={getStatusBadgeClass(statusVisual)}>
+                              {getStatusLabel(statusVisual)}
                             </div>
                           </td>
                           <td>
@@ -1252,17 +1685,57 @@ export default function InscricoesProae() {
                             </span>
                           </td>
                           <td>
+                            <span
+                              style={{
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                color: "#1e3a8a",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {Number(inscricao.pontuacao_validada ?? 0).toFixed(2)} /{" "}
+                              {Number(inscricao.pontuacao_maxima ?? 0).toFixed(2)}
+                            </span>
+                          </td>
+                          <td>
                             <ChevronRight className="w-5 h-5" style={{ color: "#64748b" }} />
                           </td>
                         </tr>
+                          );
+                        })()
                       ))}
                     </tbody>
                   </table>
                   <div className="table-footer">
                     <span>
-                      {inscricoesFiltradas.length} de {inscricoes.length} inscrição
-                      {inscricoes.length !== 1 ? "ões" : ""}
+                      Mostrando {inscricoesFiltradas.length} de {totalItens} inscrição
+                      {totalItens !== 1 ? "ões" : ""}
                     </span>
+                    <div className="table-footer-pagination">
+                      <button
+                        type="button"
+                        className="inscricoes-pagination-btn"
+                        onClick={() => setPaginaAtual((prev) => Math.max(1, prev - 1))}
+                        disabled={paginaAtual <= 1 || isLoading}
+                      >
+                        Anterior
+                      </button>
+                      <span className="inscricoes-pagination-info">
+                        Página {paginaAtual} de {Math.max(1, totalPaginas)}
+                      </span>
+                      <button
+                        type="button"
+                        className="inscricoes-pagination-btn"
+                        onClick={() =>
+                          setPaginaAtual((prev) =>
+                            Math.min(Math.max(1, totalPaginas), prev + 1),
+                          )
+                        }
+                        disabled={paginaAtual >= totalPaginas || isLoading}
+                      >
+                        Próxima
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1339,7 +1812,15 @@ export default function InscricoesProae() {
                   flexWrap: "wrap",
                 }}
               >
-                <h2 style={{ margin: 0, color: "#1e293b" }}>Detalhes da Inscrição</h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <h2 style={{ margin: 0, color: "#1e293b" }}>Detalhes da Inscrição</h2>
+                  {inscricaoSelecionada ? (
+                    <span style={{ fontSize: 12, color: "#1e3a8a", fontWeight: 700 }}>
+                      Pontuação: {Number(inscricaoSelecionada.pontuacao_validada ?? 0).toFixed(2)} /{" "}
+                      {Number(inscricaoSelecionada.pontuacao_maxima ?? 0).toFixed(2)}
+                    </span>
+                  ) : null}
+                </div>
                 {inscricaoSelecionada?.inscricao_id && (
                   <button
                     type="button"
@@ -1478,8 +1959,13 @@ export default function InscricoesProae() {
                               </h4>
 
                               {/* Info */}
-                              <div style={{ fontSize: "12px", color: "#64748b" }}>
-                                {stepItem.perguntas?.length || 0} pergunta{stepItem.perguntas?.length !== 1 ? "s" : ""}
+                              <div style={{ fontSize: "12px", color: "#64748b", display: "flex", flexDirection: "column", gap: "4px" }}>
+                                <span>
+                                  {stepItem.perguntas?.length || 0} pergunta{stepItem.perguntas?.length !== 1 ? "s" : ""}
+                                </span>
+                                <span>
+                                  Pendências: {Number(stepItem.pendencias?.totalPendentes ?? 0)}
+                                </span>
                               </div>
                             </div>
                           ))}
@@ -1489,8 +1975,44 @@ export default function InscricoesProae() {
                         {questionarioSelecionado &&
                           (() => {
                             const stepAtual = stepsCompletos?.steps?.find((s) => s.step.id === questionarioSelecionado);
+                            const totalConfiguradoStep = Number(
+                              (stepAtual?.perguntas ?? []).reduce((acc, item) => {
+                                return acc + Number(item?.pergunta?.pontuacao_validacao ?? 0);
+                              }, 0),
+                            );
+                            const totalValidadoStep = Number(
+                              (stepAtual?.perguntas ?? []).reduce((acc, item) => {
+                                const pontos = calcularPontuacaoPergunta(
+                                  item.pergunta,
+                                  item.resposta,
+                                );
+                                return acc + pontos.ganho;
+                              }, 0),
+                            );
                             return (
                               <div style={{ marginBottom: "32px" }}>
+                                <div
+                                  style={{
+                                    marginBottom: "12px",
+                                    padding: "10px 12px",
+                                    border: "1px solid #bfdbfe",
+                                    borderRadius: "10px",
+                                    background: "#eff6ff",
+                                    color: "#1e3a8a",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    flexWrap: "wrap",
+                                    gap: "8px",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  <span>Calculadora inteligente (questionário selecionado)</span>
+                                  <span>
+                                    Pontos validados: {totalValidadoStep.toFixed(2)} /{" "}
+                                    {totalConfiguradoStep.toFixed(2)}
+                                  </span>
+                                </div>
                                 <div
                                   style={{
                                     display: "flex",
@@ -1508,7 +2030,6 @@ export default function InscricoesProae() {
                                     {stepAtual.perguntas.map((item) => {
                                       const perguntaInfo = item.pergunta;
                                       const respostaInfo = item.resposta;
-                                      const tipo = perguntaInfo?.tipo_Pergunta || "N/D";
                                       const obrigatoria = perguntaInfo?.obrigatoriedade ? "Sim" : "Não";
                                       const valorOpcoes = respostaInfo?.valorOpcoes?.length ? respostaInfo.valorOpcoes.join(", ") : null;
                                       const valorTexto =
@@ -1518,6 +2039,10 @@ export default function InscricoesProae() {
                                       const isValidandoResposta = respostaInfo?.id ? validandoRespostas[respostaInfo.id] : false;
                                       const isDado = !!perguntaInfo?.dado;
                                       const dadoNome = perguntaInfo?.dado?.nome || null;
+                                      const pontosPergunta = calcularPontuacaoPergunta(
+                                        perguntaInfo,
+                                        respostaInfo,
+                                      );
 
                                       // Nova pergunta aguardando resposta do aluno
                                       const aguardandoNovaPergunta = respostaInfo?.aguardandoRespostaNovaPergunta === true;
@@ -1601,9 +2126,16 @@ export default function InscricoesProae() {
 
                                           {/* Informações Adicionais */}
                                           <div style={{ fontSize: "13px", color: "#64748b", display: "flex", gap: "16px", marginBottom: "12px" }}>
-                                            <span>Tipo: {tipo}</span>
-                                            <span>•</span>
                                             <span>Obrigatória: {obrigatoria}</span>
+                                            {pontosPergunta.peso > 0 ? (
+                                              <>
+                                                <span>•</span>
+                                                <span>
+                                                  Pontos: {pontosPergunta.ganho.toFixed(2)} /{" "}
+                                                  {pontosPergunta.peso.toFixed(2)}
+                                                </span>
+                                              </>
+                                            ) : null}
                                           </div>
 
                                           {/* Card especial: nova pergunta aguardando resposta do aluno */}
@@ -1702,7 +2234,9 @@ export default function InscricoesProae() {
                                               )}
 
                                               {/* Botão: Definir novo prazo (quando o prazo expirou) */}
-                                              {prazoNovaPergunta && new Date(prazoNovaPergunta).getTime() < Date.now() && (
+                                              {podeAnalisarInscricoes &&
+                                                prazoNovaPergunta &&
+                                                new Date(prazoNovaPergunta).getTime() < Date.now() && (
                                                 <div style={{ marginTop: "10px" }}>
                                                   <button
                                                     onClick={() =>
@@ -1795,7 +2329,7 @@ export default function InscricoesProae() {
                                                 >
                                                   Resposta:
                                                 </div>
-                                                {respostaInfo?.id && (
+                                                {podeAnalisarInscricoes && respostaInfo?.id && (
                                                   <button
                                                     onClick={() => abrirConfirmacaoEdicao(respostaInfo.id!, perguntaInfo!, respostaConteudo || "")}
                                                     title="Editar resposta"
@@ -2109,7 +2643,12 @@ export default function InscricoesProae() {
                                               gap: "8px",
                                             }}
                                           >
-                                            {respostaInfo?.id && (
+                                            {!podeAnalisarInscricoes ? (
+                                              <span style={{ fontSize: "12px", color: "#64748b", fontStyle: "italic", marginRight: "auto" }}>
+                                                Validação e correção de respostas: perfil técnico ou gerencial.
+                                              </span>
+                                            ) : null}
+                                            {podeAnalisarInscricoes && respostaInfo?.id && (
                                               <>
                                                 {respostaInvalidadaComReenvio ? (
                                                   /* Quando já está aguardando reenvio: campo para alterar prazo */
@@ -2250,8 +2789,6 @@ export default function InscricoesProae() {
                   <div
                     style={{
                       padding: "8px 4px 24px",
-                      maxHeight: "min(70vh, 640px)",
-                      overflowY: "auto",
                       textAlign: "left",
                     }}
                   >
@@ -2305,10 +2842,47 @@ export default function InscricoesProae() {
                           </div>
                           <div>
                             <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                              Situação da solicitação
+                            </div>
+                            <div style={{ marginTop: "4px" }}>
+                              {(() => {
+                                const situacaoAtual = resolveSituacaoSolicitacao(inscricaoSelecionada);
+                                return (
+                              <span
+                                className={getStatusBadgeClass(
+                                      situacaoAtual,
+                                )}
+                              >
+                                {getStatusLabel(
+                                      situacaoAtual,
+                                )}
+                              </span>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                               Benefício no edital
                             </div>
                             <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px", fontWeight: 600 }}>
-                              {inscricaoSelecionada.status_beneficio_edital || "Pendente seleção"}
+                              {inscricaoSelecionada.status_beneficio_edital || "Homologação pendente"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                              Publicação do resultado
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px", fontWeight: 600 }}>
+                              {inscricaoSelecionada.resultado_fase || "Nao publicado"}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                              Recurso
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#1e293b", marginTop: "4px", fontWeight: 600 }}>
+                              {inscricaoSelecionada.recurso_status || "Sem recurso"}
                             </div>
                           </div>
                           <div>
@@ -2325,7 +2899,7 @@ export default function InscricoesProae() {
                           </div>
                         </div>
 
-                        {isReadOnly ? (
+                        {somenteConsulta ? (
                           <div
                             style={{
                               marginBottom: "24px",
@@ -2341,7 +2915,7 @@ export default function InscricoesProae() {
                             }}
                           >
                             <Lock style={{ width: "16px", height: "16px" }} />
-                            Seu perfil é de coordenação (somente consulta). Decisões e ajustes só estão disponíveis para perfis técnico ou gerencial.
+                            Perfil Coordenação — somente consulta. Análise e validação de respostas são feitas por perfis técnico ou gerencial.
                           </div>
                         ) : (
                         <div
@@ -2398,7 +2972,8 @@ export default function InscricoesProae() {
                               gap: "8px",
                               width: "100%",
                               maxWidth: fieldMax,
-                              marginTop: "12px",
+                              marginTop: "16px",
+                              marginBottom: "4px",
                               padding: "10px 16px",
                               borderRadius: "8px",
                               border: "none",
@@ -2425,7 +3000,7 @@ export default function InscricoesProae() {
                                       disabled={salvandoAdminStatus}
                                       style={controlStyle}
                                     >
-                                      {ADMIN_STATUS_OPCOES.map((s) => (
+                                      {adminStatusOpcoesDisponiveis.map((s) => (
                                         <option key={s} value={s}>
                                           {s}
                                         </option>
@@ -2447,6 +3022,70 @@ export default function InscricoesProae() {
                                       style={{ ...controlStyle, resize: "vertical", minHeight: "72px" }}
                                     />
                                   </div>
+                                  <div
+                                    style={{
+                                      marginTop: "10px",
+                                      padding: "10px",
+                                      border: "1px solid #e2e8f0",
+                                      borderRadius: "8px",
+                                      background: "#f8fafc",
+                                      maxWidth: fieldMax,
+                                    }}
+                                  >
+                                    <label
+                                      style={{
+                                        ...labelStyle,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={adminDesistenteDraft}
+                                        disabled={salvandoAdminStatus}
+                                        onChange={(e) => setAdminDesistenteDraft(e.target.checked)}
+                                      />
+                                      Marcar solicitação como desistente
+                                    </label>
+                                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                      <button
+                                        type="button"
+                                        disabled={salvandoAdminStatus || adminDesistenteDraft}
+                                        onClick={() => void toggleDesistenciaAdmin(true)}
+                                        style={{
+                                          padding: "7px 10px",
+                                          borderRadius: "7px",
+                                          border: "1px solid #fca5a5",
+                                          background: "#fff1f2",
+                                          color: "#9f1239",
+                                          fontWeight: 600,
+                                          fontSize: "12px",
+                                          cursor: salvandoAdminStatus ? "wait" : "pointer",
+                                        }}
+                                      >
+                                        Marcar desistente agora
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={salvandoAdminStatus || !adminDesistenteDraft}
+                                        onClick={() => void toggleDesistenciaAdmin(false)}
+                                        style={{
+                                          padding: "7px 10px",
+                                          borderRadius: "7px",
+                                          border: "1px solid #cbd5e1",
+                                          background: "#ffffff",
+                                          color: "#334155",
+                                          fontWeight: 600,
+                                          fontSize: "12px",
+                                          cursor: salvandoAdminStatus ? "wait" : "pointer",
+                                        }}
+                                      >
+                                        Remover desistência
+                                      </button>
+                                    </div>
+                                  </div>
                                   <button
                                     type="button"
                                     onClick={() => void salvarStatusInscricaoAdmin()}
@@ -2463,7 +3102,13 @@ export default function InscricoesProae() {
                                 </div>
 
                                 {podeEditarBeneficioEdital ? (
-                                  <div style={{ paddingTop: "18px", borderTop: "1px solid #bae6fd" }}>
+                                  <div
+                                    style={{
+                                      paddingTop: "18px",
+                                      paddingBottom: "20px",
+                                      borderTop: "1px solid #bae6fd",
+                                    }}
+                                  >
                                     <h5 style={subTitleStyle}>2. Benefício no edital</h5>
                                     <p style={hintStyle}>
                                       Homologação como beneficiário da vaga — pode diferir do status da análise acima.
@@ -2472,17 +3117,67 @@ export default function InscricoesProae() {
                                       <label style={labelStyle}>Situação do benefício</label>
                                       <select
                                         value={adminBeneficioDraft}
-                                        onChange={(e) => setAdminBeneficioDraft(e.target.value)}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          setAdminBeneficioDraft(value);
+                                          if (value !== "Beneficiário no edital") {
+                                            setAdminOverrideVagasDraft(false);
+                                            setAdminOverrideJustificativaDraft("");
+                                          }
+                                        }}
                                         disabled={salvandoAdminBeneficio}
                                         style={controlStyle}
                                       >
-                                        {ADMIN_BENEFICIO_OPCOES.map((s) => (
+                                        {adminBeneficioOpcoesDisponiveis.map((s) => (
                                           <option key={s} value={s}>
                                             {s}
                                           </option>
                                         ))}
                                       </select>
                                     </div>
+                                    {adminBeneficioDraft === "Beneficiário no edital" ? (
+                                      <div
+                                        style={{
+                                          marginTop: "10px",
+                                          marginBottom: "16px",
+                                          padding: "12px",
+                                          border: "1px solid #fed7aa",
+                                          background: "#fff7ed",
+                                          borderRadius: "10px",
+                                        }}
+                                      >
+                                        <label
+                                          style={{
+                                            ...labelStyle,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                            marginBottom: "8px",
+                                          }}
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={adminOverrideVagasDraft}
+                                            disabled={salvandoAdminBeneficio}
+                                            onChange={(e) => setAdminOverrideVagasDraft(e.target.checked)}
+                                          />
+                                          Autorizar homologação acima do limite de vagas
+                                        </label>
+                                        <p style={{ ...hintStyle, marginBottom: adminOverrideVagasDraft ? "8px" : 0 }}>
+                                          Use apenas com autorização gerencial formal. A decisão ficará registrada no histórico de auditoria.
+                                        </p>
+                                        {adminOverrideVagasDraft ? (
+                                          <textarea
+                                            value={adminOverrideJustificativaDraft}
+                                            onChange={(e) => setAdminOverrideJustificativaDraft(e.target.value)}
+                                            disabled={salvandoAdminBeneficio}
+                                            rows={3}
+                                            placeholder="Justifique por que a homologação acima do limite é necessária..."
+                                            style={{ ...controlStyle, resize: "vertical", minHeight: "72px" }}
+                                          />
+                                        ) : null}
+                                      </div>
+                                    ) : null}
                                     <button
                                       type="button"
                                       onClick={() => void salvarBeneficioEditalAdmin()}
@@ -2495,6 +3190,75 @@ export default function InscricoesProae() {
                                         <Save style={{ width: "16px", height: "16px" }} />
                                       )}
                                       Salvar benefício no edital
+                                    </button>
+                                  </div>
+                                ) : null}
+
+                                {podeEditarBeneficioEdital ? (
+                                  <div
+                                    style={{
+                                      marginTop: "8px",
+                                      paddingTop: "20px",
+                                      borderTop: "1px solid #bae6fd",
+                                    }}
+                                  >
+                                    <h5 style={subTitleStyle}>3. Resultado e recurso</h5>
+                                    <p style={hintStyle}>
+                                      Controle a publicação do resultado (preliminar/final) e o julgamento de recurso administrativo.
+                                    </p>
+                                    <div style={{ marginBottom: "12px" }}>
+                                      <label style={labelStyle}>Fase do resultado</label>
+                                      <select
+                                        value={adminResultadoFaseDraft}
+                                        onChange={(e) => setAdminResultadoFaseDraft(e.target.value as AdminResultadoFaseOpcao)}
+                                        disabled={salvandoAdminResultadoRecurso}
+                                        style={controlStyle}
+                                      >
+                                        {adminResultadoFaseOpcoesDisponiveis.map((s) => (
+                                          <option key={s} value={s}>
+                                            {s}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div style={{ marginBottom: "12px" }}>
+                                      <label style={labelStyle}>Situação do recurso</label>
+                                      <select
+                                        value={adminRecursoStatusDraft}
+                                        onChange={(e) => setAdminRecursoStatusDraft(e.target.value as AdminRecursoStatusOpcao)}
+                                        disabled={salvandoAdminResultadoRecurso}
+                                        style={controlStyle}
+                                      >
+                                        {adminRecursoStatusOpcoesDisponiveis.map((s) => (
+                                          <option key={s} value={s}>
+                                            {s}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label style={labelStyle}>Parecer do recurso (opcional)</label>
+                                      <textarea
+                                        value={adminRecursoObsDraft}
+                                        onChange={(e) => setAdminRecursoObsDraft(e.target.value)}
+                                        disabled={salvandoAdminResultadoRecurso}
+                                        rows={3}
+                                        placeholder="Ex.: Recurso deferido por revisão documental..."
+                                        style={{ ...controlStyle, resize: "vertical", minHeight: "72px" }}
+                                      />
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => void salvarResultadoRecursoAdmin()}
+                                      disabled={salvandoAdminResultadoRecurso}
+                                      style={saveBtnStyle(salvandoAdminResultadoRecurso)}
+                                    >
+                                      {salvandoAdminResultadoRecurso ? (
+                                        <Loader2 style={{ width: "16px", height: "16px", animation: "spin 0.8s linear infinite" }} />
+                                      ) : (
+                                        <Save style={{ width: "16px", height: "16px" }} />
+                                      )}
+                                      Salvar resultado e recurso
                                     </button>
                                   </div>
                                 ) : null}

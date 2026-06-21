@@ -13,16 +13,16 @@ export default function ProtectedRouteAluno() {
   );
 
   return (
-    <div className="app-layout">
+    <div className="app-layout app-layout--aluno">
       {shouldShowSideBar && (
         <SideBar
+          portalVariant="aluno"
           homeIconRedirect={"/portal-aluno"}
           processIconRedirect={""}
           configIconRedirect={"/portal-aluno/configuracao"}
           pendenciasIconRedirect={"/portal-aluno/pendencias"}
           docsIconRedirect={""}
-          formularioGeralRedirect={"/portal-aluno/formulario-geral"}
-          formularioRenovacaoRedirect={"/portal-aluno/formulario-renovacao"}
+          tutorialRedirect={"/portal-aluno/tutorial"}
           logoutIconRedirect={"/"}
           logoutOnClick={logout}
         />

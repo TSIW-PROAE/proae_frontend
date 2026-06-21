@@ -23,6 +23,12 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     formatacao
   } = input;
 
+  const fieldClassNames = {
+    base: "w-full max-w-full",
+    mainWrapper: "w-full",
+    label: "whitespace-normal leading-snug",
+  } as const;
+
   const applyMask = (value: string, formatacao?: FormatacaoInput): string => {
     if (!value || !formatacao) return value;
 
@@ -80,6 +86,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           case "email":
             return (
               <Input
+                className="w-full"
+                classNames={fieldClassNames}
                 label={titulo}
                 labelPlacement="outside"
                 description={subtitulo}
@@ -107,6 +115,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           case "textarea":
             return (
               <Textarea
+                className="w-full"
+                classNames={fieldClassNames}
                 label={titulo}
                 labelPlacement="outside"
                 description={subtitulo}
@@ -126,6 +136,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           case "select":
             return (
               <Select
+                className="w-full"
+                classNames={fieldClassNames}
                 label={titulo}
                 labelPlacement="outside"
                 description={subtitulo}
@@ -151,6 +163,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           case "radio":
             return (
               <RadioGroup
+                className="w-full"
+                classNames={fieldClassNames}
                 label={titulo}
                 description={subtitulo}
                 value={String(field.value || "")}
@@ -172,6 +186,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           case "date":
             return (
               <DatePicker
+                className="w-full"
+                classNames={fieldClassNames}
                 label={titulo}
                 labelPlacement="outside"
                 description={subtitulo}
