@@ -43,6 +43,8 @@ interface FormularioDinamicoProps {
   focusVagaId?: string | number | null;
   /** Quando definido, envio usa PATCH /inscricoes/:id/correcao-respostas (correção) em vez de POST. */
   correcaoInscricaoId?: string | number | null;
+  /** Chamada de Cadastro Geral — oculta escolha de benefício. */
+  isCadastroGeral?: boolean;
 }
 
 export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => {
@@ -308,7 +310,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     return (
       <div className="flex justify-center items-center p-8 min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-2">Carregando benefícios disponíveis...</span>
+        <span className="ml-2">{props.isCadastroGeral ? "Carregando formulário..." : "Carregando benefícios disponíveis..."}</span>
       </div>
     );
   }
@@ -341,7 +343,7 @@ export const FormularioDinamico: React.FC<FormularioDinamicoProps> = (props) => 
     );
   }
 
-  if (vagas.length > 1 && !vagaSelecionada) {
+  if (vagas.length > 1 && !vagaSelecionada && !props.isCadastroGeral) {
     return (
       <GradeBeneficios
         vagas={vagas}

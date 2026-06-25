@@ -342,6 +342,7 @@ export default function InscricoesProae() {
 
   /** Rascunhos PROAE — aba Informações (decisões de análise / benefício no edital). */
   const [adminStatusDraft, setAdminStatusDraft] = useState("");
+  const [adminMarcarPcdCg, setAdminMarcarPcdCg] = useState(false);
   const [adminObsDraft, setAdminObsDraft] = useState("");
   const [adminBeneficioDraft, setAdminBeneficioDraft] = useState("");
   const [adminOverrideVagasDraft, setAdminOverrideVagasDraft] = useState(false);
@@ -701,8 +702,15 @@ export default function InscricoesProae() {
       await inscricaoServiceManager.adminAlterarStatusInscricao(id, {
         status: adminStatusDraft,
         observacao: observacaoFinal || undefined,
+        ...(editalSelecionado?.is_cadastro_geral && adminMarcarPcdCg
+          ? { marcar_pcd_cg: true }
+          : {}),
       });
-      toast.success("Status da inscrição (análise) atualizado.");
+      toast.success(
+        editalSelecionado?.is_cadastro_geral
+          ? "Análise CG atualizada. Situação do aluno sincronizada."
+          : "Status da inscrição (análise) atualizado.",
+      );
       const lista = await carregarInscricoes();
       const fresh = lista?.find((i) => String(i.inscricao_id) === id);
       if (fresh) setInscricaoSelecionada(fresh);
@@ -2990,7 +2998,9 @@ export default function InscricoesProae() {
                                 <div style={{ marginBottom: "20px" }}>
                                   <h5 style={subTitleStyle}>1. Análise da inscrição</h5>
                                   <p style={hintStyle}>
-                                    Documentação, parecer e trâmite da inscrição — independente de ser beneficiário da vaga.
+                                    {editalSelecionado?.is_cadastro_geral
+                                      ? "Chamada de Cadastro Geral: aprovação define CG APTO no perfil do aluno (vigência 5 semestres)."
+                                      : "Documentação, parecer e trâmite da inscrição — independente de ser beneficiário da vaga."}
                                   </p>
                                   <div style={{ marginBottom: "12px" }}>
                                     <label style={labelStyle}>Status da inscrição (análise)</label>
@@ -3022,6 +3032,19 @@ export default function InscricoesProae() {
                                       style={{ ...controlStyle, resize: "vertical", minHeight: "72px" }}
                                     />
                                   </div>
+                                  {editalSelecionado?.is_cadastro_geral ? (
+                                    <div style={{ marginTop: "10px" }}>
+                                      <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={adminMarcarPcdCg}
+                                          onChange={(e) => setAdminMarcarPcdCg(e.target.checked)}
+                                          disabled={salvandoAdminStatus}
+                                        />
+                                        Registrar PCD no Cadastro Geral (permite 2 benefícios em editais)
+                                      </label>
+                                    </div>
+                                  ) : null}
                                   <div
                                     style={{
                                       marginTop: "10px",

@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   BookOpen,
   FileText,
+  ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { resolveTituloCardExibicao } from "@/utils/editalDisplay";
 import { resolvePrimeiroLinkDocumentoEdital } from "@/utils/utils";
@@ -18,11 +20,13 @@ import {
   type EditalStatusCategoria,
 } from "@/utils/editalStatus";
 import type { DocumentoEdital } from "@/types/edital";
+import { isCgVigente, formatarSituacaoCadastroGeral } from "@/utils/cgSemestre";
 
 interface Edital {
   id: string;
   tipo_edital?: string;
   is_formulario_renovacao?: boolean;
+  is_cadastro_geral?: boolean;
   inscricoes_abertas?: boolean;
   descricao: string;
   /** API: `{ titulo_documento, url_documento }[]` */
@@ -49,6 +53,20 @@ interface OpenSelectionsProps {
   editais: Edital[];
   inscricoesAluno?: InscricaoAluno[];
   beneficiosAtivos?: string[];
+  /** CG apto e vigente — requisito para editais de benefícios comuns. */
+  cgApto?: boolean;
+  /** PCD registrada no CG — até 2 benefícios no mesmo edital. */
+  cgPcd?: boolean;
+  cgSituacao?: string;
+  cgValidoAte?: string | null;
+  /** Banner de renovação — só quando elegível e ação/contexto necessário. */
+  renovacaoBanner?: { situacao: string; detalhe?: string } | null;
+  /** Título do painel (ex.: Editais de benefícios / Renovação). */
+  title?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  /** Oculta contadores quando o painel está vazio e sem lista. */
+  compactHeader?: boolean;
 }
 
 /**
@@ -66,10 +84,10 @@ const classificarStatus = classificarStatusEdital;
 
 const OpenSelectionCard: React.FC<
   Edital & {
-    /** Quantas inscrições o aluno já tem neste edital (podem ser benefícios diferentes). */
     inscricoesNesteEdital?: number;
-    /** Benefícios homologados/ativos para ajudar no fluxo de renovação. */
     beneficiosAtivos?: string[];
+    cgApto?: boolean;
+    cgPcd?: boolean;
   }
 > = ({
   id,
@@ -81,11 +99,14 @@ const OpenSelectionCard: React.FC<
   numero_beneficios,
   data_fim_vigencia,
   is_formulario_renovacao,
+  is_cadastro_geral,
   inscricoes_abertas,
   etapas,
   etapa_edital,
   inscricoesNesteEdital = 0,
   beneficiosAtivos = [],
+  cgApto = true,
+  cgPcd = false,
 }) => {
   const normalize = (value: string) =>
     value
@@ -108,6 +129,13 @@ const OpenSelectionCard: React.FC<
   };
 
   const beneficioPreSelecionado = encontrarBeneficioAtivoCompativel();
+  const limiteInscricoesEdital = cgPcd ? 2 : 1;
+  const jaSolicitouCg = Boolean(is_cadastro_geral) && inscricoesNesteEdital >= 1;
+  const atingiuLimiteEdital = is_cadastro_geral
+    ? jaSolicitouCg
+    : !is_formulario_renovacao && inscricoesNesteEdital >= limiteInscricoesEdital;
+  const exigeCg =
+    !is_formulario_renovacao && !is_cadastro_geral && !cgApto;
   const semElegibilidadeRenovacao =
     Boolean(is_formulario_renovacao) && beneficiosAtivos.length === 0;
   const beneficiosElegiveisPreview = beneficiosAtivos.slice(0, 3);
@@ -174,6 +202,13 @@ const OpenSelectionCard: React.FC<
     <div
       className={`selection-card${temDuasAcoes ? " selection-card--dual-actions" : ""}`}
     >
+      {is_cadastro_geral ? (
+        <div className="mb-2">
+          <span className="text-xs font-medium text-indigo-800 bg-indigo-50 border border-indigo-200 rounded px-2 py-1">
+            Chamada Cadastro Geral
+          </span>
+        </div>
+      ) : null}
       <h3 className="selection-card-name" title={tituloExibicao}>
         {tituloExibicao}
       </h3>
@@ -208,23 +243,25 @@ const OpenSelectionCard: React.FC<
             {getBadgeLabel()}
           </span>
         </div>
-        <div className="selection-card-meta selection-card-meta--inline">
-          <div className="meta-item">
-            <Users className="w-3 h-3 shrink-0" aria-hidden />
-            <span>
-              {totalVagas} vaga{totalVagas !== 1 ? "s" : ""}
-              {semVagasConfiguradas ? (
-                <span className="meta-vagas-note"> (benefícios em configuração)</span>
-              ) : null}
-              {!semVagasConfiguradas && (numero_beneficios ?? 0) > 1 ? (
-                <span className="text-gray-500 font-normal">
-                  {" "}
-                  · {numero_beneficios} benefícios
-                </span>
-              ) : null}
-            </span>
+        {!is_cadastro_geral ? (
+          <div className="selection-card-meta selection-card-meta--inline">
+            <div className="meta-item">
+              <Users className="w-3 h-3 shrink-0" aria-hidden />
+              <span>
+                {totalVagas} vaga{totalVagas !== 1 ? "s" : ""}
+                {semVagasConfiguradas ? (
+                  <span className="meta-vagas-note"> (benefícios em configuração)</span>
+                ) : null}
+                {!semVagasConfiguradas && (numero_beneficios ?? 0) > 1 ? (
+                  <span className="text-gray-500 font-normal">
+                    {" "}
+                    · {numero_beneficios} benefícios
+                  </span>
+                ) : null}
+              </span>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
       <div className="selection-card-body">
@@ -270,7 +307,7 @@ const OpenSelectionCard: React.FC<
               <button
                 type="button"
                 onClick={() => {
-                  if (semElegibilidadeRenovacao) return;
+                  if (semElegibilidadeRenovacao || exigeCg || atingiuLimiteEdital) return;
                   const qs = new URLSearchParams();
                   if (is_formulario_renovacao && beneficioPreSelecionado) {
                     qs.set("beneficio", beneficioPreSelecionado);
@@ -283,11 +320,17 @@ const OpenSelectionCard: React.FC<
                   );
                 }}
                 className={`selection-action-button primary${
-                  semElegibilidadeRenovacao ? " disabled" : ""
+                  semElegibilidadeRenovacao || exigeCg || atingiuLimiteEdital ? " disabled" : ""
                 }`}
-                disabled={semElegibilidadeRenovacao}
+                disabled={semElegibilidadeRenovacao || exigeCg || atingiuLimiteEdital}
                 title={
-                  is_formulario_renovacao
+                  exigeCg
+                    ? "Cadastro Geral apto e vigente é requisito"
+                    : atingiuLimiteEdital
+                    ? cgPcd
+                      ? "Limite de 2 modalidades neste edital"
+                      : "Limite de 1 modalidade neste edital"
+                    : is_formulario_renovacao
                     ? semElegibilidadeRenovacao
                       ? "Sem benefício elegível para renovar"
                       : "Realizar solicitação de renovação"
@@ -297,7 +340,15 @@ const OpenSelectionCard: React.FC<
                 }
               >
                 <span>
-                  {is_formulario_renovacao
+                  {is_cadastro_geral
+                    ? jaSolicitouCg
+                      ? "Solicitação enviada"
+                      : "Solicitar Cadastro Geral"
+                    : exigeCg
+                    ? "CG apto necessário"
+                    : atingiuLimiteEdital
+                    ? "Limite de inscrições atingido"
+                    : is_formulario_renovacao
                     ? semElegibilidadeRenovacao
                       ? "Sem elegibilidade para renovar"
                       : beneficioPreSelecionado
@@ -351,10 +402,25 @@ const OpenSelectionCard: React.FC<
   );
 };
 
+const ordenarEditais = (a: Edital, b: Edital) => {
+  const peso = (e: Edital) =>
+    e.is_cadastro_geral ? 0 : e.is_formulario_renovacao ? 2 : 1;
+  return peso(a) - peso(b);
+};
+
 const OpenSelections: React.FC<OpenSelectionsProps> = ({
   editais,
   inscricoesAluno = [],
   beneficiosAtivos = [],
+  cgApto = true,
+  cgPcd = false,
+  cgSituacao,
+  cgValidoAte,
+  renovacaoBanner = null,
+  title = "Editais",
+  emptyTitle = "Nenhum edital disponível",
+  emptyDescription = "Aguarde novas oportunidades",
+  compactHeader = false,
 }) => {
   const contagemInscricoesPorEdital = (editalId: string | number): number => {
     const alvo = String(editalId);
@@ -366,61 +432,132 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
 
-  const lista = editais ?? [];
-
-  const openEditais = lista.filter((edital) => {
-    if (classificarStatus(edital.status_edital) !== "ABERTO") return false;
-    if (edital.data_fim_vigencia) {
-      const fim = new Date(edital.data_fim_vigencia + "T23:59:59");
-      if (fim < hoje) return false;
-    }
-    return true;
+  const situacaoCg = String(cgSituacao ?? "Nao cadastrado");
+  const aptoCg = situacaoCg.toLowerCase().includes("apto");
+  const cgVigente = isCgVigente({
+    cgSituacao,
+    cgValidoAteSemestre: cgValidoAte,
   });
 
-  const emAndamentoEditais = lista.filter(
-    (edital) => classificarStatus(edital.status_edital) === "EM_ANDAMENTO",
-  );
+  const lista = (editais ?? []).filter((e) => {
+    if (e?.is_cadastro_geral !== true) return true;
+    if (!cgVigente) return true;
+    return inscricoesAluno.some(
+      (i) => String(i.edital_id ?? "") === String(e.id),
+    );
+  });
 
-  const closedEditais = lista.filter(
-    (edital) => classificarStatus(edital.status_edital) === "ENCERRADO",
-  );
+  const openEditais = lista
+    .filter((edital) => {
+      if (classificarStatus(edital.status_edital) !== "ABERTO") return false;
+      if (edital.data_fim_vigencia) {
+        const fim = new Date(edital.data_fim_vigencia + "T23:59:59");
+        if (fim < hoje) return false;
+      }
+      return true;
+    })
+    .sort(ordenarEditais);
+
+  const emAndamentoEditais = lista
+    .filter(
+      (edital) => classificarStatus(edital.status_edital) === "EM_ANDAMENTO",
+    )
+    .sort(ordenarEditais);
+
+  const closedEditais = lista
+    .filter(
+      (edital) => classificarStatus(edital.status_edital) === "ENCERRADO",
+    )
+    .sort(ordenarEditais);
 
   const totalListado =
     openEditais.length + emAndamentoEditais.length + closedEditais.length;
 
   return (
-    <div className="bg-white border-2 p-[1.25rem] shadow-md border-solid rounded-[1.25rem] flex flex-col h-full overflow-hidden overflow-y-auto">
+    <div className="open-selections-panel bg-white border-2 p-[1.25rem] shadow-md border-solid rounded-[1.25rem] flex flex-col h-full min-h-[380px] overflow-hidden">
+      <div className="open-selections-fixed flex-shrink-0">
+      <div
+        className={`rounded-lg border px-3 py-2 mb-3 text-sm ${
+          aptoCg && cgVigente
+            ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+            : "bg-indigo-50 border-indigo-200 text-indigo-900"
+        }`}
+      >
+        <p className="m-0 font-semibold flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden />
+          Cadastro Geral (CG)
+        </p>
+        <p className="m-0 mt-1">
+          Situação: <strong>{formatarSituacaoCadastroGeral(situacaoCg)}</strong>
+          {aptoCg && cgValidoAte ? (
+            <>
+              {" "}
+              — vigente até o semestre <strong>{cgValidoAte}</strong>
+            </>
+          ) : null}
+        </p>
+        {!aptoCg ? (
+          <p className="m-0 mt-1 text-xs opacity-90">
+            O CG é requisito para editais de benefícios. Solicite na chamada
+            abaixo, quando disponível.
+          </p>
+        ) : cgVigente ? (
+          <p className="m-0 mt-1 text-xs opacity-90">
+            Não é necessário solicitar novamente enquanto o CG estiver vigente.
+          </p>
+        ) : null}
+      </div>
+
+      {renovacaoBanner ? (
+        <div className="rounded-lg border px-3 py-2 mb-3 text-sm bg-amber-50 border-amber-200 text-amber-900">
+          <p className="m-0 font-semibold flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 shrink-0" aria-hidden />
+            Renovação de benefícios
+          </p>
+          <p className="m-0 mt-1">
+            Situação: <strong>{renovacaoBanner.situacao}</strong>
+          </p>
+          {renovacaoBanner.detalhe ? (
+            <p className="m-0 mt-1 text-xs opacity-90">{renovacaoBanner.detalhe}</p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="portal-editais-header">
         <div className="portal-editais-header-title">
           <BookOpen className="w-5 h-5 text-blue-600 shrink-0" aria-hidden />
-          <h2 className="text-2xl font-semibold text-gray-900 m-0">Editais</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 m-0">{title}</h2>
         </div>
-        <ul className="portal-editais-stats" aria-label="Resumo por situação do edital">
-          <li className="portal-editais-stat portal-editais-stat--open">
-            <span className="portal-editais-stat-dot" aria-hidden />
-            <span className="portal-editais-stat-count">{openEditais.length}</span>
-            <span className="portal-editais-stat-label">Aberto(s)</span>
-          </li>
-          <li className="portal-editais-stat portal-editais-stat--progress">
-            <span className="portal-editais-stat-dot" aria-hidden />
-            <span className="portal-editais-stat-count">{emAndamentoEditais.length}</span>
-            <span className="portal-editais-stat-label">Em andamento</span>
-          </li>
-          <li className="portal-editais-stat portal-editais-stat--closed">
-            <span className="portal-editais-stat-dot" aria-hidden />
-            <span className="portal-editais-stat-count">{closedEditais.length}</span>
-            <span className="portal-editais-stat-label">Encerrado(s)</span>
-          </li>
-        </ul>
+        {!compactHeader || totalListado > 0 ? (
+          <ul className="portal-editais-stats" aria-label="Resumo por situação do edital">
+            <li className="portal-editais-stat portal-editais-stat--open">
+              <span className="portal-editais-stat-dot" aria-hidden />
+              <span className="portal-editais-stat-count">{openEditais.length}</span>
+              <span className="portal-editais-stat-label">Aberto(s)</span>
+            </li>
+            <li className="portal-editais-stat portal-editais-stat--progress">
+              <span className="portal-editais-stat-dot" aria-hidden />
+              <span className="portal-editais-stat-count">{emAndamentoEditais.length}</span>
+              <span className="portal-editais-stat-label">Em andamento</span>
+            </li>
+            <li className="portal-editais-stat portal-editais-stat--closed">
+              <span className="portal-editais-stat-dot" aria-hidden />
+              <span className="portal-editais-stat-count">{closedEditais.length}</span>
+              <span className="portal-editais-stat-label">Encerrado(s)</span>
+            </li>
+          </ul>
+        ) : null}
+      </div>
       </div>
 
+      <div className="open-selections-scroll flex-1 min-h-0 overflow-y-auto">
       {totalListado === 0 ? (
         <div className="empty-selections">
           <div className="empty-icon">
             <Calendar className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="empty-title">Nenhum edital disponível</h3>
-          <p className="empty-description">Aguarde novas oportunidades</p>
+          <h3 className="empty-title">{emptyTitle}</h3>
+          <p className="empty-description">{emptyDescription}</p>
         </div>
       ) : (
         <div className="selections-grid">
@@ -430,6 +567,8 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
               {...edital}
               inscricoesNesteEdital={contagemInscricoesPorEdital(edital.id)}
               beneficiosAtivos={beneficiosAtivos}
+              cgApto={cgApto}
+              cgPcd={cgPcd}
             />
           ))}
 
@@ -439,6 +578,8 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
               {...edital}
               inscricoesNesteEdital={contagemInscricoesPorEdital(edital.id)}
               beneficiosAtivos={beneficiosAtivos}
+              cgApto={cgApto}
+              cgPcd={cgPcd}
             />
           ))}
 
@@ -448,6 +589,8 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
               {...edital}
               inscricoesNesteEdital={contagemInscricoesPorEdital(edital.id)}
               beneficiosAtivos={beneficiosAtivos}
+              cgApto={cgApto}
+              cgPcd={cgPcd}
             />
           ))}
         </div>
@@ -463,6 +606,7 @@ const OpenSelections: React.FC<OpenSelectionsProps> = ({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

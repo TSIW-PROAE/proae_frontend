@@ -52,6 +52,9 @@ export function normalizeEditalPortalItem(raw: Record<string, unknown>) {
   const isRenovacao =
     raw.is_formulario_renovacao === true ||
     String(raw.is_formulario_renovacao).toLowerCase() === "true";
+  const isCadastroGeral =
+    raw.is_cadastro_geral === true ||
+    String(raw.is_cadastro_geral).toLowerCase() === "true";
   const inscricoesAbertas =
     raw.inscricoes_abertas === true ||
     String(raw.inscricoes_abertas).toLowerCase() === "true";
@@ -73,6 +76,7 @@ export function normalizeEditalPortalItem(raw: Record<string, unknown>) {
     edital_url: raw.edital_url,
     data_fim_vigencia: raw.data_fim_vigencia as string | null | undefined,
     is_formulario_renovacao: isRenovacao,
+    is_cadastro_geral: isCadastroGeral,
     inscricoes_abertas: inscricoesAbertas,
     ajustes_abertos: ajustesAbertos,
   };

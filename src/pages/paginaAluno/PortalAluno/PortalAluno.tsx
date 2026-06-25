@@ -1,5 +1,6 @@
 import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
+import { isCgVigente } from "@/utils/cgSemestre";
 import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { API_BASE_URL } from "@/config/api";
@@ -37,6 +38,11 @@ export default function PortalAluno() {
   const [benefits, setBenefits] = useState<any[]>([]);
   const [openSelections, setOpenSelections] = useState<any[]>([]);
   const [inscriptions, setInscriptions] = useState<any[]>([]);
+  const [cgPerfil, setCgPerfil] = useState<{
+    situacao: string;
+    validoAte: string | null;
+    pcd: boolean;
+  }>({ situacao: "Nao cadastrado", validoAte: null, pcd: false });
   const [loading, setLoading] = useState(true);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifWrapRef = useRef<HTMLDivElement>(null);
@@ -112,10 +118,25 @@ export default function PortalAluno() {
       let nivel: string = NIVEL_GRADUACAO;
       try {
         const r = (await client.get(`${API_BASE_URL}/aluno/me`)) as {
-          dados?: { aluno?: { nivel_academico?: string } };
+          dados?: {
+            aluno?: {
+              nivel_academico?: string;
+              cg_situacao?: string;
+              cg_valido_ate_semestre?: string | null;
+              cg_pcd?: boolean;
+            };
+          };
         };
-        const n = r?.dados?.aluno?.nivel_academico;
+        const aluno = r?.dados?.aluno;
+        const n = aluno?.nivel_academico;
         if (n) nivel = n as string;
+        if (aluno) {
+          setCgPerfil({
+            situacao: aluno.cg_situacao ?? "Nao cadastrado",
+            validoAte: aluno.cg_valido_ate_semestre ?? null,
+            pcd: aluno.cg_pcd === true,
+          });
+        }
       } catch {
         nivel = NIVEL_GRADUACAO;
       }
@@ -176,79 +197,40 @@ export default function PortalAluno() {
       .filter((titulo) => titulo.length > 0);
   }, [benefits]);
 
-  const resumoRenovacao = useMemo(() => {
+  const cgApto = useMemo(
+    () =>
+      isCgVigente({
+        cgSituacao: cgPerfil.situacao,
+        cgValidoAteSemestre: cgPerfil.validoAte,
+      }),
+    [cgPerfil.situacao, cgPerfil.validoAte],
+  );
+
+  const renovacaoBanner = useMemo(() => {
     const editaisRenovacao = (openSelections ?? []).filter(
       (e) => e?.is_formulario_renovacao === true,
     );
     if (editaisRenovacao.length === 0) return null;
+    if (beneficiosAtivosParaRenovacao.length === 0) return null;
 
     const editalRenovacaoAberto = editaisRenovacao.find((e) =>
       String(e?.status_edital ?? "").toLowerCase().includes("aberto"),
     );
-    const editalRenovacaoReferencia = editalRenovacaoAberto ?? editaisRenovacao[0];
-    const editalId = String(editalRenovacaoReferencia?.id ?? "");
+    if (!editalRenovacaoAberto) return null;
 
+    const editalId = String(editalRenovacaoAberto.id ?? "");
     const inscricaoRenovacao = (inscriptions ?? []).find(
       (i) => String(i?.edital_id ?? "") === editalId,
     );
 
-    if (!inscricaoRenovacao) {
-      return {
-        titulo: "Renovação",
-        descricao:
-          editalRenovacaoAberto != null
-            ? "Edital de renovação aberto. Você ainda não enviou sua solicitação."
-            : "Edital de renovação disponível para consulta.",
-        statusLabel: editalRenovacaoAberto ? "Pendente de solicitação" : "Sem solicitação",
-        tone: editalRenovacaoAberto ? "warning" : "info",
-      };
-    }
-
-    const situacao = String(inscricaoRenovacao?.situacao_solicitacao ?? "")
-      .trim()
-      .toUpperCase();
-    const recurso = String(inscricaoRenovacao?.recurso_status ?? "Sem recurso");
-
-    if (situacao === "SELECIONADA") {
-      return {
-        titulo: "Renovação",
-        descricao: "Sua solicitação de renovação foi selecionada.",
-        statusLabel: `Selecionada · Recurso: ${recurso}`,
-        tone: "success",
-      };
-    }
-    if (situacao === "CLASSIFICADA") {
-      return {
-        titulo: "Renovação",
-        descricao: "Sua solicitação de renovação está classificada.",
-        statusLabel: `Classificada · Recurso: ${recurso}`,
-        tone: "info",
-      };
-    }
-    if (situacao === "INDEFERIDA") {
-      return {
-        titulo: "Renovação",
-        descricao: "Sua solicitação de renovação foi indeferida.",
-        statusLabel: `Indeferida · Recurso: ${recurso}`,
-        tone: "danger",
-      };
-    }
-    if (situacao === "DESISTENTE") {
-      return {
-        titulo: "Renovação",
-        descricao: "Sua solicitação de renovação está como desistente.",
-        statusLabel: `Desistente · Recurso: ${recurso}`,
-        tone: "danger",
-      };
-    }
+    if (inscricaoRenovacao) return null;
 
     return {
-      titulo: "Renovação",
-      descricao: "Sua solicitação de renovação foi recebida e está em acompanhamento.",
-      statusLabel: `${inscricaoRenovacao?.status_inscricao ?? "Em análise"} · Recurso: ${recurso}`,
-      tone: "info",
+      situacao: "Aguardando solicitação",
+      detalhe:
+        "Edital de renovação aberto. Envie sua solicitação no edital abaixo.",
     };
-  }, [openSelections, inscriptions]);
+  }, [openSelections, inscriptions, beneficiosAtivosParaRenovacao]);
 
   const portalNotifications = useMemo(
     () => buildPortalNotifications(inscriptions),
@@ -449,7 +431,13 @@ export default function PortalAluno() {
           <p className="font-semibold text-slate-900 m-0 mb-1">Como ler o portal</p>
           <ul className="list-disc pl-5 m-0 space-y-1">
             <li>
-              <strong>Minhas inscrições</strong>: situação da sua inscrição no processo (análise, pendências, etc.).
+              <strong>Cadastro Geral</strong>: comprovação socioeconômica — requisito para editais de benefícios (chamada na lista de editais).
+            </li>
+            <li>
+              <strong>Editais de benefícios e renovação</strong>: seleção de auxílios e recadastro de beneficiários.
+            </li>
+            <li>
+              <strong>Minhas inscrições</strong>: situação da sua inscrição (análise, pendências, etc.).
             </li>
             <li>
               <strong>Benefícios no edital</strong>: aparece quando a inscrição está <strong>aprovada na análise</strong> e você foi{" "}
@@ -477,29 +465,7 @@ export default function PortalAluno() {
 
         {/* Conteúdo Principal */}
         <main className="main-content">
-          {resumoRenovacao && (
-            <section className="mb-4">
-              <div
-                className={`rounded-xl border px-4 py-3 shadow-sm ${
-                  resumoRenovacao.tone === "success"
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                    : resumoRenovacao.tone === "warning"
-                    ? "bg-amber-50 border-amber-200 text-amber-900"
-                    : resumoRenovacao.tone === "danger"
-                    ? "bg-red-50 border-red-200 text-red-900"
-                    : "bg-blue-50 border-blue-200 text-blue-900"
-                }`}
-              >
-                <p className="m-0 text-sm font-semibold">{resumoRenovacao.titulo}</p>
-                <p className="m-0 mt-1 text-sm">{resumoRenovacao.descricao}</p>
-                <p className="m-0 mt-1 text-xs font-medium opacity-90">
-                  {resumoRenovacao.statusLabel}
-                </p>
-              </div>
-            </section>
-          )}
-
-          {/* Seção de Benefícios e Seleções */}
+          {/* Benefícios homologados + editais (CG, seleção e renovação) */}
           <section
             ref={editaisSectionRef}
             className="benefits-selections-section"
@@ -515,9 +481,14 @@ export default function PortalAluno() {
               <div className="selections-container">
                 <div className="card-container">
                   <OpenSelections
-                    editais={openSelections}
+                    editais={openSelections ?? []}
                     inscricoesAluno={inscriptions}
                     beneficiosAtivos={beneficiosAtivosParaRenovacao}
+                    cgApto={cgApto}
+                    cgPcd={cgPerfil.pcd}
+                    cgSituacao={cgPerfil.situacao}
+                    cgValidoAte={cgPerfil.validoAte}
+                    renovacaoBanner={renovacaoBanner}
                   />
                 </div>
               </div>

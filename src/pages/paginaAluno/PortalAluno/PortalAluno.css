@@ -330,6 +330,15 @@
   margin-bottom: 2rem;
 }
 
+.portal-process-section {
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.portal-process-section:last-of-type {
+  border-bottom: none;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
@@ -341,7 +350,7 @@
 .selections-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  min-width: 0;
   height: 100%;
 }
 
@@ -349,17 +358,44 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-/* Benefícios: mais altura e largura — conteúdo textual denso; editais mantém scroll */
+/* Mesma altura mínima nas duas colunas — cards alinhados */
 .benefits-container .card-container {
-  min-height: 480px;
-  max-height: none;
+  min-height: 420px;
 }
 
 .selections-container .card-container {
-  min-height: 400px;
+  min-height: 420px;
   max-height: 640px;
+}
+
+.open-selections-panel {
+  height: 100%;
+}
+
+.open-selections-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.open-selections-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.open-selections-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.open-selections-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.selections-container .selections-grid {
+  grid-template-columns: 1fr;
 }
 
 /* Ajustar o componente de benefícios para ter altura controlada */
@@ -1506,14 +1542,12 @@
     gap: 1.5rem;
   }
 
-  /* Benefícios em mobile: altura livre; editais com teto para não estourar a página */
   .benefits-container .card-container {
     min-height: 360px;
-    max-height: none;
   }
 
   .selections-container .card-container {
-    min-height: 350px;
+    min-height: 360px;
     max-height: 520px;
   }
 

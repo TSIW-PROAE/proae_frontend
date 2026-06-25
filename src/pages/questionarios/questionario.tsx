@@ -185,6 +185,7 @@ export const Questionario: React.FC = () => {
       subtitulo={`${editalData ? editalData.descricao : ""}`}
       botaoFinal="Enviar Formulário"
       successRedirectUrl="/portal-aluno"
+      isCadastroGeral={editalData?.is_cadastro_geral === true}
       focusStepId={stepIdParam}
       focusQuestionId={perguntaIdParam}
       focusVagaId={resolvedVagaId ?? vagaIdParam}

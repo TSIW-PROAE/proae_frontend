@@ -156,7 +156,7 @@ export class InscricaoServiceManager {
    */
   async adminAlterarStatusInscricao(
     inscricaoId: string,
-    body: { status: string; observacao?: string },
+    body: { status: string; observacao?: string; marcar_pcd_cg?: boolean },
   ): Promise<void> {
     await this.httpClient.patch(`${BASE_URL}/inscricoes/admin/${inscricaoId}/status`, body);
   }

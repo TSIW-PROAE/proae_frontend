@@ -50,6 +50,7 @@ export default function ProcessosProae() {
   const [nivelNovoEdital, setNivelNovoEdital] = useState<string>(NIVEL_GRADUACAO);
   const [aplicarTemplateCadastro, setAplicarTemplateCadastro] = useState(false);
   const [isFormularioRenovacao, setIsFormularioRenovacao] = useState(false);
+  const [isCadastroGeral, setIsCadastroGeral] = useState(false);
   const [inscricoesAbertas, setInscricoesAbertas] = useState(false);
   const [ajustesAbertos, setAjustesAbertos] = useState(false);
   const [isCreatingEdital, setIsCreatingEdital] = useState(false);
@@ -196,6 +197,7 @@ export default function ProcessosProae() {
     setNivelNovoEdital(NIVEL_GRADUACAO);
     setAplicarTemplateCadastro(false);
     setIsFormularioRenovacao(false);
+    setIsCadastroGeral(false);
     setInscricoesAbertas(false);
     setAjustesAbertos(false);
     setError(null);
@@ -213,8 +215,9 @@ export default function ProcessosProae() {
       const novoEdital = await editalService.criarEdital({
         titulo_edital: tituloEdital.trim(),
         nivel_academico: nivelNovoEdital,
-        aplicar_template_cadastro: aplicarTemplateCadastro,
+        aplicar_template_cadastro: aplicarTemplateCadastro || isCadastroGeral,
         is_formulario_renovacao: isFormularioRenovacao,
+        is_cadastro_geral: isCadastroGeral,
         inscricoes_abertas: inscricoesAbertas,
         ajustes_abertos: ajustesAbertos,
       });
@@ -225,6 +228,7 @@ export default function ProcessosProae() {
       setNivelNovoEdital(NIVEL_GRADUACAO);
       setAplicarTemplateCadastro(false);
       setIsFormularioRenovacao(false);
+    setIsCadastroGeral(false);
       setInscricoesAbertas(false);
       setAjustesAbertos(false);
       if (novoEdital?.id) {
@@ -245,6 +249,7 @@ export default function ProcessosProae() {
     setNivelNovoEdital(NIVEL_GRADUACAO);
     setAplicarTemplateCadastro(false);
     setIsFormularioRenovacao(false);
+    setIsCadastroGeral(false);
     setInscricoesAbertas(false);
     setAjustesAbertos(false);
     setError(null);
@@ -441,8 +446,36 @@ export default function ProcessosProae() {
 
               <div className="modal-body">
                 <div className="input-group">
-                  <label htmlFor="edital-renovacao" className="input-label">
+                  <label htmlFor="edital-cadastro-geral" className="input-label">
                     Tipo de processo
+                  </label>
+                  <label
+                    htmlFor="edital-cadastro-geral"
+                    className="flex items-center gap-2 text-sm text-gray-700"
+                  >
+                    <input
+                      id="edital-cadastro-geral"
+                      type="checkbox"
+                      checked={isCadastroGeral}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsCadastroGeral(checked);
+                        if (checked) {
+                          setIsFormularioRenovacao(false);
+                          setAplicarTemplateCadastro(true);
+                        }
+                      }}
+                      disabled={isCreatingEdital}
+                    />
+                    Chamada de Cadastro Geral (CG)
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Processo de comprovação socioeconômica — requisito para editais de benefícios.
+                  </p>
+                </div>
+                <div className="input-group">
+                  <label htmlFor="edital-renovacao" className="input-label">
+                    Renovação
                   </label>
                   <label
                     htmlFor="edital-renovacao"
@@ -452,8 +485,12 @@ export default function ProcessosProae() {
                       id="edital-renovacao"
                       type="checkbox"
                       checked={isFormularioRenovacao}
-                      onChange={(e) => setIsFormularioRenovacao(e.target.checked)}
-                      disabled={isCreatingEdital}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsFormularioRenovacao(checked);
+                        if (checked) setIsCadastroGeral(false);
+                      }}
+                      disabled={isCreatingEdital || isCadastroGeral}
                     />
                     Este edital é de renovação
                   </label>

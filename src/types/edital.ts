@@ -34,6 +34,8 @@ export interface Edital {
   ajustes_abertos?: boolean;
   /** Quando true, representa o edital de renovação anual. */
   is_formulario_renovacao?: boolean;
+  /** Chamada de Cadastro Geral (comprovação socioeconômica). */
+  is_cadastro_geral?: boolean;
   etapa_edital?: EtapaEdital[];
   vagas?: Vaga[];
   possui_inscricoes?: boolean;
@@ -54,6 +56,8 @@ export interface CreateEditalRequest {
   aplicar_template_cadastro?: boolean;
   /** Marca o edital como processo de renovação anual. */
   is_formulario_renovacao?: boolean;
+  /** Marca o edital como chamada de Cadastro Geral. */
+  is_cadastro_geral?: boolean;
   /** Libera/fecha inscrições de alunos no edital. */
   inscricoes_abertas?: boolean;
   /** Libera/fecha ajustes/correções de pendências no edital. */
