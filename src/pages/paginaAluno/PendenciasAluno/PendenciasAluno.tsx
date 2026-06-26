@@ -52,6 +52,9 @@ const PendenciasAluno: React.FC = () => {
   const inscricoesComAjuste = pendencias.filter(
     (p) => (p.ajustes_resposta?.length ?? 0) > 0
   );
+  const inscricoesComAjusteAbertas = inscricoesComAjuste.filter(
+    (p) => p.ajustes_abertos === true
+  );
 
   const buildAjusteUrl = (
     pendencia: Pendencia,
@@ -68,19 +71,13 @@ const PendenciasAluno: React.FC = () => {
     }
     const suffix = `?${query.toString()}`;
 
-    if (pendencia.is_formulario_geral) {
-      return `/portal-aluno/formulario-geral${suffix}`;
-    }
-    if (pendencia.is_formulario_renovacao) {
-      return `/portal-aluno/formulario-renovacao${suffix}`;
-    }
     if (pendencia.edital_id != null) {
       return `/questionario/${pendencia.edital_id}${suffix}`;
     }
     return "/portal-aluno";
   };
 
-  const firstAjustePendencia = inscricoesComAjuste[0];
+  const firstAjustePendencia = inscricoesComAjusteAbertas[0];
   const firstAjusteStepId =
     firstAjustePendencia?.ajustes_resposta?.[0]?.step_id ?? null;
   const firstAjustePerguntaId =
@@ -137,10 +134,11 @@ const PendenciasAluno: React.FC = () => {
         {!loading && totalAjustesResposta > 0 && (
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-sm font-semibold text-amber-900 m-0 mb-1">
-              Você possui ajustes/complementos de resposta pendentes
+              Você possui ajustes pendentes na análise da inscrição
             </p>
             <p className="text-sm text-amber-800 m-0 mb-3">
-              A PROAE solicitou revisão em uma ou mais inscrições. Verifique suas inscrições no portal e conclua os ajustes.
+              A PROAE solicitou revisão em uma ou mais inscrições. Conclua os
+              ajustes para que a análise da inscrição continue.
             </p>
             <ul className="mb-3 list-disc pl-5 text-sm text-amber-900">
               {inscricoesComAjuste.map((ins) => (
@@ -153,6 +151,7 @@ const PendenciasAluno: React.FC = () => {
             <button
               type="button"
               onClick={() =>
+                firstAjustePendencia &&
                 navigate(
                   buildAjusteUrl(
                     firstAjustePendencia,
@@ -161,9 +160,15 @@ const PendenciasAluno: React.FC = () => {
                   )
                 )
               }
-              className="px-4 py-2 rounded-lg bg-amber-800 text-white text-sm font-medium hover:bg-amber-900"
+              disabled={!firstAjustePendencia}
+              title={
+                !firstAjustePendencia
+                  ? "Ajustes fechados pela PROAE para os editais com pendência."
+                  : undefined
+              }
+              className="px-4 py-2 rounded-lg bg-amber-800 text-white text-sm font-medium hover:bg-amber-900 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Corrigir agora
+              {firstAjustePendencia ? "Corrigir agora" : "Ajustes fechados"}
             </button>
           </div>
         )}
@@ -202,8 +207,8 @@ const PendenciasAluno: React.FC = () => {
               Nenhuma pendência encontrada
             </h3>
             <p className="text-gray-600 text-center max-w-md">
-              Parabéns! Você não possui documentos pendentes ou reprovados no
-              momento.
+              Você não possui pendências de documentos nem ajustes de resposta
+              no momento.
             </p>
           </div>
         )}
@@ -217,6 +222,7 @@ const PendenciasAluno: React.FC = () => {
                 vaga_beneficio={pendencia.vaga_beneficio}
                 documentos={pendencia.documentos}
                 ajustes_resposta={pendencia.ajustes_resposta}
+                ajustes_abertos={pendencia.ajustes_abertos}
                 onGoToAjuste={(stepId, perguntaId) =>
                   navigate(buildAjusteUrl(pendencia, stepId, perguntaId))
                 }

@@ -1,6 +1,11 @@
-import type { UserRole } from "@/types/auth";
+import type { AdminPerfil, UserRole } from "@/types/auth";
 
 const VALID_ROLES: ReadonlySet<string> = new Set<string>(["admin", "aluno"]);
+const VALID_ADMIN_PERFIS: ReadonlySet<string> = new Set<string>([
+  "tecnico",
+  "gerencial",
+  "coordenacao",
+]);
 
 /**
  * Normaliza `roles` vindos da API (array, string simple-array, ou indefinido).
@@ -35,4 +40,64 @@ export function isAdminAprovado(
   adminAprovado: boolean | null | undefined,
 ): boolean {
   return aprovado === true || adminAprovado === true;
+}
+
+/**
+ * Normaliza `adminPerfil` recebido da API. Aceita variações de caixa e remove acentos
+ * para tolerar entrada do tipo "Coordenação". Cadastros antigos sem coluna preenchida
+ * são tratados como `gerencial` (compatibilidade com comportamento histórico).
+ */
+export function normalizeAdminPerfil(
+  perfil: unknown,
+): AdminPerfil {
+  if (perfil == null) return "gerencial";
+  const raw = String(perfil)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (!raw) return "gerencial";
+  return VALID_ADMIN_PERFIS.has(raw) ? (raw as AdminPerfil) : "gerencial";
+}
+
+/** Pode criar/editar/publicar editais, configurar formulários e gerenciar a equipe PROAE. */
+export function canManageEditais(perfil: AdminPerfil | null | undefined): boolean {
+  return normalizeAdminPerfil(perfil) === "gerencial";
+}
+
+/** Pode alterar status/observação de inscrições, validar respostas e reabrir prazos. */
+export function canAnalyzeInscricoes(
+  perfil: AdminPerfil | null | undefined,
+): boolean {
+  const p = normalizeAdminPerfil(perfil);
+  return p === "tecnico" || p === "gerencial";
+}
+
+/** Apenas leitura: somente consulta (perfil de coordenação). */
+export function isReadOnlyAdmin(
+  perfil: AdminPerfil | null | undefined,
+): boolean {
+  return normalizeAdminPerfil(perfil) === "coordenacao";
+}
+
+/** Inscrições: técnico e gerencial analisam; coordenação só consulta. */
+export function inscricoesSomenteConsulta(
+  perfil: AdminPerfil | null | undefined,
+): boolean {
+  return !canAnalyzeInscricoes(perfil);
+}
+
+/** Rótulo amigável para exibição na UI. */
+export function adminPerfilLabel(
+  perfil: AdminPerfil | null | undefined,
+): string {
+  switch (normalizeAdminPerfil(perfil)) {
+    case "tecnico":
+      return "Técnico";
+    case "coordenacao":
+      return "Coordenação";
+    case "gerencial":
+    default:
+      return "Gerencial";
+  }
 }

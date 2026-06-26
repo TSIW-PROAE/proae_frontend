@@ -38,6 +38,25 @@ export class PerguntaService {
   async deletarPergunta(id: string): Promise<{ message: string }> {
   return this.httpClient.delete<{ message: string }>(`${BASE_URL}/${id}`);
   }
+
+  /**
+   * Reordena perguntas de um step. Não recria registros — apenas atualiza
+   * o campo `ordem` no backend (transação).
+   */
+  async reordenarPerguntas(
+    stepId: string | number,
+    itens: { id: number | string; ordem: number }[],
+  ): Promise<{ message: string }> {
+    return this.httpClient.patch<{ message: string }>(
+      `${BASE_URL}/step/${stepId}/reordenar`,
+      {
+        itens: itens.map((it) => ({
+          id: typeof it.id === "string" ? Number(it.id) : it.id,
+          ordem: it.ordem,
+        })),
+      },
+    );
+  }
 }
 
 export const perguntaService = new PerguntaService();

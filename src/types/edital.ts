@@ -1,5 +1,7 @@
 export interface EtapaEdital {
   etapa: string;
+  /** Tipo semântico opcional da etapa (ex.: INSCRICAO, RECURSO). */
+  tipo_etapa?: string;
   ordem_elemento: number;
   data_inicio: string;
   data_fim: string;
@@ -26,14 +28,20 @@ export interface Edital {
   descricao?: string;
   edital_url?: DocumentoEdital[];
   status_edital: "RASCUNHO" | "ABERTO" | "ENCERRADO" | "EM_ANDAMENTO";
+  /** Controle manual de abertura/fechamento de inscrições no edital. */
+  inscricoes_abertas?: boolean;
+  /** Controle manual de abertura/fechamento de ajustes de pendências. */
+  ajustes_abertos?: boolean;
+  /** Quando true, representa o edital de renovação anual. */
+  is_formulario_renovacao?: boolean;
+  /** Chamada de Cadastro Geral (comprovação socioeconômica). */
+  is_cadastro_geral?: boolean;
   etapa_edital?: EtapaEdital[];
   vagas?: Vaga[];
   possui_inscricoes?: boolean;
   total_inscricoes?: number;
   created_at?: string;
   updated_at?: string;
-  is_formulario_geral?: boolean;
-  is_formulario_renovacao?: boolean;
   /** Graduação | Pós-graduação */
   nivel_academico?: string;
   /** Fim da vigência no portal (YYYY-MM-DD ou ISO) */
@@ -44,6 +52,16 @@ export interface CreateEditalRequest {
   titulo_edital: string;
   /** Graduação (padrão API) ou Pós-graduação */
   nivel_academico?: string;
+  /** Aplica o template padrão de perguntas com peso no novo edital. */
+  aplicar_template_cadastro?: boolean;
+  /** Marca o edital como processo de renovação anual. */
+  is_formulario_renovacao?: boolean;
+  /** Marca o edital como chamada de Cadastro Geral. */
+  is_cadastro_geral?: boolean;
+  /** Libera/fecha inscrições de alunos no edital. */
+  inscricoes_abertas?: boolean;
+  /** Libera/fecha ajustes/correções de pendências no edital. */
+  ajustes_abertos?: boolean;
   descricao?: string;
   edital_url?: DocumentoEdital[];
   etapa_edital?: EtapaEdital[];
@@ -56,4 +74,7 @@ export interface UpdateEditalRequest {
   etapa_edital?: EtapaEdital[];
   data_fim_vigencia?: string | null;
   nivel_academico?: string;
+  is_formulario_renovacao?: boolean;
+  inscricoes_abertas?: boolean;
+  ajustes_abertos?: boolean;
 }

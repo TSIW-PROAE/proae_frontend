@@ -5,7 +5,7 @@ import { EditableVaga } from "../types";
 interface VagasSectionProps {
   vagas: EditableVaga[];
   openVagas: boolean;
-  editalId: string;
+  editalId: string | number;
   onVagasChange: (vagas: EditableVaga[]) => void;
   onToggleOpen: () => void;
   onSaveVaga?: (index: number) => Promise<void>;
@@ -53,7 +53,7 @@ const VagasSection: React.FC<VagasSectionProps> = ({
   const addVaga = () => {
     const newVaga: EditableVaga = {
       value: {
-        edital_id: editalId,
+        edital_id: Number(editalId) || 0,
         beneficio: "",
         descricao_beneficio: "",
         numero_vagas: 1,

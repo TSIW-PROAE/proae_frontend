@@ -1,13 +1,87 @@
+/* ── Layout da página do questionário (portal aluno) ── */
+.formulario-pagina {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--cor-creme, #faf8f5);
+  padding: 1rem 1.25rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.formulario-pagina-inner {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0.75rem;
+}
+
+.formulario-step-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.25rem 0.25rem 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.formulario-step-titulo {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--cor-azul-escuro, #14374c);
+  margin: 0 0 1.5rem;
+  line-height: 1.35;
+  width: 100%;
+  text-align: left;
+}
+
+.formulario-ajuste-aviso {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #fcd34d;
+  background-color: #fffbeb;
+  padding: 1rem 1.25rem;
+}
+
+.formulario-ajuste-aviso-texto {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #78350f;
+}
+
+.formulario-save-status {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.formulario-rodape {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 0 0;
+  border-top: 1px solid rgba(20, 55, 76, 0.12);
+}
+
 .formulario-dinamico {
   display: flex;
   flex-direction: column;
   width: 100%;
   margin: 0 auto;
-  height: 100vh; /* Altura fixa para a tela inteira */
+  min-height: 100vh;
   background-color: var(--cor-creme);
   border-radius: 1rem;
-  overflow: hidden; /* Evita rolagem do container principal */
-  position: relative; /* Para posicionamento dos elementos fixos */
+  position: relative;
 }
 
 /* Toast para mensagens de erro */
@@ -180,9 +254,10 @@
 
 .formulario-conteudo {
   flex-grow: 1;
-  overflow-y: auto; /* Permite rolagem para o conteúdo do formulário */
-  padding: 0 4rem 2rem;
-  height: calc(100vh - 16vh - 130px); /* Ajusta altura para o espaço restante */
+  overflow: visible;
+  padding: 0 1rem 1.5rem;
+  height: auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -239,17 +314,35 @@
 .inputs-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 1rem;
-  max-width: 800px;
+  gap: 2rem;
   width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  flex-grow: 1;
+  max-width: 100%;
+  margin: 0;
+}
+
+.formulario-campo {
+  width: 100%;
+  max-width: 100%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Heroui: label outside + input em largura total */
+.formulario-campo [data-slot="base"],
+.formulario-campo [data-slot="mainWrapper"],
+.formulario-campo [data-slot="inputWrapper"],
+.formulario-campo .group {
+  width: 100%;
+  max-width: 100%;
+}
+
+.formulario-campo label {
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .input-container {
-  margin-bottom: 2.5rem;
+  margin-bottom: 0;
   width: 100%;
   position: relative;
 }
@@ -830,8 +923,16 @@
   }
 
   .formulario-conteudo {
-    padding: 0 2rem 2rem;
-    height: calc(100vh - 20vh - 120px);
+    padding: 0 1rem 1.5rem;
+    height: auto;
+  }
+
+  .formulario-pagina {
+    padding: 0.75rem 1rem 1.25rem;
+  }
+
+  .formulario-step-titulo {
+    font-size: 1.5rem;
   }
 
   .toast-container {

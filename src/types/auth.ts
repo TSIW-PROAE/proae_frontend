@@ -1,10 +1,16 @@
 
 import { CadastroFormData } from "@/pages/paginaProae/CadastroProae/CadastroProae";
+
+/** Perfis administrativos do servidor PROAE. Espelha o enum do backend. */
+export type AdminPerfil = "tecnico" | "gerencial" | "coordenacao";
+
 export interface UserInfo {
   id: string;
   nome: string;
   email: string;
   roles: UserRole[];
+  /** Apenas para admins; null para alunos ou registros legados sem coluna preenchida. */
+  adminPerfil?: AdminPerfil | null;
   [key: string]: any;
 }
 
@@ -49,6 +55,8 @@ export interface UserLoginResponse {
     /** Backend pode enviar adminAprovado ou aprovado */
     aprovado?: boolean;
     adminAprovado?: boolean;
+    /** Perfil administrativo (apenas para admin). */
+    adminPerfil?: AdminPerfil | null;
     hasAluno?: boolean;
   };
   /** Resposta do login pode trazer adminAprovado no top level */

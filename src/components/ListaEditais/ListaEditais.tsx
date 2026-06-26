@@ -19,6 +19,7 @@ import {
   NIVEL_GRADUACAO,
   NIVEL_POS_GRADUACAO,
 } from "@/constants/nivelAcademico";
+import { getTituloEdital } from "@/utils/editalDisplay";
 import "./ListaEditais.css";
 
 /** Badge de nível (Graduação / Pós-graduação) na lista e no grid. */
@@ -51,6 +52,8 @@ interface ListaEditaisProps {
   onDelete: (id: string) => void;
   isLoading?: boolean;
   onRequestDuplicate?: (edital: Edital) => void;
+  /** Quando false, esconde botões de editar/excluir/duplicar (perfis sem permissão de gestão). */
+  canManage?: boolean;
 }
 
 type ViewMode = "grid" | "list";
@@ -60,7 +63,8 @@ const EditalTableRow: React.FC<{
   onEdit: (edital: Edital) => void;
   onDelete: (id: string) => void;
   onRequestDuplicate?: (edital: Edital) => void;
-}> = ({ edital, onEdit, onDelete, onRequestDuplicate }) => {
+  canManage?: boolean;
+}> = ({ edital, onEdit, onDelete, onRequestDuplicate, canManage = true }) => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loadingVagas, setLoadingVagas] = useState(false);
 
@@ -83,7 +87,7 @@ const EditalTableRow: React.FC<{
     } finally {
       setLoadingVagas(false);
     }
-  }, [edital.id]);
+  }, [edital.id, loadingVagas]);
 
   useEffect(() => {
     loadVagas();
@@ -157,33 +161,37 @@ const EditalTableRow: React.FC<{
       </td>
       <td className="table-cell actions-cell">
         <div className="table-actions">
-          <button
-            onClick={handleDuplicate}
-            className="action-btn duplicate-btn"
-            title="Duplicar edital"
-          >
-            <Copy className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(edital);
-            }}
-            className="action-btn edit-btn"
-            title="Editar edital"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              edital.id && onDelete(edital.id);
-            }}
-            className="action-btn delete-btn"
-            title="Deletar edital"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canManage && (
+            <>
+              <button
+                onClick={handleDuplicate}
+                className="action-btn duplicate-btn"
+                title="Duplicar edital"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(edital);
+                }}
+                className="action-btn edit-btn"
+                title="Editar edital"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  edital.id && onDelete(edital.id);
+                }}
+                className="action-btn delete-btn"
+                title="Deletar edital"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </td>
     </tr>
@@ -195,7 +203,8 @@ const EditalCard: React.FC<{
   onEdit: (edital: Edital) => void;
   onDelete: (id: string) => void;
   onRequestDuplicate?: (edital: Edital) => void;
-}> = ({ edital, onEdit, onDelete, onRequestDuplicate }) => {
+  canManage?: boolean;
+}> = ({ edital, onEdit, onDelete, onRequestDuplicate, canManage = true }) => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loadingVagas, setLoadingVagas] = useState(false);
 
@@ -218,7 +227,7 @@ const EditalCard: React.FC<{
     } finally {
       setLoadingVagas(false);
     }
-  }, [edital.id]);
+  }, [edital.id, loadingVagas]);
 
   // Carregar vagas automaticamente quando o componente é montado
   useEffect(() => {
@@ -272,33 +281,37 @@ const EditalCard: React.FC<{
           </span>
         </div>
         <div className="card-actions">
-          <button
-            onClick={handleDuplicate}
-            className="action-btn duplicate-btn"
-            title="Duplicar edital"
-          >
-            <Copy className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(edital);
-            }}
-            className="action-btn edit-btn"
-            title="Editar edital"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              edital.id && onDelete(edital.id);
-            }}
-            className="action-btn delete-btn"
-            title="Deletar edital"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canManage && (
+            <>
+              <button
+                onClick={handleDuplicate}
+                className="action-btn duplicate-btn"
+                title="Duplicar edital"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(edital);
+                }}
+                className="action-btn edit-btn"
+                title="Editar edital"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  edital.id && onDelete(edital.id);
+                }}
+                className="action-btn delete-btn"
+                title="Deletar edital"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
           {/* {edital.edital_url && edital.edital_url[0] && (
             <a
               href={edital.edital_url[0].url_documento}
@@ -315,18 +328,18 @@ const EditalCard: React.FC<{
       </div>
 
       <div className="selection-card-body">
+        <div className="selection-card-title-row">
+          <h3 className="selection-card-title" title={getTituloEdital(edital)}>
+            {getTituloEdital(edital)}
+          </h3>
+          <NivelAcademicoBadge nivel={edital.nivel_academico} />
+        </div>
+
         <div className="selection-card-meta">
           <div className="meta-item">
             <Users className="w-3 h-3" />
             <span>{totalVagas} vagas total</span>
           </div>
-        </div>
-
-        <div className="selection-card-title-row">
-          <h3 className="selection-card-title">
-            {edital.titulo_edital || "Título não informado"}
-          </h3>
-          <NivelAcademicoBadge nivel={edital.nivel_academico} />
         </div>
         <p className="selection-card-description">
           {edital.descricao && edital.descricao.length > 90
@@ -375,6 +388,7 @@ export default function ListaEditais({
   onDelete,
   isLoading = false,
   onRequestDuplicate,
+  canManage = true,
 }: ListaEditaisProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
@@ -428,6 +442,7 @@ export default function ListaEditais({
               onEdit={onEdit}
               onDelete={onDelete}
               onRequestDuplicate={onRequestDuplicate}
+              canManage={canManage}
             />
           ))}
 
@@ -439,6 +454,7 @@ export default function ListaEditais({
               onEdit={onEdit}
               onDelete={onDelete}
               onRequestDuplicate={onRequestDuplicate}
+              canManage={canManage}
             />
           ))}
 
@@ -450,6 +466,7 @@ export default function ListaEditais({
               onEdit={onEdit}
               onDelete={onDelete}
               onRequestDuplicate={onRequestDuplicate}
+              canManage={canManage}
             />
           ))}
 
@@ -461,6 +478,7 @@ export default function ListaEditais({
               onEdit={onEdit}
               onDelete={onDelete}
               onRequestDuplicate={onRequestDuplicate}
+              canManage={canManage}
             />
           ))}
         </div>
@@ -496,6 +514,7 @@ export default function ListaEditais({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onRequestDuplicate={onRequestDuplicate}
+                canManage={canManage}
               />
             ))}
 
@@ -507,6 +526,7 @@ export default function ListaEditais({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onRequestDuplicate={onRequestDuplicate}
+                canManage={canManage}
               />
             ))}
 
@@ -518,6 +538,7 @@ export default function ListaEditais({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onRequestDuplicate={onRequestDuplicate}
+                canManage={canManage}
               />
             ))}
 
@@ -529,6 +550,7 @@ export default function ListaEditais({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onRequestDuplicate={onRequestDuplicate}
+                canManage={canManage}
               />
             ))}
           </tbody>

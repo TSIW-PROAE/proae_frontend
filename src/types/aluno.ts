@@ -15,6 +15,14 @@ export interface Aluno {
 export interface ListaAlunosResponse {
   sucesso: boolean;
   dados: Aluno[];
+  paginacao?: {
+    pagina: number;
+    limite: number;
+    total_itens: number;
+    total_paginas: number;
+    tem_anterior: boolean;
+    tem_proxima: boolean;
+  };
 }
 
 export interface ErrorResponse {

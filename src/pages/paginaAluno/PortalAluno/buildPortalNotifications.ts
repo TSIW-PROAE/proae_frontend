@@ -21,14 +21,25 @@ export type InscricaoPortalLike = {
   edital_id?: number;
   titulo_edital?: string;
   status_inscricao?: string;
+  situacao_solicitacao?:
+    | "SELECIONADA"
+    | "CLASSIFICADA"
+    | "INDEFERIDA"
+    | "DESISTENTE";
   status_beneficio_edital?: string;
+  resultado_fase?: string;
+  recurso_status?: string;
+  recurso_observacao?: string | null;
   observacao_admin?: string | null;
   possui_pendencias?: boolean;
   total_pendencias?: number;
   possui_novas_perguntas_pendentes?: boolean;
   total_novas_perguntas?: number;
-  is_formulario_geral?: boolean;
-  vaga?: { beneficio?: string };
+  novas_perguntas_pendentes_por_step?: Array<{
+    step_id?: string | number;
+    primeira_pergunta_id?: number;
+  }>;
+  vaga?: { beneficio?: string; vaga_id?: string | number };
 };
 
 function asBool(value: unknown): boolean {
@@ -50,8 +61,8 @@ function asNumber(value: unknown): number {
   return 0;
 }
 
-function prefixoProcesso(ins: InscricaoPortalLike): string {
-  return ins.is_formulario_geral ? "[Formulário geral] " : "";
+function prefixoProcesso(_ins: InscricaoPortalLike): string {
+  return "";
 }
 
 function sufixoBeneficio(ins: InscricaoPortalLike): string {
@@ -63,22 +74,26 @@ function norm(s: string | undefined | null): string {
   return (s ?? "").toLowerCase();
 }
 
+function resolveAjusteHref(ins: InscricaoPortalLike): string {
+  const query = new URLSearchParams();
+  query.set("corrigir", "1");
+  const first = ins.novas_perguntas_pendentes_por_step?.[0];
+  if (first?.step_id != null) query.set("step_id", String(first.step_id));
+  if (first?.primeira_pergunta_id != null) {
+    query.set("pergunta_id", String(first.primeira_pergunta_id));
+  }
+  if (ins.vaga?.vaga_id != null) query.set("vaga_id", String(ins.vaga.vaga_id));
+  if (ins.inscricao_id != null) query.set("inscricao_id", String(ins.inscricao_id));
+  const suffix = `?${query.toString()}`;
+
+  if (ins.edital_id != null) return `/questionario/${ins.edital_id}${suffix}`;
+  return "/portal-aluno/pendencias";
+}
+
 export function buildPortalNotifications(
   inscriptions: InscricaoPortalLike[] | undefined,
-  renovacaoPendente: boolean,
 ): PortalNotification[] {
   const list: PortalNotification[] = [];
-
-  if (renovacaoPendente) {
-    list.push({
-      id: "renovacao-obrigatoria",
-      title: "Renovação",
-      body: "Há formulário de renovação aberto. Conclua-o para voltar a se inscrever em editais.",
-      href: "/portal-aluno/formulario-renovacao",
-      variant: "warning",
-      urgent: true,
-    });
-  }
 
   for (const ins of inscriptions ?? []) {
     const sid = String(ins.inscricao_id ?? ins.edital_id ?? Math.random());
@@ -115,7 +130,7 @@ export function buildPortalNotifications(
           n > 0
             ? `${titulo}${suf}: ${n} ajuste(s)/complemento(s) pendente(s) para responder/corrigir.`
             : `${titulo}${suf}: há ajustes/complementos pendentes.`,
-        href: "/portal-aluno/pendencias",
+        href: resolveAjusteHref(ins),
         variant: "warning",
         urgent: true,
       });
@@ -123,61 +138,115 @@ export function buildPortalNotifications(
 
     const st = norm(ins.status_inscricao);
     const stRaw = ins.status_inscricao ?? "";
+    const situacao = (ins.situacao_solicitacao ?? "").toString().trim().toUpperCase();
+    const hasSituacaoExplicita = [
+      "SELECIONADA",
+      "CLASSIFICADA",
+      "INDEFERIDA",
+      "DESISTENTE",
+    ].includes(situacao);
 
-    if (st.includes("aprovad")) {
+    if (hasSituacaoExplicita) {
+      if (situacao === "SELECIONADA") {
+        list.push({
+          id: `sit-selecionada-${sid}`,
+          title: `${pref}Situação da solicitação`,
+          body: `${titulo}${suf}: solicitação selecionada.`,
+          variant: "success",
+          urgent: false,
+        });
+      } else if (situacao === "CLASSIFICADA") {
+        list.push({
+          id: `sit-classificada-${sid}`,
+          title: `${pref}Situação da solicitação`,
+          body: `${titulo}${suf}: solicitação classificada.`,
+          variant: "info",
+          urgent: false,
+        });
+      } else if (situacao === "INDEFERIDA") {
+        const obs = ins.observacao_admin?.trim();
+        list.push({
+          id: `sit-indeferida-${sid}`,
+          title: `${pref}Situação da solicitação`,
+          body: obs
+            ? `${titulo}${suf}: solicitação indeferida. Observação: ${obs}`
+            : `${titulo}${suf}: solicitação indeferida.`,
+          variant: "danger",
+          urgent: false,
+        });
+      } else if (situacao === "DESISTENTE") {
+        list.push({
+          id: `sit-desistente-${sid}`,
+          title: `${pref}Situação da solicitação`,
+          body: `${titulo}${suf}: solicitação marcada como desistente.`,
+          variant: "info",
+          urgent: false,
+        });
+      }
+    }
+
+    if (!hasSituacaoExplicita && st.includes("aprovad")) {
       list.push({
         id: `insc-aprov-${sid}`,
-        title: `${pref}Inscrição`,
+        title: `${pref}Análise da inscrição`,
         body: `${titulo}${suf}: inscrição aprovada na análise.`,
         variant: "success",
         urgent: false,
       });
     } else if (
-      st.includes("negad") ||
-      st.includes("reprov") ||
-      st.includes("rejeit")
+      !hasSituacaoExplicita &&
+      (st.includes("negad") ||
+        st.includes("reprov") ||
+        st.includes("rejeit"))
     ) {
       const obs = ins.observacao_admin?.trim();
       list.push({
         id: `insc-neg-${sid}`,
-        title: `${pref}Inscrição`,
+        title: `${pref}Análise da inscrição`,
         body: obs
           ? `${titulo}${suf}: inscrição não aprovada. Observação: ${obs}`
           : `${titulo}${suf}: inscrição não aprovada na análise.`,
         variant: "danger",
-        urgent: true,
+        /** Situação final — não há ação no portal; só informa na lista. */
+        urgent: false,
       });
-    } else if (stRaw === "Ajuste Necessário" || st.includes("ajuste")) {
+    } else if (
+      !hasSituacaoExplicita &&
+      (stRaw === "Ajuste Necessário" || st.includes("ajuste"))
+    ) {
       list.push({
         id: `insc-ajuste-${sid}`,
-        title: `${pref}Inscrição`,
+        title: `${pref}Análise da inscrição`,
         body: `${titulo}${suf}: ajuste necessário — verifique o questionário e as orientações.`,
+        href: resolveAjusteHref(ins),
         variant: "warning",
         urgent: true,
       });
     } else if (
-      st.includes("aguardando complemento") ||
-      st.includes("complemento") ||
-      st.includes("regulariza") ||
-      st.includes("pendente_regularizacao")
+      !hasSituacaoExplicita &&
+      (st.includes("aguardando complemento") ||
+        st.includes("complemento") ||
+        st.includes("regulariza") ||
+        st.includes("pendente_regularizacao"))
     ) {
       list.push({
         id: `insc-complemento-${sid}`,
-        title: `${pref}Inscrição`,
+        title: `${pref}Análise da inscrição`,
         body: `${titulo}${suf}: há ajustes/complementos pendentes na sua inscrição.`,
-        href: "/portal-aluno/pendencias",
+        href: resolveAjusteHref(ins),
         variant: "warning",
         urgent: true,
       });
     } else if (
-      st.includes("pendente") ||
-      st.includes("análise") ||
-      st.includes("analise") ||
-      st.includes("em andamento")
+      !hasSituacaoExplicita &&
+      (st.includes("pendente") ||
+        st.includes("análise") ||
+        st.includes("analise") ||
+        st.includes("em andamento"))
     ) {
       list.push({
         id: `insc-analise-${sid}`,
-        title: `${pref}Inscrição`,
+        title: `${pref}Análise da inscrição`,
         body: `${titulo}${suf}: inscrição em análise.`,
         variant: "info",
         urgent: false,
@@ -214,6 +283,55 @@ export function buildPortalNotifications(
         urgent: false,
       });
     }
+
+    const resultado = norm(ins.resultado_fase);
+    const recurso = norm(ins.recurso_status);
+    if (resultado.includes("preliminar")) {
+      list.push({
+        id: `res-prelim-${sid}`,
+        title: `${pref}Resultado da inscrição`,
+        body: `${titulo}${suf}: resultado preliminar publicado.`,
+        variant: "info",
+        urgent: false,
+      });
+    } else if (resultado.includes("final")) {
+      list.push({
+        id: `res-final-${sid}`,
+        title: `${pref}Resultado da inscrição`,
+        body: `${titulo}${suf}: resultado final publicado.`,
+        variant: "success",
+        urgent: false,
+      });
+    }
+
+    if (recurso.includes("solicitado")) {
+      list.push({
+        id: `recurso-sol-${sid}`,
+        title: `${pref}Recurso da inscrição`,
+        body: `${titulo}${suf}: recurso solicitado e aguardando julgamento.`,
+        variant: "warning",
+        urgent: true,
+      });
+    } else if (recurso.includes("deferido")) {
+      list.push({
+        id: `recurso-def-${sid}`,
+        title: `${pref}Recurso da inscrição`,
+        body: `${titulo}${suf}: recurso deferido.`,
+        variant: "success",
+        urgent: false,
+      });
+    } else if (recurso.includes("indeferido")) {
+      const obs = ins.recurso_observacao?.trim();
+      list.push({
+        id: `recurso-ind-${sid}`,
+        title: `${pref}Recurso da inscrição`,
+        body: obs
+          ? `${titulo}${suf}: recurso indeferido. Parecer: ${obs}`
+          : `${titulo}${suf}: recurso indeferido.`,
+        variant: "danger",
+        urgent: false,
+      });
+    }
   }
 
   return list;
@@ -221,4 +339,44 @@ export function buildPortalNotifications(
 
 export function countUrgentNotifications(notifications: PortalNotification[]): number {
   return notifications.filter((n) => n.urgent).length;
+}
+
+/** Chave no sessionStorage por usuário (e-mail). */
+export function portalNotifReadStorageKey(userKey: string): string {
+  const safe = (userKey || "anon").trim().toLowerCase();
+  return `proae_portal_notif_read_${safe}`;
+}
+
+export function loadReadPortalNotificationIds(userKey: string): Set<string> {
+  try {
+    const raw = sessionStorage.getItem(portalNotifReadStorageKey(userKey));
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((id): id is string => typeof id === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+export function saveReadPortalNotificationIds(
+  userKey: string,
+  ids: Set<string>,
+): void {
+  try {
+    sessionStorage.setItem(
+      portalNotifReadStorageKey(userKey),
+      JSON.stringify([...ids]),
+    );
+  } catch {
+    /* quota / modo privado */
+  }
+}
+
+/** Urgentes que o aluno ainda não abriu no sininho nesta sessão/navegador. */
+export function countUnreadUrgentNotifications(
+  notifications: PortalNotification[],
+  readIds: Set<string>,
+): number {
+  return notifications.filter((n) => n.urgent && !readIds.has(n.id)).length;
 }

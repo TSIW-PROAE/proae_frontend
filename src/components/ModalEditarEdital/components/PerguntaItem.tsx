@@ -17,6 +17,9 @@ import {
   XCircle,
   FileUp,
   X,
+  ArrowUp,
+  ArrowDown,
+  GitBranch,
 } from "lucide-react";
 import { PerguntaEditorItem, DadoAluno } from "../types";
 
@@ -24,6 +27,19 @@ interface PerguntaItemProps {
   pergunta: PerguntaEditorItem;
   index: number;
   dadosAluno?: DadoAluno[]; // Lista de dados do aluno disponíveis
+  /**
+   * Perguntas anteriores neste mesmo edital (já persistidas) que podem ser
+   * usadas como origem em uma regra condicional. Idealmente apenas as
+   * perguntas com tipo "multipla_escolha" / "multipla_selecao" são úteis,
+   * mas mantemos a lista completa para flexibilidade.
+   */
+  perguntasAnteriores?: { id: number | string; texto: string; opcoes?: string[] }[];
+  /** Permite mover a pergunta para cima na lista (manual). */
+  onMoveUp?: () => void;
+  /** Permite mover a pergunta para baixo na lista (manual). */
+  onMoveDown?: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
   onUpdate: (field: keyof PerguntaEditorItem, value: any) => void;
   onUpdateOpcao: (opcaoIndex: number, value: string) => void;
   onAddOpcao: () => void;
@@ -38,6 +54,11 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
   pergunta,
   index,
   dadosAluno = [],
+  perguntasAnteriores = [],
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
   onUpdate,
   onUpdateOpcao,
   onAddOpcao,
@@ -131,6 +152,48 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
           <div className="pergunta-header">
             <span className="pergunta-numero">Pergunta {index + 1}</span>
             <div className="pergunta-actions">
+              {(onMoveUp || onMoveDown) && (
+                <div
+                  className="pergunta-move-buttons"
+                  style={{ display: "flex", gap: 4 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMoveUp?.();
+                    }}
+                    disabled={isFirst}
+                    title="Mover para cima"
+                    aria-label="Mover pergunta para cima"
+                    className="move-pergunta-button"
+                    style={{
+                      opacity: isFirst ? 0.4 : 1,
+                      cursor: isFirst ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMoveDown?.();
+                    }}
+                    disabled={isLast}
+                    title="Mover para baixo"
+                    aria-label="Mover pergunta para baixo"
+                    className="move-pergunta-button"
+                    style={{
+                      opacity: isLast ? 0.4 : 1,
+                      cursor: isLast ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                </div>
+              )}
               <label
                 className={`pergunta-toggle-compact ${pergunta.vincularDadosAluno ? "toggle-disabled" : ""}`}
                 title={
@@ -481,6 +544,173 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
             </div>
           )}
 
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px dashed #d1d5db",
+              background: "#fcfcff",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}
+            >
+              <Hash size={16} />
+              <strong style={{ fontSize: 13 }}>Calculadora inteligente</strong>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "#666" }}>
+                Pontos por validação
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label style={{ fontSize: 12, color: "#475569" }} htmlFor={`pontuacao-${index}`}>
+                Pontuação se validada
+              </label>
+              <input
+                id={`pontuacao-${index}`}
+                type="number"
+                min={0}
+                step="0.5"
+                value={String(pergunta.pontuacao_validacao ?? 0)}
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  onUpdate(
+                    "pontuacao_validacao",
+                    Number.isFinite(raw) && raw >= 0 ? raw : 0,
+                  );
+                }}
+                style={{ width: 120 }}
+              />
+              <span style={{ fontSize: 12, color: "#64748b" }}>
+                pontos
+              </span>
+            </div>
+          </div>
+
+          {/* Bloco de condicional: a pergunta só aparece quando outra pergunta tiver determinado valor. */}
+          <div
+            className="pergunta-condicao-card"
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px dashed #c9d4e2",
+              background: "#f7faff",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}
+            >
+              <GitBranch size={16} />
+              <strong style={{ fontSize: 13 }}>Exibir somente quando…</strong>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "#666" }}>
+                {pergunta.condicao ? "Condicional ativa" : "Sempre visível"}
+              </span>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <select
+                aria-label="Pergunta de origem da condição"
+                value={pergunta.condicao?.pergunta_id_origem ?? ""}
+                onChange={(e) => {
+                  const valorBruto = e.target.value;
+                  if (!valorBruto) {
+                    onUpdate("condicao", null);
+                    return;
+                  }
+                  const idOrigem = Number(valorBruto);
+                  onUpdate("condicao", {
+                    pergunta_id_origem: idOrigem,
+                    operador: pergunta.condicao?.operador ?? "equals",
+                    valor: pergunta.condicao?.valor ?? "",
+                  });
+                }}
+                style={{ flex: "1 1 280px" }}
+              >
+                <option value="">— Sempre exibir —</option>
+                {perguntasAnteriores.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {String(p.texto).slice(0, 60)}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                aria-label="Operador da condição"
+                value={pergunta.condicao?.operador ?? "equals"}
+                onChange={(e) => {
+                  if (!pergunta.condicao) return;
+                  onUpdate("condicao", {
+                    ...pergunta.condicao,
+                    operador: e.target.value as any,
+                  });
+                }}
+                disabled={!pergunta.condicao}
+                style={{ flex: "0 0 140px" }}
+              >
+                <option value="equals">igual a</option>
+                <option value="notEquals">diferente de</option>
+                <option value="includes">inclui</option>
+                <option value="notIncludes">não inclui</option>
+              </select>
+
+              {(() => {
+                const origem = perguntasAnteriores.find(
+                  (p) => Number(p.id) === Number(pergunta.condicao?.pergunta_id_origem),
+                );
+                const opcoes = origem?.opcoes ?? [];
+                const valorAtual = pergunta.condicao?.valor;
+                if (opcoes.length > 0) {
+                  // Mostra select com as opções da pergunta origem
+                  return (
+                    <select
+                      aria-label="Valor de comparação"
+                      value={Array.isArray(valorAtual) ? (valorAtual[0] ?? "") : (valorAtual ?? "")}
+                      onChange={(e) => {
+                        if (!pergunta.condicao) return;
+                        onUpdate("condicao", {
+                          ...pergunta.condicao,
+                          valor: e.target.value,
+                        });
+                      }}
+                      disabled={!pergunta.condicao}
+                      style={{ flex: "1 1 220px" }}
+                    >
+                      <option value="">— Selecione um valor —</option>
+                      {opcoes.map((opc) => (
+                        <option key={opc} value={opc}>
+                          {opc}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                }
+                return (
+                  <input
+                    type="text"
+                    aria-label="Valor de comparação"
+                    placeholder="Valor exato esperado na resposta"
+                    value={Array.isArray(valorAtual) ? valorAtual.join(", ") : (valorAtual ?? "")}
+                    onChange={(e) => {
+                      if (!pergunta.condicao) return;
+                      onUpdate("condicao", {
+                        ...pergunta.condicao,
+                        valor: e.target.value,
+                      });
+                    }}
+                    disabled={!pergunta.condicao}
+                    style={{ flex: "1 1 220px" }}
+                  />
+                );
+              })()}
+            </div>
+            {perguntasAnteriores.length === 0 && (
+              <p style={{ marginTop: 8, fontSize: 11, color: "#777" }}>
+                Salve uma pergunta antes desta para usá-la como origem de uma condição.
+              </p>
+            )}
+          </div>
+
           {/* Rodapé com botão de salvar */}
           <div className="pergunta-footer">
             <button
@@ -595,6 +825,12 @@ const PerguntaItem: React.FC<PerguntaItemProps> = ({
                     : "Vinculada"}
                 </span>
               )}
+              <span
+                className="tipo-badge-saved"
+                title="Pontuação aplicada quando esta resposta for validada na análise."
+              >
+                {Number(pergunta.pontuacao_validacao ?? 0).toFixed(2)} pts
+              </span>
             </div>
           </div>
         </>

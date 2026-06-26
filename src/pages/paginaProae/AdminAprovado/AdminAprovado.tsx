@@ -3,12 +3,17 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { Spinner } from "@heroui/react";
 import { CheckCircle2 } from "lucide-react";
+import { adminPerfilLabel, normalizeAdminPerfil } from "@/utils/authRoles";
 
 export default function AdminAprovado() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { checkAuth } = useContext(AuthContext);
   const sucesso = searchParams.get("sucesso") === "true";
+  const perfilAprovado = searchParams.get("perfil");
+  const perfilLabel = perfilAprovado
+    ? adminPerfilLabel(normalizeAdminPerfil(perfilAprovado))
+    : null;
 
   useEffect(() => {
     const handleApproval = async () => {
@@ -53,10 +58,16 @@ export default function AdminAprovado() {
             
             <div className="space-y-4 text-gray-600">
               <p className="text-lg">
-                Seu cadastro foi aprovado com sucesso.
+                Cadastro aprovado com sucesso.
               </p>
+              {perfilLabel && (
+                <p className="text-sm">
+                  Perfil de acesso atribuído:{" "}
+                  <span className="font-semibold text-[#183b4e]">{perfilLabel}</span>
+                </p>
+              )}
               <p className="text-base">
-                Você será redirecionado para a página inicial em instantes...
+                Redirecionando para a página inicial em instantes...
               </p>
             </div>
 

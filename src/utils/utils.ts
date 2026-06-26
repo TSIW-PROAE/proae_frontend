@@ -1,4 +1,5 @@
-import Cookie from "js-cookie"
+import Cookie from "js-cookie";
+import { API_BASE_URL } from "@/config/api";
 
 export function getCookie(name: string): string | null {
   const cookie = Cookie.get(name);
@@ -44,4 +45,32 @@ export function normalizeUrlForHref(raw: string | undefined | null): string {
     return `https://${u.replace(/^\/+/, "")}`;
   }
   return u;
+}
+
+/**
+ * Extrai o primeiro link de documento do edital (`edital_url` da API).
+ * A API envia `{ titulo_documento, url_documento }[]` — usar o array[0] direto
+ * no href gera `[object Object]` e 404 no navegador.
+ */
+export function resolvePrimeiroLinkDocumentoEdital(editalUrl: unknown): string | null {
+  if (!Array.isArray(editalUrl) || editalUrl.length === 0) return null;
+
+  const first = editalUrl[0];
+  let raw: string | undefined;
+  if (typeof first === "string") {
+    raw = first;
+  } else if (first && typeof first === "object") {
+    raw = (first as { url_documento?: string }).url_documento;
+  }
+  if (!raw?.trim()) return null;
+
+  let href = normalizeUrlForHref(raw);
+  if (href === "#") return null;
+
+  // Caminho relativo servido pela API (ex.: MinIO proxy): evita 404 no host do Vite.
+  if (href.startsWith("/") && !href.startsWith("//")) {
+    href = `${API_BASE_URL.replace(/\/+$/, "")}${href}`;
+  }
+
+  return href;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext, useRef, type RefObject } from "react";
 import {
   Edital,
   CreateEditalRequest,
@@ -6,7 +6,6 @@ import {
 } from "../../../types/edital";
 import { editalService } from "../../../services/EditalService/editalService";
 import { stepService } from "../../../services/StepService/stepService";
-import { perguntaService } from "../../../services/PerguntaService/perguntaService";
 import FormularioEdital from "../../../components/FormularioEdital/FormularioEdital";
 import ListaEditais from "../../../components/ListaEditais/ListaEditais";
 import ModalEditarEdital from "../../../components/ModalEditarEdital/ModalEditarEdital";
@@ -15,18 +14,28 @@ import {
   Plus,
   AlertCircle,
   BookOpen,
+  Lock,
   X,
   Settings,
   Trash2,
 } from "lucide-react";
 import "./ProcessosProae.css";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
+import { useSearchParams } from "react-router-dom";
 import {
   NIVEL_GRADUACAO,
   NIVEL_POS_GRADUACAO,
 } from "@/constants/nivelAcademico";
+import { AuthContext } from "@/context/AuthContext";
+import { canManageEditais } from "@/utils/authRoles";
+import { getApiErrorMessage } from "@/utils/apiError";
 
 export default function ProcessosProae() {
+  const { userInfo } = useContext(AuthContext);
+  const podeGerenciarEditais = canManageEditais(userInfo?.adminPerfil ?? null);
+  const [searchParams] = useSearchParams();
+  const tour = searchParams.get("tour");
+
   const [editais, setEditais] = useState<Edital[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -36,16 +45,47 @@ export default function ProcessosProae() {
   const [showForm, setShowForm] = useState(false);
   const [editingEdital, setEditingEdital] = useState<Edital | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [tituloEdital, setTituloEdital] = useState("");
   const [nivelNovoEdital, setNivelNovoEdital] = useState<string>(NIVEL_GRADUACAO);
+  const [aplicarTemplateCadastro, setAplicarTemplateCadastro] = useState(false);
+  const [isFormularioRenovacao, setIsFormularioRenovacao] = useState(false);
+  const [isCadastroGeral, setIsCadastroGeral] = useState(false);
+  const [inscricoesAbertas, setInscricoesAbertas] = useState(false);
+  const [ajustesAbertos, setAjustesAbertos] = useState(false);
   const [isCreatingEdital, setIsCreatingEdital] = useState(false);
   const [isDeletingEdital, setIsDeletingEdital] = useState(false);
   const [duplicatingEdital, setDuplicatingEdital] = useState<Edital | null>(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const listaRef = useRef<HTMLElement>(null);
+  const tourHandledRef = useRef<string | null>(null);
 
   useEffect(() => {
     carregarEditais();
   }, []);
+
+  useEffect(() => {
+    if (!tour) return;
+    if (tourHandledRef.current === tour) return;
+    const map: Record<string, { ref: RefObject<HTMLElement>; label: string }> = {
+      novo: { ref: headerRef, label: "criação de edital" },
+      lista: { ref: listaRef, label: "lista de editais" },
+    };
+    const target = map[tour];
+    if (!target?.ref.current) return;
+    target.ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (tour === "novo") {
+      if (podeGerenciarEditais) {
+        setShowCreateModal(true);
+      } else {
+        toast("Perfil atual em modo consulta: sem permissão para criar edital.");
+      }
+    } else {
+      toast(`Tutorial: foco em "${target.label}".`);
+    }
+    tourHandledRef.current = tour;
+  }, [tour, podeGerenciarEditais]);
 
   const carregarEditais = async () => {
     setIsLoading(true);
@@ -101,6 +141,7 @@ export default function ProcessosProae() {
 
     setEditalToDelete(edital);
     setShowDeleteModal(true);
+    setDeleteError(null);
     setError(null);
   };
 
@@ -108,14 +149,17 @@ export default function ProcessosProae() {
     if (!editalToDelete?.id) return;
 
     setIsDeletingEdital(true);
-    setError(null);
+    setDeleteError(null);
     try {
       await editalService.deletarEdital(editalToDelete.id);
       await carregarEditais();
       setShowDeleteModal(false);
       setEditalToDelete(null);
+      setDeleteError(null);
     } catch (err) {
-      setError("Erro ao deletar edital. Tente novamente.");
+      setDeleteError(
+        getApiErrorMessage(err) || "Erro ao deletar edital. Tente novamente.",
+      );
       console.error("Erro ao deletar edital:", err);
     } finally {
       setIsDeletingEdital(false);
@@ -125,7 +169,7 @@ export default function ProcessosProae() {
   const handleCancelarDelecao = () => {
     setShowDeleteModal(false);
     setEditalToDelete(null);
-    setError(null);
+    setDeleteError(null);
   };
 
   const handleCloseEditModal = async () => {
@@ -151,6 +195,11 @@ export default function ProcessosProae() {
     setShowCreateModal(true);
     setTituloEdital("");
     setNivelNovoEdital(NIVEL_GRADUACAO);
+    setAplicarTemplateCadastro(false);
+    setIsFormularioRenovacao(false);
+    setIsCadastroGeral(false);
+    setInscricoesAbertas(false);
+    setAjustesAbertos(false);
     setError(null);
   };
 
@@ -166,11 +215,22 @@ export default function ProcessosProae() {
       const novoEdital = await editalService.criarEdital({
         titulo_edital: tituloEdital.trim(),
         nivel_academico: nivelNovoEdital,
+        aplicar_template_cadastro: aplicarTemplateCadastro || isCadastroGeral,
+        is_formulario_renovacao: isFormularioRenovacao,
+        is_cadastro_geral: isCadastroGeral,
+        inscricoes_abertas: inscricoesAbertas,
+        ajustes_abertos: ajustesAbertos,
       });
+
       await carregarEditais();
       setShowCreateModal(false);
       setTituloEdital("");
       setNivelNovoEdital(NIVEL_GRADUACAO);
+      setAplicarTemplateCadastro(false);
+      setIsFormularioRenovacao(false);
+    setIsCadastroGeral(false);
+      setInscricoesAbertas(false);
+      setAjustesAbertos(false);
       if (novoEdital?.id) {
         setEditingEdital(novoEdital);
         setShowEditModal(true);
@@ -187,6 +247,11 @@ export default function ProcessosProae() {
     setShowCreateModal(false);
     setTituloEdital("");
     setNivelNovoEdital(NIVEL_GRADUACAO);
+    setAplicarTemplateCadastro(false);
+    setIsFormularioRenovacao(false);
+    setIsCadastroGeral(false);
+    setInscricoesAbertas(false);
+    setAjustesAbertos(false);
     setError(null);
   };
 
@@ -226,6 +291,11 @@ export default function ProcessosProae() {
       const novo = await editalService.criarEdital({
         titulo_edital: `${duplicatingEdital.titulo_edital} (cópia)`,
         nivel_academico: nivelCopia,
+        aplicar_template_cadastro: false,
+        is_formulario_renovacao:
+          duplicatingEdital.is_formulario_renovacao ?? false,
+        inscricoes_abertas: duplicatingEdital.inscricoes_abertas ?? false,
+        ajustes_abertos: duplicatingEdital.ajustes_abertos ?? false,
       });
 
       // 2) Atualizar infos do novo (descricao, documentos, etapas básicas se existirem no payload)
@@ -234,6 +304,10 @@ export default function ProcessosProae() {
           descricao: duplicatingEdital.descricao,
           edital_url: duplicatingEdital.edital_url,
           nivel_academico: nivelCopia,
+          is_formulario_renovacao:
+            duplicatingEdital.is_formulario_renovacao ?? false,
+          inscricoes_abertas: duplicatingEdital.inscricoes_abertas ?? false,
+          ajustes_abertos: duplicatingEdital.ajustes_abertos ?? false,
           // Cronograma (etapa_edital) é parte do edital; duplicamos aqui
           etapa_edital: Array.isArray(duplicatingEdital.etapa_edital)
             ? duplicatingEdital.etapa_edital
@@ -241,7 +315,7 @@ export default function ProcessosProae() {
         });
       }
 
-      // 3) Clonar vagas do edital
+      // 3) Clonar vagas
       if (novo?.id && duplicatingEdital.id) {
         const vagasOriginais = await editalService.buscarVagasDoEdital(
           duplicatingEdital.id
@@ -250,7 +324,7 @@ export default function ProcessosProae() {
           await Promise.all(
             vagasOriginais.map((v) =>
               editalService.criarVaga({
-                edital_id: novo.id!,
+                edital_id: Number(novo.id) || 0,
                 beneficio: v.beneficio,
                 descricao_beneficio: v.descricao_beneficio,
                 numero_vagas: v.numero_vagas,
@@ -260,42 +334,14 @@ export default function ProcessosProae() {
         }
       }
 
-      // 4) Clonar steps e 5) perguntas
-      if (novo?.id && Array.isArray(duplicatingEdital.etapa_edital)) {
-        // Buscar steps originais via stepService (se necessário, caso etapas venham sem id)
-        // Aqui, se não houver listagem de steps por edital além de etapa_edital, pulamos e criamos apenas texto dos steps do edital original
-      }
-
-      // Buscar steps reais do edital original
-      // Alguns locais usam StepService.listarStepsPorEdital
-      const stepsOriginais = duplicatingEdital.id
-        ? await stepService.listarStepsPorEdital(duplicatingEdital.id.toString())
-        : [];
-
-      // Criar steps do novo
-      if (novo?.id && stepsOriginais.length) {
-        for (const step of stepsOriginais) {
-          const novoStep = await stepService.criarStep( novo.id!, step.texto || step.titulo || "",);
-
-          // Clonar perguntas do step, se houver
-          const perguntas = step.id
-            ? await perguntaService.listarPerguntasPorStep(step.id)
-            : step.perguntas || [];
-          if (novoStep?.id && perguntas.length) {
-            for (const p of perguntas) {
-              await perguntaService.criarPergunta({
-                step_id: novoStep.id,
-                pergunta: (p as any).pergunta || p.pergunta || "",
-                obrigatoriedade:
-                  (p as any).obrigatoriedade ?? p.obrigatoriedade ?? false,
-                tipo_Pergunta:
-                  (p as any).tipo_Pergunta || p.tipo_Pergunta || "input",
-                ...(p as any).tipo_formatacao
-                  ? { tipo_formatacao: (p as any).tipo_formatacao }
-                  : {},
-              } as any);
-            }
-          }
+      // 4) Clonar steps e perguntas em uma única chamada transacional no
+      // backend, preservando opções, vínculos com dados, ordem manual e
+      // condições de exibição. Substitui a clonagem múltipla em N chamadas.
+      if (novo?.id && duplicatingEdital.id) {
+        try {
+          await stepService.clonarFormulario(novo.id, duplicatingEdital.id, false);
+        } catch (err) {
+          console.error("Falha ao clonar formulário do edital original", err);
         }
       }
 
@@ -320,7 +366,11 @@ export default function ProcessosProae() {
       <Toaster position="top-right" />
       <div className="processos-container">
         {/* Header Principal */}
-        <header className="processos-header">
+        <header
+          ref={headerRef}
+          className="processos-header"
+          style={tour === "novo" ? { outline: "2px solid #60a5fa", borderRadius: "12px" } : undefined}
+        >
           <div className="header-content">
             <div className="welcome-section">
               <div className="avatar-container">
@@ -337,14 +387,24 @@ export default function ProcessosProae() {
             </div>
 
             <div className="header-actions">
-              <button
-                onClick={handleNovoEdital}
-                className="btn-novo-edital"
-                disabled={isLoading}
-              >
-                <Plus className="w-5 h-5" />
-                <span>Novo Edital</span>
-              </button>
+              {podeGerenciarEditais ? (
+                <button
+                  onClick={handleNovoEdital}
+                  className="btn-novo-edital"
+                  disabled={isLoading}
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Novo Edital</span>
+                </button>
+              ) : (
+                <div
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600"
+                  title="Apenas perfis gerenciais podem criar editais."
+                >
+                  <Lock className="w-4 h-4" />
+                  Somente consulta
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -385,6 +445,122 @@ export default function ProcessosProae() {
               </div>
 
               <div className="modal-body">
+                <div className="input-group">
+                  <label htmlFor="edital-cadastro-geral" className="input-label">
+                    Tipo de processo
+                  </label>
+                  <label
+                    htmlFor="edital-cadastro-geral"
+                    className="flex items-center gap-2 text-sm text-gray-700"
+                  >
+                    <input
+                      id="edital-cadastro-geral"
+                      type="checkbox"
+                      checked={isCadastroGeral}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsCadastroGeral(checked);
+                        if (checked) {
+                          setIsFormularioRenovacao(false);
+                          setAplicarTemplateCadastro(true);
+                        }
+                      }}
+                      disabled={isCreatingEdital}
+                    />
+                    Chamada de Cadastro Geral (CG)
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Processo de comprovação socioeconômica — requisito para editais de benefícios.
+                  </p>
+                </div>
+                <div className="input-group">
+                  <label htmlFor="edital-renovacao" className="input-label">
+                    Renovação
+                  </label>
+                  <label
+                    htmlFor="edital-renovacao"
+                    className="flex items-center gap-2 text-sm text-gray-700"
+                  >
+                    <input
+                      id="edital-renovacao"
+                      type="checkbox"
+                      checked={isFormularioRenovacao}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsFormularioRenovacao(checked);
+                        if (checked) setIsCadastroGeral(false);
+                      }}
+                      disabled={isCreatingEdital || isCadastroGeral}
+                    />
+                    Este edital é de renovação
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Use para o processo de renovação de benefícios.
+                  </p>
+                </div>
+                <div className="input-group">
+                  <label htmlFor="edital-inscricoes-abertas" className="input-label">
+                    Permissão de novas inscrições
+                  </label>
+                  <label
+                    htmlFor="edital-inscricoes-abertas"
+                    className="flex items-center gap-2 text-sm text-gray-700"
+                  >
+                    <input
+                      id="edital-inscricoes-abertas"
+                      type="checkbox"
+                      checked={inscricoesAbertas}
+                      onChange={(e) => setInscricoesAbertas(e.target.checked)}
+                      disabled={isCreatingEdital}
+                    />
+                    Permitir novas inscrições agora
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ativa o botão de inscrição para alunos (respeitando o período da etapa de inscrição no cronograma).
+                  </p>
+                </div>
+                <div className="input-group">
+                  <label htmlFor="edital-ajustes-abertos" className="input-label">
+                    Permissão de ajustes
+                  </label>
+                  <label
+                    htmlFor="edital-ajustes-abertos"
+                    className="flex items-center gap-2 text-sm text-gray-700"
+                  >
+                    <input
+                      id="edital-ajustes-abertos"
+                      type="checkbox"
+                      checked={ajustesAbertos}
+                      onChange={(e) => setAjustesAbertos(e.target.checked)}
+                      disabled={isCreatingEdital}
+                    />
+                    Permitir envio de ajustes agora
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Libera correções de pendências pelos alunos (respeitando prazos e regras do edital).
+                  </p>
+                </div>
+                <div className="input-group">
+                  <label htmlFor="template-cadastro" className="input-label">
+                    Template de cadastro
+                  </label>
+                  <label
+                    htmlFor="template-cadastro"
+                    className="flex items-center gap-2 text-sm text-gray-700"
+                  >
+                    <input
+                      id="template-cadastro"
+                      type="checkbox"
+                      checked={aplicarTemplateCadastro}
+                      onChange={(e) => setAplicarTemplateCadastro(e.target.checked)}
+                      disabled={isCreatingEdital}
+                    />
+                    Aplicar perguntas padrão com pesos
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Quando marcado, o edital já nasce com o template de cadastro.
+                  </p>
+                </div>
                 <div className="input-group">
                   <label htmlFor="titulo-edital" className="input-label">
                     Título do Edital
@@ -470,6 +646,12 @@ export default function ProcessosProae() {
               </div>
 
               <div className="modal-body">
+                {deleteError && (
+                  <div className="modal-error-message" role="alert">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                    <span>{deleteError}</span>
+                  </div>
+                )}
                 <div className="delete-warning">
                   <div className="warning-icon">
                     <AlertCircle className="w-12 h-12 text-red-500" />
@@ -550,7 +732,11 @@ export default function ProcessosProae() {
               </div>
             </section>
           ) : (
-            <section className="editais-section">
+            <section
+              ref={listaRef}
+              className="editais-section"
+              style={tour === "lista" ? { outline: "2px solid #34d399", borderRadius: "12px" } : undefined}
+            >
               <div className="section-header">
                 <div className="header-info">
                   <BookOpen className="w-5 h-5 text-blue-600" />
@@ -564,6 +750,7 @@ export default function ProcessosProae() {
                   onDelete={handleDeletarEdital}
                   isLoading={isLoading}
                   onRequestDuplicate={abrirModalDuplicar}
+                  canManage={podeGerenciarEditais}
                 />
               </div>
             </section>

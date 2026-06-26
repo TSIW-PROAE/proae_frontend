@@ -10,6 +10,15 @@ interface CronogramaSectionProps {
   onPersist?: (etapas: EditableEtapa[]) => void;
 }
 
+const ETAPA_TIPO_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "", label: "Sem tipo (opcional)" },
+  { value: "INSCRICAO", label: "Inscrição" },
+  { value: "RESULTADO_PRELIMINAR", label: "Resultado preliminar" },
+  { value: "RECURSO", label: "Recurso" },
+  { value: "RESULTADO_FINAL", label: "Resultado final" },
+  { value: "ACOMPANHAMENTO", label: "Acompanhamento" },
+];
+
 /**
  * Ordena as etapas por data_inicio e recalcula ordem_elemento automaticamente.
  */
@@ -28,19 +37,34 @@ const sortAndReindex = (etapas: EditableEtapa[]): EditableEtapa[] => {
 /**
  * Verifica se uma etapa com as datas informadas conflita (sobrepõe) com alguma outra etapa já existente.
  * Retorna true se houver conflito.
+ *
+ * Importante: usamos comparação **estrita** (`<`/`>`), de modo que duas
+ * etapas adjacentes — uma terminando no mesmo dia em que a próxima começa,
+ * ou em dias subsequentes — NÃO são consideradas em conflito. Antes, com
+ * `<=`/`>=`, o sistema rejeitava esse encadeamento natural (por exemplo:
+ * "Análise: 10–15/05" e "Resultado: 15/05–20/05") e impedia administradores
+ * de editar etapas em dias subsequentes.
+ *
+ * Datas inválidas / vazias são ignoradas para não bloquear a digitação em
+ * estados intermediários (o usuário pode estar prestes a corrigir o valor).
  */
 const hasDateOverlap = (etapas: EditableEtapa[], currentIndex: number, dataInicio: string, dataFim: string): boolean => {
   if (!dataInicio || !dataFim) return false;
   const newStart = new Date(dataInicio).getTime();
   const newEnd = new Date(dataFim).getTime();
+  if (Number.isNaN(newStart) || Number.isNaN(newEnd)) return false;
+  // Inversão: ainda não validamos aqui, deixamos para o save final.
+  if (newStart > newEnd) return false;
 
   return etapas.some((etapa, idx) => {
     if (idx === currentIndex) return false;
     if (!etapa.value.data_inicio || !etapa.value.data_fim) return false;
     const existStart = new Date(etapa.value.data_inicio).getTime();
     const existEnd = new Date(etapa.value.data_fim).getTime();
-    // Sobreposição: novo começa antes do fim existente E novo termina depois do início existente
-    return newStart <= existEnd && newEnd >= existStart;
+    if (Number.isNaN(existStart) || Number.isNaN(existEnd)) return false;
+    // Sobreposição estrita: o novo intervalo começa **antes** do fim do
+    // existente E termina **depois** do início do existente.
+    return newStart < existEnd && newEnd > existStart;
   });
 };
 
@@ -54,11 +78,18 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
       value: { ...newEtapas[index].value, [field]: value },
     };
 
-    // Verificar conflito de datas em tempo real ao alterar datas
+    // Verificar conflito de datas em tempo real apenas quando ambas as
+    // datas estão preenchidas e formam um intervalo coerente — caso
+    // contrário o aviso aparecia "tremendo" enquanto o usuário ainda
+    // estava terminando de digitar a segunda data.
     if (field === "data_inicio" || field === "data_fim") {
       const di = field === "data_inicio" ? value : newEtapas[index].value.data_inicio;
       const df = field === "data_fim" ? value : newEtapas[index].value.data_fim;
-      if (hasDateOverlap(newEtapas, index, di, df)) {
+      const tStart = di ? new Date(di).getTime() : NaN;
+      const tEnd = df ? new Date(df).getTime() : NaN;
+      const intervaloCoerente =
+        !Number.isNaN(tStart) && !Number.isNaN(tEnd) && tStart <= tEnd;
+      if (intervaloCoerente && hasDateOverlap(newEtapas, index, di, df)) {
         setOverlapWarning(`As datas da etapa "${newEtapas[index].value.etapa || "(sem nome)"}" conflitam com outra etapa existente.`);
       } else {
         setOverlapWarning(null);
@@ -87,6 +118,7 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
     const newEtapa: EditableEtapa = {
       value: {
         etapa: "",
+        tipo_etapa: "",
         ordem_elemento: etapas.length + 1,
         data_inicio: "",
         data_fim: "",
@@ -99,6 +131,16 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
   const saveEtapa = (index: number) => {
     const etapa = etapas[index];
     if (!etapa.value.etapa || !etapa.value.data_inicio || !etapa.value.data_fim) return;
+
+    // Validação: data de início não pode ser posterior à data de fim.
+    const ti = new Date(etapa.value.data_inicio).getTime();
+    const tf = new Date(etapa.value.data_fim).getTime();
+    if (!Number.isNaN(ti) && !Number.isNaN(tf) && ti > tf) {
+      setOverlapWarning(
+        `A data de início da etapa "${etapa.value.etapa}" é posterior à data de término. Ajuste para continuar.`,
+      );
+      return;
+    }
 
     // Bloquear se houver conflito de datas
     if (hasDateOverlap(etapas, index, etapa.value.data_inicio, etapa.value.data_fim)) {
@@ -162,6 +204,18 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
                     onChange={(e) => updateEtapa(index, "etapa", e.target.value)}
                     className="timeline-input"
                   />
+                  <select
+                    value={etapa.value.tipo_etapa || ""}
+                    onChange={(e) => updateEtapa(index, "tipo_etapa", e.target.value)}
+                    className="date-input"
+                    title="Tipo da etapa (opcional)"
+                  >
+                    {ETAPA_TIPO_OPTIONS.map((opt) => (
+                      <option key={opt.value || "none"} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                   <div className="timeline-dates">
                     <input
                       type="date"
@@ -170,7 +224,7 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
                       onChange={(e) => updateEtapa(index, "data_inicio", e.target.value)}
                       className="date-input"
                     />
-                    <span>até</span>
+                    <span className="timeline-dates-separator">até</span>
                     <input
                       type="date"
                       value={etapa.value.data_fim}
@@ -192,6 +246,11 @@ const CronogramaSection: React.FC<CronogramaSectionProps> = ({ etapas, openCrono
                 <div className="timeline-display">
                   <div className="timeline-content">
                     <h4>{etapa.value.etapa}</h4>
+                    {etapa.value.tipo_etapa && (
+                      <div className="timeline-period">
+                        Tipo: {etapa.value.tipo_etapa}
+                      </div>
+                    )}
                     <div className="timeline-period">
                       {new Date(etapa.value.data_inicio).toLocaleDateString("pt-BR")} - {new Date(etapa.value.data_fim).toLocaleDateString("pt-BR")}
                     </div>

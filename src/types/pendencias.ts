@@ -13,9 +13,8 @@ export interface Pendencia {
   inscricao_id: string;
   vaga_id?: number | null;
   edital_id?: number | null;
-  is_formulario_geral?: boolean;
-  is_formulario_renovacao?: boolean;
   titulo_edital: string;
+  ajustes_abertos?: boolean;
   vaga_beneficio?: string | null;
   documentos: Documento[];
   ajustes_resposta?: AjusteResposta[];

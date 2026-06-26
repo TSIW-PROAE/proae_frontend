@@ -22,6 +22,8 @@ export interface QuestionarioItem {
   titulo: string;
   nome: string;
   previewPerguntas: string[];
+  /** Total de perguntas no step (quando conhecido via API). */
+  totalPerguntas?: number;
 }
 
 export interface EditableQuestionario {
@@ -35,6 +37,12 @@ export interface DadoAluno {
   tipo: "text" | "number" | "date" | "select" | "file";
   obrigatorio: boolean;
   opcoes?: string[];
+}
+
+export interface PerguntaCondicaoEditor {
+  pergunta_id_origem: number;
+  operador: 'equals' | 'notEquals' | 'includes' | 'notIncludes';
+  valor: string | string[];
 }
 
 export interface PerguntaEditorItem {
@@ -55,6 +63,12 @@ export interface PerguntaEditorItem {
   dadoVinculado?: string; // nome do dado do aluno vinculado
   dadoId?: string; // ID do dado vinculado no backend
   isEditing?: boolean;
+  /** Posição relativa dentro do step (asc). */
+  ordem?: number;
+  /** Regra de exibição condicional (referencia outra pergunta deste edital). */
+  condicao?: PerguntaCondicaoEditor | null;
+  /** Pontos aplicados quando a resposta for validada na análise. */
+  pontuacao_validacao?: number;
 }
 
 export const statusLabelMap: Record<StatusEdital, string> = {

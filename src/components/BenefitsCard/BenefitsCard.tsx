@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardHeader, CardBody, CardFooter, Chip } from "@heroui/react";
-import { Award, CheckCircle2, FileCheck2 } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 interface Benefit {
   titulo_beneficio: string;
@@ -37,7 +37,7 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
         backgroundColor,
         borderColor,
         color,
-        height: "100%",
+        minHeight: "100%",
         display: "flex",
         flexDirection: "column",
         boxShadow:
@@ -46,17 +46,15 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
         border: "1px solid rgba(229, 231, 235, 0.8)",
       }}
     >
-      <CardHeader className="pb-2 flex flex-col gap-2 items-stretch">
-        <div className="flex gap-2 items-center">
-          <Award className="w-5 h-5 text-emerald-600 shrink-0" />
+      <CardHeader className="pb-4 pt-5 px-6 flex flex-col gap-2 items-stretch">
+        <div className="flex gap-3 items-start">
+          <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
           <div>
-            <h3 className="text-2xl font-semibold text-gray-900 m-0">
+            <h3 className="text-xl font-semibold text-gray-900 m-0 leading-tight">
               Benefícios no edital
             </h3>
-            <p className="text-sm text-gray-600 m-0 mt-1 font-normal leading-snug">
-              Aqui aparecem processos em que você está{" "}
-              <strong>inscrito</strong>, com <strong>inscrição aprovada</strong> na
-              análise e <strong>homologado como beneficiário</strong> da vaga.
+            <p className="text-sm text-gray-600 m-0 mt-1.5 font-normal leading-relaxed max-w-2xl">
+              Processos em que sua inscrição foi homologada como beneficiário.
             </p>
           </div>
         </div>
@@ -64,64 +62,46 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
 
       {activeBenefits.length > 0 ? (
         <>
-          <div
-            className="grid grid-cols-1 sm:grid-cols-12 gap-2 px-6 py-3 border-b font-medium text-xs sm:text-sm bg-gray-50"
-            style={{
-              color: "#6b7280",
-              borderColor: "#e5e7eb",
-              backgroundColor: "#f8fafc",
-            }}
-          >
-            <span className="sm:col-span-4">Processo / vaga</span>
-            <span className="sm:col-span-3 hidden sm:inline">Inscrição e benefício</span>
-            <span className="sm:col-span-2">Inscrito em</span>
-            <span className="sm:col-span-3">Situação</span>
-          </div>
-
-          <CardBody className="p-0 flex-1 overflow-y-auto benefits-list">
-            <ul className="divide-y divide-gray-200">
+          <CardBody className="px-6 pt-0 pb-4 flex-1 benefits-list">
+            <ul className="flex flex-col gap-3 m-0 p-0 list-none">
               {activeBenefits.map((benefit, idx) => (
                 <li
                   key={idx}
-                  className="grid grid-cols-1 sm:grid-cols-12 gap-3 px-6 py-4 text-sm items-start hover:bg-gray-50 transition-colors"
-                  style={{ color }}
+                  className="rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-4 sm:px-5 sm:py-4"
                 >
-                  <div className="sm:col-span-4 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate" title={benefit.titulo_edital || benefit.titulo_beneficio}>
-                      {benefit.titulo_edital || "Edital"}
-                    </p>
-                    <p className="text-xs text-gray-600 mt-0.5 truncate" title={benefit.titulo_beneficio}>
-                      Benefício: {benefit.titulo_beneficio}
-                    </p>
-                    {benefit.resumo_para_aluno && (
-                      <p className="text-xs text-gray-500 mt-2 leading-relaxed border-l-2 border-emerald-200 pl-2">
-                        {benefit.resumo_para_aluno}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <p
+                        className="font-semibold text-gray-900 text-base leading-snug break-words m-0"
+                        title={benefit.titulo_beneficio}
+                      >
+                        {benefit.titulo_beneficio}
                       </p>
-                    )}
-                  </div>
-                  <div className="sm:col-span-3 flex flex-col gap-1.5">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-800 text-xs font-medium px-2 py-0.5 w-fit">
-                      <FileCheck2 className="w-3.5 h-3.5 shrink-0" />
-                      Inscrição aprovada
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-medium px-2 py-0.5 w-fit">
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                      Beneficiário no edital
-                    </span>
-                  </div>
-                  <div className="sm:col-span-2 text-gray-700">
-                    {new Date(benefit.data_inicio).toLocaleDateString("pt-BR")}
-                  </div>
-                  <div className="sm:col-span-3 flex flex-wrap gap-1 items-center">
+                      <p
+                        className="text-sm text-gray-600 leading-relaxed break-words m-0"
+                        title={benefit.titulo_edital || benefit.titulo_beneficio}
+                      >
+                        {benefit.titulo_edital || "Edital"}
+                      </p>
+                      <p className="text-sm text-gray-500 m-0">
+                        Inscrito em{" "}
+                        <span className="font-medium text-gray-700">
+                          {new Date(benefit.data_inicio).toLocaleDateString("pt-BR")}
+                        </span>
+                      </p>
+                    </div>
+
                     <Chip
                       color="success"
-                      size="sm"
+                      size="md"
                       variant="flat"
+                      classNames={{
+                        base: "shrink-0 self-start sm:self-center",
+                        content: "font-medium text-sm",
+                      }}
                       style={{
                         backgroundColor: "#dcfce7",
-                        color: "#16a34a",
-                        fontSize: "0.75rem",
-                        fontWeight: "500",
+                        color: "#15803d",
                       }}
                     >
                       Benefício ativo
@@ -132,40 +112,28 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
             </ul>
           </CardBody>
 
-          <CardFooter className="justify-between text-xs text-gray-500 pt-4 border-t">
+          <CardFooter className="text-sm text-gray-500 px-6 py-3 border-t">
             <span>
-              Total: {activeBenefits.length} benefício
+              {activeBenefits.length} benefício{activeBenefits.length !== 1 ? "s" : ""} homologado
               {activeBenefits.length !== 1 ? "s" : ""}
             </span>
-            <span>Atualizado agora</span>
           </CardFooter>
         </>
       ) : (
-        <CardBody className="flex-1 flex items-center justify-center py-16">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+        <CardBody className="flex-1 flex items-center justify-center py-14 px-6">
+          <div className="text-center max-w-md">
+            <div className="w-14 h-14 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <ShieldCheck className="w-7 h-7 text-gray-400" />
             </div>
-            <h4 className="text-lg font-semibold text-gray-600 mb-2">
+            <h4 className="text-base font-semibold text-gray-700 mb-2 m-0">
               Nenhum benefício homologado ainda
             </h4>
-            <p className="text-sm text-gray-500 max-w-md mx-auto">
-              Quando sua <strong>inscrição estiver aprovada</strong> na análise e
-              você for <strong>homologado como beneficiário</strong> no edital,
-              o processo aparecerá aqui. Acompanhe o status em{" "}
-              <strong>Minhas inscrições</strong> abaixo.
+            <p className="text-sm text-gray-500 leading-relaxed m-0">
+              Quando você for homologado em um edital, o benefício aparecerá aqui. Acompanhe o
+              andamento{" "}
+              <span className="whitespace-nowrap">
+                em <strong>Minhas inscrições</strong>.
+              </span>
             </p>
           </div>
         </CardBody>
@@ -175,3 +143,4 @@ const BenefitsCard: React.FC<BenefitsCardProps> = ({
 };
 
 export default BenefitsCard;
+

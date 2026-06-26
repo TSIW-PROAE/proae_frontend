@@ -11,23 +11,18 @@ import "./CentralEstudanteDrawer.css";
 const BENEFICIO_OPCOES = ["Pendente seleção", "Beneficiário no edital", "Não beneficiário"] as const;
 
 function labelProcesso(row: AdminAlunoResumoInscricao): string {
-  if (row.processo_tipo === "FORMULARIO_GERAL") return "Form. Geral";
-  if (row.processo_tipo === "RENOVACAO") return "Renovação";
   return "Edital";
 }
 
-/** Abre a tela admin com painel de respostas/documentos (mesmo fluxo das telas FG / FR / Inscrições). */
+/** Abre a tela admin com painel de respostas/documentos no fluxo de inscrições. */
 function hrefDetalheAdmin(row: AdminAlunoResumoInscricao, nivelAluno: string): string {
   const id = row.inscricao_id;
-  const n = encodeURIComponent(row.nivel_academico ?? nivelAluno);
-  if (row.processo_tipo === "FORMULARIO_GERAL") {
-    return `/portal-proae/formulario-geral?tab=inscricoes&expandInscricao=${id}&nivel_academico=${n}`;
-  }
-  if (row.processo_tipo === "RENOVACAO") {
-    return `/portal-proae/formulario-renovacao?tab=inscricoes&expandInscricao=${id}&nivel_academico=${n}`;
-  }
   const eid = row.edital_id;
-  return `/portal-proae/inscricoes?editalId=${eid}&expandInscricao=${id}`;
+  const query = new URLSearchParams();
+  query.set("expandInscricao", String(id));
+  if (eid != null) query.set("editalId", String(eid));
+  if (!eid && nivelAluno) query.set("nivel_academico", String(nivelAluno));
+  return `/portal-proae/inscricoes?${query.toString()}`;
 }
 
 function formatActorDisplay(entry: { actor_nome?: string | null; actor_usuario_id: string | null }): string {
@@ -117,7 +112,7 @@ function InscricaoAuditTimeline({ inscricaoId }: { inscricaoId: number }) {
   );
 }
 
-/** Somente leitura: dados consolidados + auditoria. Decisões (status / benefício) ficam em Inscrições por edital ou FG/FR. */
+/** Somente leitura: dados consolidados + auditoria. Decisões ficam na tela de inscrições. */
 function InscricaoRowResumo({
   row,
   nivelAluno,
@@ -127,7 +122,6 @@ function InscricaoRowResumo({
   nivelAluno: string;
   auditGlobalNonce: number;
 }) {
-  const isEditalComBeneficio = row.processo_tipo === "EDITAL";
   const beneficioInicial =
     row.status_beneficio_edital && BENEFICIO_OPCOES.includes(row.status_beneficio_edital as (typeof BENEFICIO_OPCOES)[number])
       ? row.status_beneficio_edital
@@ -152,14 +146,10 @@ function InscricaoRowResumo({
         <span title="Resultado da análise da inscrição (documentos, parecer)">
           <strong>Análise:</strong> {row.status_inscricao}
         </span>
-        {isEditalComBeneficio ? (
-          <span title="Homologação do benefício no edital (vaga)">
-            <strong>Benefício no edital:</strong> {beneficioInicial}
-            {row.beneficio_nome ? ` (${row.beneficio_nome})` : ""}
-          </span>
-        ) : (
-          <span className="central-meta-muted">Benefício no edital: não se aplica (FG / Renovação)</span>
-        )}
+        <span title="Homologação do benefício no edital (vaga)">
+          <strong>Benefício no edital:</strong> {beneficioInicial}
+          {row.beneficio_nome ? ` (${row.beneficio_nome})` : ""}
+        </span>
       </div>
       <a
         className="central-detalhe-link"

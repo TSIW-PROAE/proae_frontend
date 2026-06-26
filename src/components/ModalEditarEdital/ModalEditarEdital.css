@@ -410,6 +410,10 @@
   gap: 32px;
 }
 
+.two-col-row > * {
+  min-width: 0;
+}
+
 /* Cards de seção colapsáveis */
 .section-card {
   background: #ffffff;
@@ -923,10 +927,12 @@ select:focus {
 }
 
 .timeline-dates {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
+  width: 100%;
 }
 
 .date-input {
@@ -935,23 +941,42 @@ select:focus {
   border-radius: 8px;
   padding: 10px;
   outline: none;
+  width: 100%;
+  min-width: 0;
+}
+
+.timeline-dates-separator {
+  color: #64748b;
+  white-space: nowrap;
+  justify-self: center;
+}
+
+@media (max-width: 640px) {
+  .timeline-dates {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-dates-separator {
+    justify-self: start;
+  }
 }
 
 .timeline-actions {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  flex-shrink: 0;
+  align-items: center;
 }
 
 .timeline-display {
   background: #f8fafc;
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px 20px;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   transition: all 0.2s;
-  min-height: 64px; /* altura mínima para centralização visual */
+  min-height: 64px;
 }
 
 .timeline-display:hover {
@@ -960,16 +985,26 @@ select:focus {
   transform: translateY(-1px);
 }
 
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .timeline-content h4 {
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   font-size: 1.1rem;
   font-weight: 600;
   color: #374151;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .timeline-period {
   font-size: 0.9rem;
   color: #64748b;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .btn-save-timeline,
@@ -981,6 +1016,10 @@ select:focus {
   padding: 8px;
   cursor: pointer;
   transition: background 0.2s;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-delete-timeline {
@@ -991,6 +1030,10 @@ select:focus {
   padding: 8px;
   cursor: pointer;
   transition: background 0.2s;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-add-timeline {
@@ -4967,4 +5010,121 @@ select:focus {
 .btn-delete-pergunta-confirm:hover {
   background: linear-gradient(135deg, #b91c1c, #991b1b);
   box-shadow: 0 2px 8px #dc262640;
+}
+
+/* Modal importar formulário (portal no body) */
+.importar-formulario-overlay {
+  z-index: 10000;
+}
+
+.importar-formulario-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d4d4d8;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.importar-formulario-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+.importar-formulario-lista {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.importar-formulario-lista-empty {
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+}
+
+.importar-formulario-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  background: transparent;
+  cursor: pointer;
+}
+
+.importar-formulario-item--selected {
+  background: #eff6ff;
+}
+
+.importar-formulario-item-titulo {
+  font-weight: 600;
+}
+
+.importar-formulario-item-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.importar-formulario-preview {
+  font-size: 13px;
+  color: #334155;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.importar-formulario-preview-warn {
+  color: #b45309;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.importar-formulario-aviso {
+  font-size: 13px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.importar-formulario-confirm-box {
+  text-align: center;
+  padding: 8px 4px 4px;
+}
+
+.importar-formulario-confirm-box p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.importar-formulario-confirm-icon {
+  color: #d97706;
+  margin-bottom: 12px;
+}
+
+.importar-formulario-confirm-warn {
+  font-size: 13px !important;
+  color: #991b1b !important;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px !important;
+}
+
+.importar-formulario-confirm-info {
+  font-size: 13px !important;
+  color: #92400e !important;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px !important;
 }

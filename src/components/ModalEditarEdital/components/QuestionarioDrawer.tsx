@@ -32,6 +32,11 @@ interface QuestionarioDrawerProps {
   onCreateDado?: (dado: Omit<DadoAluno, "id">) => Promise<DadoAluno | null>; // Função para criar dado
   adicionarQuestionario: () => void;
   removerQuestionario: (index: number) => void;
+  /**
+   * Persiste a nova ordem das perguntas no backend (apenas atualiza o campo
+   * `ordem` — não recria registros nem perde respostas históricas).
+   */
+  onPersistirOrdem?: (perguntasOrdenadas: PerguntaEditorItem[]) => Promise<void> | void;
 }
 
 const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
@@ -52,6 +57,7 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
   onCreateDado,
   adicionarQuestionario,
   removerQuestionario,
+  onPersistirOrdem,
 }) => {
   // Estados para filtros e ordenação
   const [searchTerm, setSearchTerm] = useState("");
@@ -184,6 +190,36 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
     list[index].isEditing = !list[index].isEditing;
     onPerguntasChange(list);
   };
+
+  /** Move a pergunta no array (ordem manual). Persiste em background se possível. */
+  const movePergunta = async (index: number, dir: -1 | 1) => {
+    const newIndex = index + dir;
+    if (newIndex < 0 || newIndex >= perguntas.length) return;
+    const list = [...perguntas];
+    const [moved] = list.splice(index, 1);
+    list.splice(newIndex, 0, moved);
+    // Reatribui campo `ordem` em sequência (1..N) para refletir a nova posição.
+    const comOrdem = list.map((p, i) => ({ ...p, ordem: i + 1 }));
+    onPerguntasChange(comOrdem);
+    if (onPersistirOrdem) {
+      try {
+        await onPersistirOrdem(comOrdem);
+      } catch (err) {
+        console.error("Falha ao persistir ordem das perguntas", err);
+      }
+    }
+  };
+
+  /**
+   * Reordenação manual só faz sentido quando não há ordenação alfabética
+   * nem filtros que reduzam/embaralhem a lista exibida.
+   */
+  const podeReordenarManualmente =
+    sortOrder === "none" &&
+    !searchTerm.trim() &&
+    !filterVinculadas &&
+    !filterObrigatorias &&
+    !filterTipo;
 
   if (!isOpen) return null;
 
@@ -426,11 +462,34 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                   </div>
                 ) : (
                   <>
+                    {!podeReordenarManualmente && perguntas.length > 1 && (
+                      <div
+                        className="filter-results-info"
+                        style={{ background: "#fff7ed", color: "#7a4f0a" }}
+                      >
+                        <span>
+                          Limpe os filtros e a ordenação alfabética para
+                          reorganizar as perguntas manualmente.
+                        </span>
+                      </div>
+                    )}
                     {perguntasFiltradas.map((pergunta) => {
                       // Encontra o índice real da pergunta no array original
                       const realIndex = perguntas.findIndex(
                         (p) => p === pergunta
                       );
+
+                      // Origens disponíveis para condicional: somente perguntas
+                      // já persistidas (com id) e que vêm ANTES desta na ordem
+                      // visível (o backend só conhece IDs reais).
+                      const perguntasAnteriores = perguntas
+                        .slice(0, realIndex)
+                        .filter((p) => p.id)
+                        .map((p) => ({
+                          id: p.id as string,
+                          texto: p.texto,
+                          opcoes: p.opcoes,
+                        }));
 
                       return (
                         <PerguntaItem
@@ -438,6 +497,19 @@ const QuestionarioDrawer: React.FC<QuestionarioDrawerProps> = ({
                           pergunta={pergunta}
                           index={realIndex}
                           dadosAluno={dadosAluno}
+                          perguntasAnteriores={perguntasAnteriores}
+                          isFirst={realIndex === 0}
+                          isLast={realIndex === perguntas.length - 1}
+                          onMoveUp={
+                            podeReordenarManualmente
+                              ? () => movePergunta(realIndex, -1)
+                              : undefined
+                          }
+                          onMoveDown={
+                            podeReordenarManualmente
+                              ? () => movePergunta(realIndex, 1)
+                              : undefined
+                          }
                           onUpdate={(field, value) =>
                             updatePergunta(realIndex, field, value)
                           }

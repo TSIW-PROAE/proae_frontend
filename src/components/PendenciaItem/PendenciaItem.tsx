@@ -19,6 +19,7 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
   vaga_beneficio,
   documentos: pendencias,
   ajustes_resposta,
+  ajustes_abertos,
   onUpdated,
   onGoToAjuste,
 }) => {
@@ -197,9 +198,17 @@ const PendenciaItem: React.FC<PendenciaItemProps> = ({
                         onClick={() =>
                           onGoToAjuste?.(ajuste.step_id, ajuste.pergunta_id)
                         }
-                        className="rounded-md bg-amber-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-800"
+                        disabled={ajustes_abertos !== true}
+                        title={
+                          ajustes_abertos !== true
+                            ? "Ajustes fechados pela PROAE para este edital."
+                            : undefined
+                        }
+                        className="rounded-md bg-amber-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-800 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        Corrigir agora
+                        {ajustes_abertos === true
+                          ? "Corrigir agora"
+                          : "Ajustes fechados"}
                       </button>
                     </div>
                   </div>

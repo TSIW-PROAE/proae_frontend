@@ -1,26 +1,32 @@
 import BenefitsCard from "@/components/BenefitsCard/BenefitsCard";
 import OpenSelections from "@/pages/paginaAluno/PortalAluno/componentes/OpenSelections";
+import { isCgVigente } from "@/utils/cgSemestre";
 import { FetchAdapter } from "@/services/api";
 import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import { API_BASE_URL } from "@/config/api";
 import { NIVEL_GRADUACAO } from "@/constants/nivelAcademico";
-import { formularioGeralService } from "@/services/FormularioGeralService/formularioGeral.service";
-import { useEffect, useState, useContext, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useContext, useMemo, useRef, useCallback, type RefObject } from "react";
 import {
   buildPortalNotifications,
-  countUrgentNotifications,
+  countUnreadUrgentNotifications,
+  loadReadPortalNotificationIds,
+  saveReadPortalNotificationIds,
 } from "./buildPortalNotifications";
 import "./PortalAluno.css";
 import CandidateStatus from "./componentes/CandidateStatus";
-import { User, BookOpen, FileText, Award, TrendingUp, Clock, CheckCircle, AlertCircle, Bell, RefreshCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { User, BookOpen, FileText, ShieldCheck, TrendingUp, Clock, CheckCircle, AlertCircle, Bell } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingSpin } from "@/components/Loading/LoadingScreen";
 import toast from "react-hot-toast";
+import { isInscricaoDisponivelEdital } from "@/utils/editalDisponibilidade";
 
 interface ResponseData {
   dados: {
-    beneficios: [];
+    beneficios: Array<{
+      titulo_beneficio?: string;
+      beneficio?: string;
+    }>;
   };
 }
 
@@ -32,19 +38,51 @@ export default function PortalAluno() {
   const [benefits, setBenefits] = useState<any[]>([]);
   const [openSelections, setOpenSelections] = useState<any[]>([]);
   const [inscriptions, setInscriptions] = useState<any[]>([]);
-  const [podeSeInscreverEmOutros, setPodeSeInscreverEmOutros] = useState<boolean>(true);
-  const [renovacaoPendente, setRenovacaoPendente] = useState(false);
+  const [cgPerfil, setCgPerfil] = useState<{
+    situacao: string;
+    validoAte: string | null;
+    pcd: boolean;
+  }>({ situacao: "Nao cadastrado", validoAte: null, pcd: false });
   const [loading, setLoading] = useState(true);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifWrapRef = useRef<HTMLDivElement>(null);
-  const prevUrgentCountRef = useRef(0);
+  const editaisSectionRef = useRef<HTMLElement>(null);
+  const inscricoesSectionRef = useRef<HTMLElement>(null);
+  const statusSectionRef = useRef<HTMLElement>(null);
+  const tourHandledRef = useRef<string | null>(null);
+  const prevUnreadUrgentRef = useRef(0);
+  const [searchParams] = useSearchParams();
+  const tour = searchParams.get("tour");
+  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(() =>
+    loadReadPortalNotificationIds(""),
+  );
 
   useEffect(() => {
     if (user) {
       setFirstName(user.nome || "");
       setUserId(user.email);
+      setReadNotifIds(loadReadPortalNotificationIds(user.email || ""));
     }
   }, [user]);
+
+  const markNotificationsRead = useCallback(
+    (ids: string[]) => {
+      if (!ids.length || !userId) return;
+      setReadNotifIds((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+        for (const id of ids) {
+          if (!next.has(id)) {
+            next.add(id);
+            changed = true;
+          }
+        }
+        if (changed) saveReadPortalNotificationIds(userId, next);
+        return changed ? next : prev;
+      });
+    },
+    [userId],
+  );
 
   const client = new FetchAdapter();
   const portalAlunoService = new PortalAlunoService(client);
@@ -72,17 +110,6 @@ export default function PortalAluno() {
     }
   };
 
-  const getFormularioGeralStatus = async () => {
-    try {
-      const fg = await formularioGeralService.getFormularioGeralOrNull();
-      setPodeSeInscreverEmOutros(fg?.pode_se_inscrever_em_outros ?? true);
-      setRenovacaoPendente(!!fg?.renovacao_pendente);
-    } catch {
-      setPodeSeInscreverEmOutros(true);
-      setRenovacaoPendente(false);
-    }
-  };
-
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
@@ -91,10 +118,25 @@ export default function PortalAluno() {
       let nivel: string = NIVEL_GRADUACAO;
       try {
         const r = (await client.get(`${API_BASE_URL}/aluno/me`)) as {
-          dados?: { aluno?: { nivel_academico?: string } };
+          dados?: {
+            aluno?: {
+              nivel_academico?: string;
+              cg_situacao?: string;
+              cg_valido_ate_semestre?: string | null;
+              cg_pcd?: boolean;
+            };
+          };
         };
-        const n = r?.dados?.aluno?.nivel_academico;
+        const aluno = r?.dados?.aluno;
+        const n = aluno?.nivel_academico;
         if (n) nivel = n as string;
+        if (aluno) {
+          setCgPerfil({
+            situacao: aluno.cg_situacao ?? "Nao cadastrado",
+            validoAte: aluno.cg_valido_ate_semestre ?? null,
+            pcd: aluno.cg_pcd === true,
+          });
+        }
       } catch {
         nivel = NIVEL_GRADUACAO;
       }
@@ -111,7 +153,6 @@ export default function PortalAluno() {
       await Promise.all([
         getBenefits(),
         getInscriptions(),
-        getFormularioGeralStatus(),
       ]);
     })().finally(() => {
       if (!cancelled) setLoading(false);
@@ -142,16 +183,70 @@ export default function PortalAluno() {
   const inscricoesComPendenciaCount =
     inscriptions?.filter((i) => hasPendenciasLike(i)).length ?? 0;
 
-  const portalNotifications = useMemo(
-    () => buildPortalNotifications(inscriptions, renovacaoPendente),
-    [inscriptions, renovacaoPendente],
+  const beneficiosAtivosParaRenovacao = useMemo(() => {
+    return (benefits ?? [])
+      .filter((b) => {
+        const status = String(b?.beneficio ?? "").toLowerCase();
+        return (
+          status.includes("ativo") ||
+          status.includes("beneficiário") ||
+          status.includes("beneficiario")
+        );
+      })
+      .map((b) => String(b?.titulo_beneficio ?? "").trim())
+      .filter((titulo) => titulo.length > 0);
+  }, [benefits]);
+
+  const cgApto = useMemo(
+    () =>
+      isCgVigente({
+        cgSituacao: cgPerfil.situacao,
+        cgValidoAteSemestre: cgPerfil.validoAte,
+      }),
+    [cgPerfil.situacao, cgPerfil.validoAte],
   );
-  const urgentNotifCount = useMemo(
-    () => countUrgentNotifications(portalNotifications),
-    [portalNotifications],
+
+  const renovacaoBanner = useMemo(() => {
+    const editaisRenovacao = (openSelections ?? []).filter(
+      (e) => e?.is_formulario_renovacao === true,
+    );
+    if (editaisRenovacao.length === 0) return null;
+    if (beneficiosAtivosParaRenovacao.length === 0) return null;
+
+    const editalRenovacaoAberto = editaisRenovacao.find((e) =>
+      String(e?.status_edital ?? "").toLowerCase().includes("aberto"),
+    );
+    if (!editalRenovacaoAberto) return null;
+
+    const editalId = String(editalRenovacaoAberto.id ?? "");
+    const inscricaoRenovacao = (inscriptions ?? []).find(
+      (i) => String(i?.edital_id ?? "") === editalId,
+    );
+
+    if (inscricaoRenovacao) return null;
+
+    return {
+      situacao: "Aguardando solicitação",
+      detalhe:
+        "Edital de renovação aberto. Envie sua solicitação no edital abaixo.",
+    };
+  }, [openSelections, inscriptions, beneficiosAtivosParaRenovacao]);
+
+  const portalNotifications = useMemo(
+    () => buildPortalNotifications(inscriptions),
+    [inscriptions],
+  );
+  const unreadUrgentCount = useMemo(
+    () => countUnreadUrgentNotifications(portalNotifications, readNotifIds),
+    [portalNotifications, readNotifIds],
   );
 
   const closeNotif = useCallback(() => setNotifOpen(false), []);
+
+  const markAllUrgentAsRead = useCallback(() => {
+    const urgentIds = portalNotifications.filter((n) => n.urgent).map((n) => n.id);
+    markNotificationsRead(urgentIds);
+  }, [portalNotifications, markNotificationsRead]);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -171,9 +266,15 @@ export default function PortalAluno() {
   }, [notifOpen, closeNotif]);
 
   useEffect(() => {
-    const prev = prevUrgentCountRef.current;
-    if (urgentNotifCount > prev) {
-      const novas = urgentNotifCount - prev;
+    if (notifOpen) {
+      markAllUrgentAsRead();
+    }
+  }, [notifOpen, markAllUrgentAsRead]);
+
+  useEffect(() => {
+    const prev = prevUnreadUrgentRef.current;
+    if (unreadUrgentCount > prev) {
+      const novas = unreadUrgentCount - prev;
       toast(
         novas === 1
           ? "Você recebeu 1 nova notificação de pendência."
@@ -181,13 +282,28 @@ export default function PortalAluno() {
         { icon: "🔔" },
       );
     }
-    prevUrgentCountRef.current = urgentNotifCount;
-  }, [urgentNotifCount]);
+    prevUnreadUrgentRef.current = unreadUrgentCount;
+  }, [unreadUrgentCount]);
+
+  useEffect(() => {
+    if (loading || !tour) return;
+    if (tourHandledRef.current === tour) return;
+    const map: Record<string, { ref: RefObject<HTMLElement>; label: string }> = {
+      editais: { ref: editaisSectionRef, label: "Editais e seleções" },
+      inscricoes: { ref: inscricoesSectionRef, label: "Minhas inscrições" },
+      status: { ref: statusSectionRef, label: "Status rápido" },
+    };
+    const target = map[tour];
+    if (!target?.ref.current) return;
+    target.ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast(`Tutorial: foco em "${target.label}".`);
+    tourHandledRef.current = tour;
+  }, [loading, tour]);
 
   // Estatísticas do dashboard
   const stats = [
     {
-      icon: Award,
+      icon: ShieldCheck,
       label: "Benefícios no edital",
       value: benefits?.filter((b) => b.beneficio?.toLowerCase().includes("ativo")).length || 0,
       color: "bg-emerald-500",
@@ -197,7 +313,12 @@ export default function PortalAluno() {
     {
       icon: BookOpen,
       label: "Seleções Abertas",
-      value: openSelections?.filter((s) => s.status_edital?.toLowerCase().includes("aberto")).length || 0,
+      // Conta editais com a janela de inscrição explicitamente aberta,
+      // independente do status operacional do edital.
+      value:
+        openSelections?.filter((s) => {
+          return isInscricaoDisponivelEdital(s ?? {});
+        }).length || 0,
       color: "bg-blue-500",
       bgColor: "bg-blue-50",
       textColor: "text-blue-700",
@@ -257,9 +378,9 @@ export default function PortalAluno() {
                   onClick={() => setNotifOpen((o) => !o)}
                 >
                   <Bell className="w-5 h-5" />
-                  {urgentNotifCount > 0 && (
+                  {unreadUrgentCount > 0 && (
                     <span className="notification-badge">
-                      {urgentNotifCount > 9 ? "9+" : urgentNotifCount}
+                      {unreadUrgentCount > 9 ? "9+" : unreadUrgentCount}
                     </span>
                   )}
                 </button>
@@ -267,7 +388,7 @@ export default function PortalAluno() {
                   <div className="notification-dropdown" role="region" aria-label="Lista de notificações">
                     <div className="notification-dropdown-header">Notificações</div>
                     <p className="notification-dropdown-hint">
-                      Resumo com base nas suas inscrições e renovação. Itens em vermelho/laranja pedem ação.
+                      Resumo com base nas suas inscrições (incluindo renovação, quando houver). Itens em vermelho/laranja pedem ação.
                     </p>
                     {portalNotifications.length === 0 ? (
                       <p className="notification-dropdown-empty">Nada a mostrar no momento.</p>
@@ -280,6 +401,7 @@ export default function PortalAluno() {
                                 type="button"
                                 className={`notification-item notification-item--${n.variant}`}
                                 onClick={() => {
+                                  markNotificationsRead([n.id]);
                                   navigate(n.href!);
                                   closeNotif();
                                 }}
@@ -309,7 +431,13 @@ export default function PortalAluno() {
           <p className="font-semibold text-slate-900 m-0 mb-1">Como ler o portal</p>
           <ul className="list-disc pl-5 m-0 space-y-1">
             <li>
-              <strong>Minhas inscrições</strong>: situação da sua inscrição no processo (análise, pendências, etc.).
+              <strong>Cadastro Geral</strong>: comprovação socioeconômica — requisito para editais de benefícios (chamada na lista de editais).
+            </li>
+            <li>
+              <strong>Editais de benefícios e renovação</strong>: seleção de auxílios e recadastro de beneficiários.
+            </li>
+            <li>
+              <strong>Minhas inscrições</strong>: situação da sua inscrição (análise, pendências, etc.).
             </li>
             <li>
               <strong>Benefícios no edital</strong>: aparece quando a inscrição está <strong>aprovada na análise</strong> e você foi{" "}
@@ -317,27 +445,6 @@ export default function PortalAluno() {
             </li>
           </ul>
         </div>
-
-        {renovacaoPendente && (
-          <div className="mb-4 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-950 flex flex-wrap items-center gap-3 justify-between">
-            <div className="flex items-start gap-2">
-              <RefreshCw className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold">Renovação obrigatória</p>
-                <p className="text-sm opacity-90">
-                  Há um formulário de renovação aberto. Conclua-o para voltar a se inscrever em editais e benefícios.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate("/portal-aluno/formulario-renovacao")}
-              className="px-4 py-2 rounded-lg bg-amber-800 text-white text-sm font-medium hover:bg-amber-900"
-            >
-              Preencher renovação
-            </button>
-          </div>
-        )}
 
         {/* Estatísticas Cards */}
         <section className="stats-section">
@@ -358,8 +465,12 @@ export default function PortalAluno() {
 
         {/* Conteúdo Principal */}
         <main className="main-content">
-          {/* Seção de Benefícios e Seleções */}
-          <section className="benefits-selections-section">
+          {/* Benefícios homologados + editais (CG, seleção e renovação) */}
+          <section
+            ref={editaisSectionRef}
+            className="benefits-selections-section"
+            style={tour === "editais" ? { outline: "2px solid #60a5fa", borderRadius: "12px" } : undefined}
+          >
             <div className="content-grid">
               <div className="benefits-container">
                 <div className="card-container">
@@ -370,9 +481,14 @@ export default function PortalAluno() {
               <div className="selections-container">
                 <div className="card-container">
                   <OpenSelections
-                    editais={openSelections}
-                    podeSeInscreverEmOutros={podeSeInscreverEmOutros}
+                    editais={openSelections ?? []}
                     inscricoesAluno={inscriptions}
+                    beneficiosAtivos={beneficiosAtivosParaRenovacao}
+                    cgApto={cgApto}
+                    cgPcd={cgPerfil.pcd}
+                    cgSituacao={cgPerfil.situacao}
+                    cgValidoAte={cgPerfil.validoAte}
+                    renovacaoBanner={renovacaoBanner}
                   />
                 </div>
               </div>
@@ -380,7 +496,11 @@ export default function PortalAluno() {
           </section>
 
           {/* Seção de Inscrições */}
-          <section className="inscriptions-section">
+          <section
+            ref={inscricoesSectionRef}
+            className="inscriptions-section"
+            style={tour === "inscricoes" ? { outline: "2px solid #a78bfa", borderRadius: "12px" } : undefined}
+          >
             <div className="section-header">
               <FileText className="w-5 h-5 text-purple-600" />
               <h2 className="section-title">Minhas Inscrições</h2>
@@ -414,7 +534,11 @@ export default function PortalAluno() {
           </section>
 
           {/* Seção de Status Rápido */}
-          <section className="quick-status-section">
+          <section
+            ref={statusSectionRef}
+            className="quick-status-section"
+            style={tour === "status" ? { outline: "2px solid #34d399", borderRadius: "12px" } : undefined}
+          >
             <div className="status-grid">
               <div className="status-card success">
                 <CheckCircle className="w-6 h-6 text-emerald-600" />

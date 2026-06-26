@@ -104,12 +104,40 @@ export default function Inscricao() {
     loadPages();
   }, []);
 
-  const getOptions = (options: string[]): Option[] => {
-    let optionsTyped: Option[] = [];
-    options.forEach((option) => {
-      optionsTyped.push({ valor: option, label: option });
+  const sanitizeOptionToken = (token: unknown): string => {
+    const raw = String(token ?? "").trim();
+    if (!raw) return "";
+    return raw
+      .replace(/^[\s{"]+/, "")
+      .replace(/[\s}"]+$/, "")
+      .replace(/\\"/g, '"')
+      .trim();
+  };
+
+  const getOptions = (rawOptions: unknown): Option[] => {
+    const items = Array.isArray(rawOptions) ? rawOptions : [rawOptions];
+    const normalized: string[] = [];
+
+    items.forEach((item) => {
+      const text = String(item ?? "").trim();
+      if (!text) return;
+      if (text.startsWith("{") && text.endsWith("}")) {
+        const inner = text.slice(1, -1);
+        inner
+          .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+          .map((part) => sanitizeOptionToken(part))
+          .filter(Boolean)
+          .forEach((opt) => normalized.push(opt));
+        return;
+      }
+      const clean = sanitizeOptionToken(text);
+      if (clean) normalized.push(clean);
     });
-    return optionsTyped;
+
+    return Array.from(new Set(normalized)).map((option) => ({
+      valor: option,
+      label: option,
+    }));
   };
 
   const handleFormSubmit = async (dados: Record<string, any>) => {

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FetchAdapter } from "@/services/api";
+import PortalAlunoService from "@/services/PortalAluno/PortalAlunoService";
 import {
   AlertCircle,
   AlertTriangle,
@@ -16,9 +18,11 @@ import {
   XCircle,
   ArrowRight,
 } from "lucide-react";
+import { isAjusteDisponivelEdital } from "@/utils/editalDisponibilidade";
 
 interface EtapaEdital {
   etapa: string;
+  tipo_etapa?: string;
   ordem_elemento: number;
   data_inicio: string;
   data_fim: string;
@@ -50,10 +54,16 @@ interface EditalAPI {
   inscricao_id: string;
   titulo_edital: string;
   status_edital: string;
+  ajustes_abertos?: boolean;
   etapa_edital: EtapaEdital[];
   status_inscricao: string;
   /** Homologação da vaga no edital (API `status_beneficio_edital`) */
   status_beneficio_edital?: string;
+  situacao_solicitacao?: "SELECIONADA" | "CLASSIFICADA" | "INDEFERIDA" | "DESISTENTE";
+  resultado_fase?: string;
+  recurso_status?: string;
+  recurso_observacao?: string | null;
+  resultado_publicado_em?: string | null;
   data_inscricao: string;
   vaga: Vaga;
   possui_pendencias: boolean;
@@ -64,8 +74,6 @@ interface EditalAPI {
   possui_novas_perguntas_pendentes?: boolean;
   total_novas_perguntas?: number;
   novas_perguntas_pendentes_por_step?: NovaPerguntaPendenteStep[];
-  is_formulario_geral?: boolean;
-  is_formulario_renovacao?: boolean;
   observacao_admin?: string | null;
 }
 
@@ -74,15 +82,25 @@ interface CandidateStatusProps {
   onReload?: () => void;
 }
 
-const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
+const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital, onReload }) => {
   const navigate = useNavigate();
   const [fichaOpen, setFichaOpen] = useState(false);
+  const [recursoModalOpen, setRecursoModalOpen] = useState(false);
+  const [recursoJustificativa, setRecursoJustificativa] = useState("");
+  const [recursoErro, setRecursoErro] = useState<string | null>(null);
+  const [solicitandoRecurso, setSolicitandoRecurso] = useState(false);
   if (!edital) return null;
+  const portalAlunoService = new PortalAlunoService(new FetchAdapter());
 
   const {
     titulo_edital,
     status_inscricao,
     status_beneficio_edital,
+    situacao_solicitacao,
+    resultado_fase,
+    recurso_status,
+    recurso_observacao,
+    resultado_publicado_em,
     possui_pendencias,
     etapa_edital: etapaEditalProp,
     data_inscricao,
@@ -92,8 +110,6 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
     possui_novas_perguntas_pendentes,
     total_novas_perguntas,
     novas_perguntas_pendentes_por_step,
-    is_formulario_geral,
-    is_formulario_renovacao,
     observacao_admin,
   } = edital;
 
@@ -113,12 +129,19 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
     benLower.includes("não beneficiário") ||
     benLower.includes("nao beneficiário") ||
     benLower.includes("nao beneficiario");
+  const faseResultado = (resultado_fase ?? "").trim().toLowerCase();
+  const statusRecurso = (recurso_status ?? "").trim().toLowerCase();
+  const podeSolicitarRecurso =
+    faseResultado.includes("preliminar") &&
+    (statusRecurso === "" || statusRecurso.includes("sem recurso"));
 
   const statusLower = (status_inscricao ?? "").toLowerCase();
   const isAjuste = status_inscricao === "Ajuste Necessário";
+  const ajustesAbertos = isAjusteDisponivelEdital({
+    ajustes_abertos: edital.ajustes_abertos,
+    etapa_edital,
+  });
   const isNegada = statusLower.includes("negada") || statusLower.includes("rejeitada") || statusLower.includes("reprovada");
-  const isFG = is_formulario_geral === true;
-  const isFR = is_formulario_renovacao === true;
   /** Mesmo padrão de query que `PendenciasAluno` → `buildAjusteUrl`. */
   const resolveAjusteUrl = () => {
     const first = novas_perguntas_pendentes_por_step?.[0];
@@ -133,8 +156,6 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
       query.set("inscricao_id", String(edital.inscricao_id));
     }
     const suffix = `?${query.toString()}`;
-    if (isFG) return `/portal-aluno/formulario-geral${suffix}`;
-    if (isFR) return `/portal-aluno/formulario-renovacao${suffix}`;
     return `/questionario/${edital.edital_id}${suffix}`;
   };
 
@@ -170,16 +191,16 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
 
   const getStatusInfo = () => {
     if (isAjuste) {
-      return { icon: AlertTriangle, color: "text-orange-600", bgColor: "bg-orange-50", borderColor: "border-orange-200", label: "Ajuste Necessário" };
+      return { icon: AlertTriangle, color: "text-orange-600", bgColor: "bg-orange-50", borderColor: "border-orange-200", label: "Análise: ajuste necessário" };
     }
     if (statusLower.includes("aprovada")) {
-      return { icon: CheckCircle, color: "text-emerald-600", bgColor: "bg-emerald-50", borderColor: "border-emerald-200", label: "Aprovada" };
+      return { icon: CheckCircle, color: "text-emerald-600", bgColor: "bg-emerald-50", borderColor: "border-emerald-200", label: "Análise: aprovada" };
     }
     if (statusLower.includes("rejeitada por prazo de complemento") || statusLower.includes("rejeitada_por_prazo_complemento")) {
       return { icon: Clock, color: "text-red-700", bgColor: "bg-red-50", borderColor: "border-red-300", label: "Rejeitada por Prazo de Complemento" };
     }
     if (isNegada) {
-      return { icon: XCircle, color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-red-200", label: "Negada" };
+      return { icon: XCircle, color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-red-200", label: "Análise: negada" };
     }
     if (statusLower.includes("aguardando complemento") || statusLower.includes("aguardando_complemento")) {
       return { icon: RefreshCw, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-300", label: "Aguardando Complemento" };
@@ -194,15 +215,71 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
       return { icon: ShieldAlert, color: "text-orange-600", bgColor: "bg-orange-50", borderColor: "border-orange-300", label: "Pendente de Regularização" };
     }
     if (statusLower.includes("em_analise") || statusLower.includes("em análise")) {
-      return { icon: HelpCircle, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", label: "Em Análise" };
+      return { icon: HelpCircle, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", label: "Análise: em andamento" };
     }
     if (statusLower.includes("pendente")) {
-      return { icon: Clock, color: "text-yellow-600", bgColor: "bg-yellow-50", borderColor: "border-yellow-200", label: "Pendente" };
+      return { icon: Clock, color: "text-yellow-600", bgColor: "bg-yellow-50", borderColor: "border-yellow-200", label: "Análise: em andamento" };
     }
-    return { icon: Clock, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", label: status_inscricao };
+    return { icon: Clock, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", label: `Análise: ${status_inscricao}` };
   };
 
   const statusInfo = getStatusInfo();
+
+  const getSituacaoSolicitacaoInfo = () => {
+    switch (situacao_solicitacao) {
+      case "SELECIONADA":
+        return {
+          label: "Selecionada",
+          className:
+            "bg-emerald-50 border-emerald-200 text-emerald-900",
+        };
+      case "CLASSIFICADA":
+        return {
+          label: "Classificada",
+          className:
+            "bg-blue-50 border-blue-200 text-blue-900",
+        };
+      case "INDEFERIDA":
+        return {
+          label: "Indeferida",
+          className:
+            "bg-red-50 border-red-200 text-red-900",
+        };
+      case "DESISTENTE":
+        return {
+          label: "Desistente",
+          className:
+            "bg-slate-100 border-slate-300 text-slate-800",
+        };
+      default:
+        return null;
+    }
+  };
+
+  const situacaoInfo = getSituacaoSolicitacaoInfo();
+
+  const handleSolicitarRecurso = async () => {
+    const justificativa = recursoJustificativa.trim();
+    if (justificativa.length < 10) {
+      setRecursoErro("A justificativa precisa ter pelo menos 10 caracteres.");
+      return;
+    }
+    setRecursoErro(null);
+
+    try {
+      setSolicitandoRecurso(true);
+      await portalAlunoService.solicitarRecurso(edital.inscricao_id, justificativa);
+      setRecursoModalOpen(false);
+      setRecursoJustificativa("");
+      window.alert("Recurso solicitado com sucesso.");
+      if (onReload) await onReload();
+    } catch (e: any) {
+      const msg = e?.message || "Não foi possível solicitar recurso.";
+      setRecursoErro(String(msg));
+    } finally {
+      setSolicitandoRecurso(false);
+    }
+  };
 
   return (
     <div className="candidate-status-card">
@@ -222,7 +299,7 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
       </div>
 
       <div className="status-content">
-        {!isFG && status_beneficio_edital && (
+        {status_beneficio_edital && (
           <div
             className={`mb-3 rounded-lg border px-3 py-2.5 text-sm ${
               ehBeneficiario
@@ -234,11 +311,11 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
           >
             <p className="font-semibold m-0 flex items-center gap-2">
               <CheckCircle className="w-4 h-4 shrink-0" />
-              Sua participação neste edital
+              Situação no edital
             </p>
             <p className="m-0 mt-1 opacity-95">
-              <span className="font-medium">Inscrição:</span> você está inscrito desde {formatDate(data_inscricao)}.{" "}
-              <span className="font-medium">Análise da inscrição:</span>{" "}
+              <span className="font-medium">Inscrição registrada em:</span> {formatDate(data_inscricao)}.{" "}
+              <span className="font-medium">Status da análise:</span>{" "}
               {status_inscricao || "—"}.
             </p>
             {ehBeneficiario && statusLower.includes("aprovada") && (
@@ -258,6 +335,54 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
             )}
           </div>
         )}
+
+        {situacaoInfo && (
+          <div className={`mb-3 rounded-lg border px-3 py-2.5 text-sm ${situacaoInfo.className}`}>
+            <p className="font-semibold m-0 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0" />
+              Situação da solicitação
+            </p>
+            <p className="m-0 mt-1 opacity-95">
+              {situacaoInfo.label}
+            </p>
+          </div>
+        )}
+
+        
+          <div className="mb-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-sm text-indigo-950">
+            <p className="font-semibold m-0 flex items-center gap-2">
+              <FileText className="w-4 h-4 shrink-0" />
+              Resultado e recurso
+            </p>
+            <p className="m-0 mt-1 opacity-95">
+              <span className="font-medium">Resultado:</span> {resultado_fase || "Nao publicado"}.
+              {" "}
+              <span className="font-medium">Recurso:</span> {recurso_status || "Sem recurso"}.
+            </p>
+            {resultado_publicado_em && (
+              <p className="m-0 mt-1 opacity-90">
+                Publicado em: {formatDate(resultado_publicado_em)}.
+              </p>
+            )}
+            {recurso_observacao && (
+              <p className="m-0 mt-2">
+                <span className="font-medium">Parecer:</span> {recurso_observacao}
+              </p>
+            )}
+            {podeSolicitarRecurso && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRecursoErro(null);
+                  setRecursoModalOpen(true);
+                }}
+                disabled={solicitandoRecurso}
+                className="mt-2 rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-70"
+              >
+                {solicitandoRecurso ? "Enviando recurso..." : "Solicitar recurso"}
+              </button>
+            )}
+          </div>
 
         {isAjuste && (
           <div className="alert alert-warning">
@@ -419,9 +544,14 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
               </div>
             )}
 
-            <button onClick={() => navigate(resolveAjusteUrl())} className="pendencias-urgent-button novas-perguntas-button">
+            <button
+              onClick={() => navigate(resolveAjusteUrl())}
+              className="pendencias-urgent-button novas-perguntas-button"
+              disabled={!ajustesAbertos}
+              title={!ajustesAbertos ? "Ajustes fechados pela PROAE para este edital." : undefined}
+            >
               <RefreshCw className="w-4 h-4" />
-              <span>Resolver ajustes</span>
+              <span>{ajustesAbertos ? "Resolver ajustes" : "Ajustes fechados"}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -434,10 +564,15 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
           <span>Ver Ficha de Inscrição</span>
         </button>
 
-        {isAjuste && isFG && (
-          <button onClick={() => navigate("/portal-aluno/formulario-geral")} className="action-button primary">
+        {isAjuste && (
+          <button
+            onClick={() => navigate(resolveAjusteUrl())}
+            className="action-button primary"
+            disabled={!ajustesAbertos}
+            title={!ajustesAbertos ? "Ajustes fechados pela PROAE para este edital." : undefined}
+          >
             <AlertTriangle className="w-4 h-4" />
-            <span>Corrigir Formulário</span>
+            <span>{ajustesAbertos ? "Corrigir inscrição" : "Ajustes fechados"}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         )}
@@ -473,8 +608,22 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
                 <span className="font-semibold">Status da inscrição:</span> {status_inscricao || "—"}
               </p>
               <p className="m-0">
+                <span className="font-semibold">Situação da solicitação:</span> {situacaoInfo?.label || "—"}
+              </p>
+              <p className="m-0">
                 <span className="font-semibold">Status do benefício no edital:</span> {status_beneficio_edital || "—"}
               </p>
+              <p className="m-0">
+                <span className="font-semibold">Resultado:</span> {resultado_fase || "Nao publicado"}
+              </p>
+              <p className="m-0">
+                <span className="font-semibold">Recurso:</span> {recurso_status || "Sem recurso"}
+              </p>
+              {recurso_observacao && (
+                <p className="m-0">
+                  <span className="font-semibold">Parecer do recurso:</span> {recurso_observacao}
+                </p>
+              )}
               <p className="m-0">
                 <span className="font-semibold">Data de inscrição:</span> {formatDate(data_inscricao)}
               </p>
@@ -501,18 +650,78 @@ const CandidateStatus: React.FC<CandidateStatusProps> = ({ edital }) => {
               >
                 Ir para Pendências
               </button>
-              {isFG && (
-                <button
-                  type="button"
-                  className="rounded-md bg-[#183b4e] px-3 py-2 text-sm font-medium text-white hover:opacity-95"
-                  onClick={() => {
-                    navigate("/portal-aluno/formulario-geral");
-                    setFichaOpen(false);
-                  }}
-                >
-                  Abrir formulário geral
-                </button>
-              )}
+              <button
+                type="button"
+                className="rounded-md bg-[#183b4e] px-3 py-2 text-sm font-medium text-white hover:opacity-95"
+                onClick={() => {
+                  navigate(resolveAjusteUrl());
+                  setFichaOpen(false);
+                }}
+              >
+                Abrir inscrição
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {recursoModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Solicitar recurso"
+          className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => {
+            if (solicitandoRecurso) return;
+            setRecursoModalOpen(false);
+          }}
+        >
+          <div
+            className="w-full max-w-xl rounded-xl bg-white shadow-2xl border border-slate-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <h4 className="m-0 text-base font-semibold text-slate-900">Solicitar recurso</h4>
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                disabled={solicitandoRecurso}
+                onClick={() => setRecursoModalOpen(false)}
+              >
+                Fechar
+              </button>
+            </div>
+            <div className="space-y-3 px-5 py-4">
+              <p className="m-0 text-sm text-slate-700">
+                Descreva sua justificativa para análise do recurso (mínimo de 10 caracteres).
+              </p>
+              <textarea
+                value={recursoJustificativa}
+                onChange={(e) => setRecursoJustificativa(e.target.value)}
+                disabled={solicitandoRecurso}
+                rows={6}
+                className="w-full rounded-lg border border-slate-300 p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                placeholder="Ex.: Solicito revisão da análise pois..."
+              />
+              {recursoErro && <p className="m-0 text-sm text-red-600">{recursoErro}</p>}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                disabled={solicitandoRecurso}
+                onClick={() => setRecursoModalOpen(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-[#183b4e] px-3 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-60"
+                disabled={solicitandoRecurso}
+                onClick={() => void handleSolicitarRecurso()}
+              >
+                {solicitandoRecurso ? "Enviando..." : "Enviar recurso"}
+              </button>
             </div>
           </div>
         </div>
